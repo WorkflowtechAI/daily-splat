@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily rebuild of the job-hunt cabal's Daily Splat
+
+[Timer]
+# Before the group's morning coffee, Pacific time, so "New today" means today
+# for the people reading it. The jitter keeps it off the exact minute.
+OnCalendar=*-*-* 05:30:00 America/Los_Angeles
+RandomizedDelaySec=20m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

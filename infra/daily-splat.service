@@ -1,0 +1,23 @@
+[Unit]
+Description=Rebuild iambraun.com/cv/job-sources/daily-splat (jobs.json)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=foundry
+# FOORILLA_API_KEY and TYPESAFE_API_KEY (Jev). root:root 0600, never in the repo.
+# Either key may be missing: that source or the Jev pass is skipped and named
+# in jobs.json's run stats, and the rest of the run still lands.
+EnvironmentFile=/etc/daily-splat.env
+# Yesterday's postings and the Jev answer cache live here, outside the docroot,
+# and systemd hands the path to the script as $STATE_DIRECTORY.
+StateDirectory=daily-splat
+ExecStart=/usr/bin/python3 /var/www/iambraun.com/cv/job-sources/daily-splat/splat.py
+# Fails closed: if fewer than half the sources answer, or nothing survives the
+# filters, it writes nothing and exits non-zero. Yesterday's page stands and the
+# reason lands in `journalctl -u daily-splat.service`.
+#
+# A normal day is a few minutes. The first run asks Jev about every posting,
+# so it is the slow one.
+TimeoutStartSec=45min

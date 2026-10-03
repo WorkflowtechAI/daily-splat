@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Splat · Cyber + Engineering Jobs, PNW</title>
+<link rel="canonical" href="https://iambraun.com/cv/job-sources/daily-splat/">
+<meta name="description" content="Cybersecurity and engineering openings, mid to senior level, in the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
+<meta property="og:title" content="Daily Splat: cyber + engineering jobs, PNW and remote">
+<meta property="og:description" content="Mid to senior cybersecurity and engineering openings in WA, OR, ID or remote-US. Rebuilt daily.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#F4F7F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14100c" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231E5C43'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='%23F4F7F2' font-family='Georgia,serif'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F7F2; --card:#ffffff; --ink:#1d241f; --ink-soft:#4a544c; --ink-faint:#78827a;
+    --line:#dfe4dc; --copper:#a64f2a; --copper-ink:#8c3f20; --moss:#1E5C43; --moss-soft:#e3eee7;
+    --cyber:#5a3d8a; --cyber-soft:#ece6f5;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular","Consolas",monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#14100c; --card:#1d1712; --ink:#f1e9df; --ink-soft:#b3a798; --ink-faint:#8d8277;
+      --line:#332a22; --copper:#d98a5c; --copper-ink:#e3a077; --moss:#7cc4a0; --moss-soft:#1f2a22;
+      --cyber:#b9a2e6; --cyber-soft:#262033;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 16px 90px}
+  a{color:var(--copper-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+  a:hover{color:var(--copper)}
+
+  header.mast{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:22px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--copper);margin:0 0 10px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,5vw,3rem);line-height:1.05;letter-spacing:-.02em;margin:0 0 12px}
+  .standfirst{font-size:1.04rem;color:var(--ink-soft);margin:0;max-width:66ch}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:0 0 22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:10px 12px}
+  .stat b{display:block;font-family:var(--serif);font-size:1.6rem;font-weight:600;line-height:1.1}
+  .stat span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+  .stat.new b{color:var(--moss)}
+
+  .bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:0 0 12px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--card)}
+  .seg button,.chip{font:500 13px/1 var(--sans);color:var(--ink-soft);background:transparent;border:0;padding:8px 11px;cursor:pointer}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .chip{border:1px solid var(--line);border-radius:999px;background:var(--card)}
+  .chip[aria-pressed="true"]{border-color:var(--copper);color:var(--copper-ink);background:color-mix(in srgb,var(--copper) 9%,transparent)}
+  .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-right:6px}
+  #q{flex:1 1 240px;min-width:0;font:15px var(--sans);padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);color:var(--ink)}
+  #q:focus,button:focus-visible{outline:2px solid var(--copper);outline-offset:1px}
+  #shown{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin:6px 0 0}
+
+  h2{font-family:var(--serif);font-weight:600;font-size:1.4rem;margin:34px 0 10px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+  h2 small{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-faint);letter-spacing:.05em}
+
+  ol.jobs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .job{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px}
+  .job:hover{border-color:color-mix(in srgb,var(--copper) 45%,var(--line))}
+  .job h3{margin:0;font-size:1rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+  .job h3 a{color:var(--ink);text-decoration:none}
+  .job h3 a:hover{color:var(--copper-ink);text-decoration:underline}
+  .who{color:var(--ink-soft);font-size:.92rem;overflow-wrap:anywhere}
+  .who b{color:var(--ink);font-weight:500}
+  .when{font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:right;white-space:nowrap}
+  .tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+  .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:2px 6px;border-radius:2px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap}
+  .tag.cyber{background:var(--cyber-soft);color:var(--cyber);border-color:transparent}
+  .tag.eng{background:var(--moss-soft);color:var(--moss);border-color:transparent}
+  .tag.new{background:var(--moss);color:var(--paper);border-color:transparent;font-weight:600}
+  .tag.pay{color:var(--ink)}
+  .tag.warn{color:var(--copper-ink);border-color:var(--copper)}
+  .more{margin:10px 0 0;font:500 13px var(--sans);padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:3px;cursor:pointer}
+  .empty{padding:24px 0;color:var(--ink-faint)}
+  .loading{padding:40px 0;color:var(--ink-faint);font-family:var(--mono);font-size:12px}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:12px 14px;margin:14px 0 0}
+  summary{cursor:pointer;font-weight:600}
+  details p,details li{color:var(--ink-soft);font-size:.93rem}
+  .srcs{columns:3 200px;font-family:var(--mono);font-size:11px;padding:0;list-style:none;margin:10px 0 0}
+  .srcs li{break-inside:avoid;padding:1px 0}
+  .srcs .bad{color:var(--copper-ink)}
+  footer.foot{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  @media (max-width:560px){
+    .job{grid-template-columns:minmax(0,1fr)}
+    .when{text-align:left}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
+    <h1>The Daily Splat</h1>
+    <p class="standfirst">Cybersecurity and engineering openings, mid to senior level, in Washington, Oregon and Idaho or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
+  </header>
+
+  <section class="stats" aria-label="Today's numbers">
+    <div class="stat new"><b id="s-new">–</b><span>New today</span></div>
+    <div class="stat"><b id="s-total">–</b><span>Open roles</span></div>
+    <div class="stat"><b id="s-cyber">–</b><span>Cyber</span></div>
+    <div class="stat"><b id="s-eng">–</b><span>Engineering</span></div>
+    <div class="stat"><b id="s-pnw">–</b><span>In the PNW</span></div>
+    <div class="stat"><b id="s-dropped">–</b><span>Dropped since yesterday</span></div>
+  </section>
+
+  <div class="bar">
+    <span><span class="lbl">Track</span><span class="seg" data-key="track">
+      <button data-v="all">All</button><button data-v="cyber">Cyber</button><button data-v="eng">Engineering</button>
+    </span></span>
+    <span><span class="lbl">Where</span><span class="seg" data-key="where">
+      <button data-v="all">All</button><button data-v="pnw">PNW</button><button data-v="remote">Remote US</button>
+    </span></span>
+  </div>
+  <div class="bar">
+    <span class="lbl">Level</span>
+    <button class="chip" data-level="mid">Mid</button>
+    <button class="chip" data-level="senior">Senior</button>
+    <button class="chip" data-level="staff">Staff+</button>
+    <span class="lbl" style="margin-left:8px">Only</span>
+    <button class="chip" data-flag="new">New today</button>
+    <button class="chip" data-flag="pay">Pay listed</button>
+    <button class="chip" data-flag="noclr">No clearance</button>
+  </div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search title, company or city…" aria-label="Search jobs" autocomplete="off">
+  </div>
+  <p id="shown" aria-live="polite"></p>
+
+  <main id="list"><p class="loading">Loading today's splat…</p></main>
+
+  <details>
+    <summary>How this works</summary>
+    <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, Remotive, RemoteOK, Jobicy, Himalayas, Working Nomads and The Muse.</p>
+    <p>It keeps a posting when the title reads as security or engineering, the level is not intern, junior or director, and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers.</p>
+    <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
+    <p id="src-line"></p>
+    <ul class="srcs" id="srcs"></ul>
+  </details>
+
+  <footer class="foot">
+    <span id="updated">Updated: –</span>
+    <span><span id="raw"></span><a href="/job-sources/">job source directory</a></span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const PAGE = 60;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const LEVEL = { mid: "Mid", senior: "Senior", staff: "Staff+" };
+  const TRACK = { cyber: "Cyber", eng: "Engineering" };
+
+  // Filters live in the URL hash so a filtered view can be shared in the group chat.
+  const st = { track: "all", where: "all", levels: new Set(), flags: new Set(), q: "" };
+  function readHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    st.track = ["cyber", "eng"].includes(h.get("track")) ? h.get("track") : "all";
+    st.where = ["pnw", "remote"].includes(h.get("where")) ? h.get("where") : "all";
+    st.levels = new Set((h.get("level") || "").split(",").filter((x) => x in LEVEL));
+    st.flags = new Set((h.get("only") || "").split(",").filter((x) => ["new", "pay", "noclr"].includes(x)));
+    st.q = h.get("q") || "";
+  }
+  function writeHash() {
+    const h = new URLSearchParams();
+    if (st.track !== "all") h.set("track", st.track);
+    if (st.where !== "all") h.set("where", st.where);
+    if (st.levels.size) h.set("level", [...st.levels].join(","));
+    if (st.flags.size) h.set("only", [...st.flags].join(","));
+    if (st.q) h.set("q", st.q);
+    const s = h.toString();
+    history.replaceState(null, "", s ? "#" + s : location.pathname);
+  }
+  function syncControls() {
+    $$(".seg").forEach((seg) => $$("button", seg).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === st[seg.dataset.key]))));
+    $$("[data-level]").forEach((b) => b.setAttribute("aria-pressed", String(st.levels.has(b.dataset.level))));
+    $$("[data-flag]").forEach((b) => b.setAttribute("aria-pressed", String(st.flags.has(b.dataset.flag))));
+    if ($("#q").value !== st.q) $("#q").value = st.q;
+  }
+
+  const el = (tag, props = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+    }
+    kids.forEach((k) => k && n.append(k));
+    return n;
+  };
+  // Job data is third-party text; it only ever reaches the page via textContent,
+  // and a link is used only if it is plain http(s).
+  const safeUrl = (u) => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : null; } catch { return null; } };
+
+  let DATA = null, today = "";
+  const daysAgo = (d) => d ? Math.round((Date.parse(today) - Date.parse(d)) / 864e5) : null;
+  const ago = (n) => n == null ? "" : n <= 0 ? "today" : n === 1 ? "1 day ago" : `${n} days ago`;
+
+  function matches(j) {
+    if (st.track !== "all" && j.track !== st.track) return false;
+    if (st.where !== "all" && j.where !== st.where) return false;
+    if (st.levels.size && !st.levels.has(j.level)) return false;
+    if (st.flags.has("new") && j.first_seen !== today) return false;
+    if (st.flags.has("pay") && !j.salary) return false;
+    if (st.flags.has("noclr") && j.clearance) return false;
+    if (st.q) {
+      const hay = `${j.title} ${j.company} ${j.location}`.toLowerCase();
+      if (!st.q.toLowerCase().split(/\s+/).every((w) => hay.includes(w))) return false;
+    }
+    return true;
+  }
+
+  function card(j) {
+    const url = safeUrl(j.url);
+    const title = url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer nofollow", text: j.title }) : document.createTextNode(j.title);
+    const tags = el("div", { class: "tags" });
+    if (j.first_seen === today) tags.append(el("span", { class: "tag new", text: "NEW" }));
+    tags.append(el("span", { class: `tag ${j.track}`, text: TRACK[j.track] || j.track }));
+    tags.append(el("span", { class: "tag", text: LEVEL[j.level] || j.level }));
+    tags.append(el("span", { class: "tag", text: j.where === "pnw" ? "PNW" : "Remote US" }));
+    if (j.salary) tags.append(el("span", { class: "tag pay", text: j.salary }));
+    if (j.clearance) tags.append(el("span", { class: "tag warn", text: "Clearance" }));
+    if (j.carried) tags.append(el("span", { class: "tag warn", text: "Source down today" }));
+    tags.append(el("span", { class: "tag", text: j.via === "company" ? `via ${j.source} board` : `via ${j.source}` }));
+    const posted = daysAgo(j.posted);
+    return el("li", { class: "job" },
+      el("div", {}, el("h3", {}, title), el("div", { class: "who" }, el("b", { text: j.company }), document.createTextNode(` · ${j.location}`))),
+      el("div", { class: "when", text: posted != null ? `posted ${ago(posted)}` : `seen ${ago(daysAgo(j.first_seen))}` }),
+      tags);
+  }
+
+  function group(title, rows) {
+    if (!rows.length) return null;
+    const box = el("section");
+    const ol = el("ol", { class: "jobs" });
+    box.append(el("h2", {}, document.createTextNode(title), el("small", { text: `${rows.length}` })), ol);
+    let shown = 0;
+    const more = el("button", { class: "more", type: "button" });
+    const step = () => {
+      rows.slice(shown, shown + PAGE).forEach((j) => ol.append(card(j)));
+      shown = Math.min(rows.length, shown + PAGE);
+      more.textContent = `Show ${Math.min(PAGE, rows.length - shown)} more (${rows.length - shown} left)`;
+      more.hidden = shown >= rows.length;
+    };
+    more.addEventListener("click", step);
+    step();
+    box.append(more);
+    return box;
+  }
+
+  function render() {
+    const rows = DATA.jobs.filter(matches);
+    const age = (j) => daysAgo(j.first_seen === today ? today : (j.posted || j.first_seen)) ?? 99;
+    const list = $("#list");
+    list.replaceChildren();
+    const groups = [
+      ["New today", rows.filter((j) => j.first_seen === today)],
+      ["This week", rows.filter((j) => j.first_seen !== today && age(j) <= 7)],
+      ["Earlier", rows.filter((j) => j.first_seen !== today && age(j) > 7)],
+    ];
+    groups.forEach(([t, r]) => { const g = group(t, r); if (g) list.append(g); });
+    if (!rows.length) list.append(el("p", { class: "empty", text: "Nothing matches those filters today." }));
+    $("#shown").textContent = `${rows.length} of ${DATA.jobs.length} roles shown`;
+  }
+
+  function stats() {
+    const c = DATA.counts;
+    $("#s-new").textContent = c.new_today;
+    $("#s-total").textContent = c.total;
+    $("#s-cyber").textContent = c.cyber;
+    $("#s-eng").textContent = c.eng;
+    $("#s-pnw").textContent = c.pnw;
+    $("#s-dropped").textContent = c.dropped_since_last_run;
+    const when = new Date(DATA.generated_at);
+    $("#updated").textContent = `Updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
+    const ok = DATA.sources.filter((s) => s.ok).length;
+    $("#src-line").textContent = `This morning: ${ok} of ${DATA.sources.length} sources answered.`;
+    const ul = $("#srcs");
+    DATA.sources.slice().sort((a, b) => b.kept - a.kept).forEach((s) => {
+      ul.append(el("li", { class: s.ok ? "" : "bad", text: s.ok ? `${s.label}: ${s.kept} kept of ${s.fetched}` : `${s.label}: did not answer` }));
+    });
+  }
+
+  function wire() {
+    $$(".seg").forEach((seg) => seg.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      st[seg.dataset.key] = b.dataset.v; changed();
+    }));
+    $$("[data-level]").forEach((b) => b.addEventListener("click", () => {
+      st.levels.has(b.dataset.level) ? st.levels.delete(b.dataset.level) : st.levels.add(b.dataset.level); changed();
+    }));
+    $$("[data-flag]").forEach((b) => b.addEventListener("click", () => {
+      st.flags.has(b.dataset.flag) ? st.flags.delete(b.dataset.flag) : st.flags.add(b.dataset.flag); changed();
+    }));
+    let t;
+    $("#q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); changed(); }, 150); });
+    window.addEventListener("hashchange", () => { readHash(); syncControls(); render(); });
+  }
+  function changed() { writeHash(); syncControls(); render(); }
+
+  readHash(); syncControls(); wire();
+  fetch("jobs.json", { cache: "no-cache" })
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then((d) => {
+      DATA = d; today = d.date; stats(); render();
+      // Linked only once it exists: the file is written on the box, never shipped.
+      $("#raw").append(el("a", { href: "jobs.json", text: "jobs.json" }), document.createTextNode(" · "));
+    })
+    .catch(() => { $("#list").replaceChildren(el("p", { class: "empty", text: "Today's list did not load. Try a refresh in a minute." })); });
+})();
+</script>
+</body>
+</html>
