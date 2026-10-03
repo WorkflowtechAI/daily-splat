@@ -1,7 +1,8 @@
 # The Daily Splat
 
 `https://iambraun.com/cv/job-sources/daily-splat/` is a tiny job aggregator for
-the job-hunt cabal: cybersecurity and engineering openings, mid to senior
+the job-hunt cabal: cybersecurity openings plus the infrastructure engineering
+next to them (cloud, network, systems, DevOps), mid to senior
 level, in Washington, Oregon and Idaho or remote within the US. It is rebuilt
 every morning, and a posting its source stopped listing is gone that day.
 
@@ -26,7 +27,7 @@ systemd timer, a generated JSON the deploy is told never to stomp.
 |---|---|---|
 | Company boards | Greenhouse, Lever, Ashby, Workday tenants and Amazon, listed at the top of `splat.py` | the board stops returning the job |
 | Open aggregators | Remotive, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse | the feed stops returning the job |
-| Foorilla (keyed) | PNW location queries over 30 days; remote-US title queries over 14 days, mid and senior only | `expired` flag, or it ages out of the window |
+| Foorilla (keyed) | PNW location queries over 30 days; remote-US over 14 days from its InfoSec & Privacy (102) and Cybersecurity (26) categories plus security and infra title queries | `expired` flag, or it ages out of the window |
 
 Microsoft's own careers API refuses anonymous calls, but its roles arrive
 through Foorilla. Not covered, and why: LinkedIn (no API, and scraping it is against its terms), We Work Remotely
@@ -41,16 +42,20 @@ a wrong token shows up as a failed source, it does not break the run.
 
 1. **Rules** (`where`, `rule_track`, `rule_level` in `splat.py`). Location in
    WA/OR/ID (cities, state names, `, WA`-style codes; `Washington, DC` is not
-   Washington), or remote with a US mention. Title reads as security or
-   engineering; sales, recruiting, hardware, mechanical, civil and the like are
-   out. Level: no intern/junior/`Engineer I`, no director/VP/head-of/C-level.
+   Washington), or remote with a US mention. Title reads as security, or as
+   infrastructure next to it: an infra word (cloud, network, systems,
+   platform, DevOps/SRE, identity, endpoint...) AND an engineering role word.
+   General product software development is out: the first live run took every
+   engineer title and the group's verdict was "mostly SWE roles, not infosec".
+   Sales, recruiting, hardware, mechanical, civil and the like are out. Level: no intern/junior/`Engineer I`, no director/VP/head-of/C-level.
    Recruiter and staffing reposts are dropped: the page lists employers.
 2. **Jev** (TypeSafe's typed classifier).
    Three typed questions per new posting: track (cyber / eng / neither), level
    (entry / mid / senior / staff / executive), clearance required. "Neither",
    "entry" and "executive" drop the posting. A title that states its level
-   keeps the rule's level. About a few hundred input tokens per posting at
-   $0.042 per million, so a normal day costs well under a cent.
+   keeps the rule's level. About 800 input tokens per posting at $0.042 per
+   million (the first run: 5,687 postings, 4.7M tokens). Answers are cached
+   under `JEV_VERSION`; bump it whenever the questions change meaning.
 
 `infra/daily-splat/test_splat.py` holds the rule cases, most of them bugs the
 first sample run shipped. Run it after touching a regex:

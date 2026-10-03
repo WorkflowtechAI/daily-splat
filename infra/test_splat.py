@@ -42,14 +42,43 @@ WHERE = [
     ("New York City", True, None),
     ("San Francisco", False, None),
     ("PL-Warsaw-Lixa C", True, None),
+    # Read as PNW on 2026-10-03, none of them are:
+    ("USA-DC-Washington (remote)", True, "remote"),
+    ("USA, DC, Washington (935 Pennslyv Ave NW), United States (remote)", True, "remote"),
+    ("Wash, 213 Washington St., Newark, NJ, United States", False, None),
+    ("NY OR US Remote, US", True, "remote"),
+    ("Portland, ME", False, None),
+    # And these are:
+    ("US-WA-Spokane-AD WA (WA019), United States", False, "pnw"),
+    ("Seattle, WA | Washington, DC", False, "pnw"),
+    ("Keyport, Washington, United States", False, "pnw"),
+    ("Hillsboro, OR 97124", False, "pnw"),
+    ("Remote - Seattle", True, "pnw"),
+    # A Foorilla US-only query row with a bare city, after the source tags it.
+    ("San Francisco (remote) · United States", True, "remote"),
 ]
 
 TRACK = [
     ("Staff Security Engineer - Engineer", "cyber"),
     ("Manager, MDR & Threat Hunting", "cyber"),
-    ("Senior Software Engineer, Backend", "eng"),
-    ("Member of Technical Staff", "eng"),
+    # Product SWE is out: "mostly SWE roles, not infosec" (the cabal, 2026-10-03).
+    ("Senior Software Engineer, Backend", None),
+    ("Member of Technical Staff", None),
+    ("Frontend Software Engineer, Codex App", None),
+    ("Senior Machine Learning Engineer", None),
+    ("iOS Software Engineer, Consumer Engineering", None),
     ("Site Reliability Engineer", "eng"),
+    ("Senior Cloud Infrastructure Engineer", "eng"),
+    ("Network Engineer III", "eng"),
+    ("Systems Administrator, Linux", "eng"),
+    ("Sr. Security Engineer (Detection)", "cyber"),
+    ("SOC Analyst II", "cyber"),
+    ("Data Platform Engineer", None),
+    ("ML Platform Engineer", None),
+    ("Software Engineer - E-commerce Recommendation Infrastructure", None),
+    ("Data Security Engineer", "cyber"),
+    ("Information System Security Officer (ISSO)", "cyber"),
+    ("Privacy Operations Lead", "cyber"),
     ("Strategic Sourcing Manager, Engineering Technology & Software", None),
     ("Sr. Manager, Electrical Engineer - Data Centers", None),
     ("Security Officer", None),
@@ -58,6 +87,14 @@ TRACK = [
     ("Technical Program Manager - Security", "cyber"),
     ("Semiconductor Equipment Engineer", None),
     ("Sr. Design Validation Product Engineer, DEG", None),
+]
+
+# Titles Foorilla filed under its infosec topics, where the title alone is not
+# enough. The rule lets a role-shaped title through; Jev makes the real call.
+TRACK_SEC_TOPIC = [
+    ("Principal Solutions Engineer", "cyber"),
+    ("Mid-Level Data Engineer", "cyber"),
+    ("Account Executive", None),
 ]
 
 NORM = [
@@ -96,11 +133,16 @@ def main() -> int:
         if got != want:
             bad += 1
             print(f"rule_level({title!r}, {hint!r}) = {got!r}, want {want!r}")
+    for title, want in TRACK_SEC_TOPIC:
+        got = splat.rule_track(title, True)
+        if got != want:
+            bad += 1
+            print(f"rule_track({title!r}, sec_topic) = {got!r}, want {want!r}")
     for a, b in NORM:
         if splat.norm(a) != splat.norm(b):
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
-    total = len(WHERE) + len(TRACK) + len(LEVEL) + len(NORM)
+    total = len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(LEVEL) + len(NORM)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

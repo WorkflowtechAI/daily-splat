@@ -110,16 +110,25 @@ WORKDAY = [
 
 CYBER = re.compile(
     r"secur|cyber|infosec|appsec|devsecops|secops|\bsoc\b|threat|incident response|detection|"
+    r"privacy|\bisso\b|\bissm\b|"
     r"vulnerab|penetration|pen ?test|red team|blue team|purple team|malware|forensic|\bgrc\b|"
     r"governance,? risk|identity (and|&) access|\biam\b|zero trust|cryptograph|privacy engineer|"
     r"\bsiem\b|offensive|defensive|trust (and|&) safety engineer", re.I)
-ENG = re.compile(
-    r"engineer\b|engineers\b|engineering (manager|lead)|developer|\bdev\b|\bsre\b|site reliability|devops|architect|programmer|"
-    r"\bswe\b|\bsde\b|sdet|member of technical staff|\bmts\b|platform|infrastructure", re.I)
+# "Engineering" here means the infrastructure security people work in and next
+# to, not general software development. The first live run (2026-10-03) took
+# every engineer title and landed 4,539 engineering rows against 657 cyber,
+# almost all of them product SWE. The group's verdict: "mostly SWE roles, not
+# infosec". So a title needs an infra word AND an engineering role word.
+INFRA = re.compile(
+    r"cloud|infrastructure|platform|devops|dev ops|\bsre\b|site reliability|reliability engineer|network|"
+    r"systems? (engineer|administrator|architect|admin)|sysadmin|\bit (engineer|architect|systems)|"
+    r"identity|endpoint|linux|windows|active directory|\bentra\b|kubernetes|\bk8s\b|terraform|"
+    r"observability|\bnoc\b|data ?center|virtualization|vmware|storage engineer|edge", re.I)
+ENG_ROLE = re.compile(r"engineer|architect|administrator|\badmin\b|\bsre\b|devops|specialist|operations", re.I)
 NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     r"\bsales\b(?! engineer)|account executive|account manager|business development|marketing|"
     r"recruit|talent|counsel|attorney|paralegal|legal|customer success manager|\bsdr\b|\bbdr\b|"
-    r"security (guard|officer)|physical security|loss prevention|securities|social security|"
+    r"security guard|(?<!information )(?<!systems )(?<!system )security officer(?!.*\bisso\b)|physical security|loss prevention|securities|social security|"
     r"sourcing|procurement|program manager(?!.*secur)|product manager|project manager|designer|"
     r"\bux\b|writer|scrum|data analyst|business analyst|"
     r"mechanical|electrical|civil|structural|chemical|manufacturing|process engineer|field service|"
@@ -142,8 +151,16 @@ PNW_CITY = re.compile(
     r"lynnwood|tukwila|sammamish|woodinville|mukilteo|bellingham|richland|kennewick|pullman|"
     r"portland|beaverton|hillsboro|eugene|corvallis|tigard|lake oswego|wilsonville|"
     r"\bbend\b|boise|meridian|nampa|coeur d.alene|idaho falls|puget sound", re.I)
-PNW_STATE = re.compile(r"\bwashington\b(?!,?\s*(d\.?\s?c\.?|district))|\boregon\b|\bidaho\b", re.I)
-PNW_ABBR = re.compile(r"(?:^|[\s,\-/(|])(WA|OR|ID)(?=$|[\s,\-/)|])")  # case-sensitive on purpose
+PNW_STATE = re.compile(r"\bwashington\b|\boregon\b|\bidaho\b", re.I)
+# Only the shapes a state code actually takes in a location: ", WA", "US-WA",
+# "WA 98101". A bare " OR " is the English word ("NY OR US Remote" was read as
+# Oregon on 2026-10-03). Case-sensitive on purpose.
+PNW_ABBR = re.compile(r"(?:,\s*|\bUSA?\s*-\s*|\bUSA?-)(WA|OR|ID)\b|\b(WA|OR|ID)\s+\d{5}\b")
+# A segment that names DC, or Washington as a street, is not Washington State.
+NOT_WA_STATE = re.compile(r"\bd\.?\s?c\.?\b|district of columbia|washington\s+(st|street|ave|avenue|blvd|rd|road)\b", re.I)
+# Same-named cities elsewhere.
+NOT_PNW_CITY = re.compile(r"portland,?\s*(me\b|maine)|meridian,?\s*(ms\b|mississippi)|everett,?\s*(ma\b|mass)|"
+                          r"bellevue,?\s*(ne\b|nebraska)|richland,?\s*(ms\b|mississippi)", re.I)
 REMOTE = re.compile(r"remote|anywhere|work from home|\bwfh\b|distributed|virtual|telecommute", re.I)
 US_COUNTRY = re.compile(r"\bU\.?S\.?A?\b|united states", re.I)
 WORLD = re.compile(r"worldwide|global|anywhere|international", re.I)
@@ -171,8 +188,15 @@ NOT_US = re.compile(
 def where(location: str, remote_flag: bool = False) -> str | None:
     """'pnw', 'remote', or None. PNW wins: a PNW hybrid that also allows remote is local."""
     loc = location or ""
-    if PNW_CITY.search(loc) or PNW_STATE.search(loc) or PNW_ABBR.search(loc):
-        return "pnw"
+    # One segment at a time: "Seattle, WA | Washington, DC" is PNW by its first
+    # segment, and the DC in the second must not veto it.
+    for seg in re.split(r"[;|\n]", loc):
+        if NOT_PNW_CITY.search(seg):
+            continue
+        if PNW_CITY.search(seg) or PNW_ABBR.search(seg):
+            return "pnw"
+        if PNW_STATE.search(seg) and not NOT_WA_STATE.search(seg):
+            return "pnw"
     said_remote = bool(REMOTE.search(loc))
     if not (said_remote or remote_flag):
         return None
@@ -189,12 +213,23 @@ def where(location: str, remote_flag: bool = False) -> str | None:
     return None
 
 
-def rule_track(title: str) -> str | None:
+# Data and ML platforms say "platform" and "infrastructure" too, and are not
+# the infra this page means (Jev let "Data Platform Engineer" through on 2026-10-03).
+DATA_ML = re.compile(r"\bdata\b|\bml\b|machine learning|\bai platform|recommendation|databricks|snowflake|"
+                     r"analytics|e-?commerce|\bmlops\b", re.I)
+SEC_ROLE = re.compile(r"engineer|architect|analyst|specialist|consultant|officer|manager|\blead\b|tester|auditor|"
+                      r"administrator|researcher|hunter|responder", re.I)
+
+
+def rule_track(title: str, sec_topic: bool = False) -> str | None:
+    """sec_topic: the source already filed it under infosec (Foorilla topics 102/26).
+    Then a role-shaped title is enough ("Principal Solutions Engineer" at a
+    security vendor), and Jev has the final say."""
     if NOT_ROLE.search(title):
         return None
-    if CYBER.search(title):
+    if CYBER.search(title) or (sec_topic and SEC_ROLE.search(title)):
         return "cyber"
-    if ENG.search(title):
+    if INFRA.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
         return "eng"
     return None
 
@@ -274,7 +309,7 @@ def money(lo, hi, unit: str = "") -> str | None:
 
 def posting(**kw) -> dict:
     p = {"title": "", "company": "", "url": "", "location": "", "remote": False, "posted": None,
-         "salary": None, "desc": "", "hint": None, "origin": "company"}
+         "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False}
     p.update(kw)
     p["title"] = re.sub(r"\s+", " ", unescape(p["title"] or "")).strip()
     p["company"] = unescape(p["company"] or "").strip()
@@ -357,7 +392,7 @@ def src_workday(tenant: str, host: str, site: str, name: str) -> list[dict]:
                if p and "location" in p.lower() and where(d)]
     out, seen = [], set()
     for param, fid, desc in targets:
-        for q in ("security", "engineer", "developer"):
+        for q in ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability"):
             offset = 0
             while offset < 400:
                 d = http_json(base, {"appliedFacets": {param: [fid]}, "limit": 20, "offset": offset, "searchText": q})
@@ -384,8 +419,8 @@ def src_workday(tenant: str, host: str, site: str, name: str) -> list[dict]:
 def src_amazon() -> list[dict]:
     out, seen = [], set()
     for state in ("Washington", "Oregon", "Idaho"):
-        for q in ("security", "software development engineer", "systems engineer", "devops",
-                  "site reliability", "cloud engineer", "data engineer", "network engineer", "solutions architect"):
+        for q in ("security", "systems engineer", "systems development engineer", "devops",
+                  "site reliability", "cloud engineer", "infrastructure", "network engineer", "cloud support engineer"):
             offset = 0
             while offset < 1000:
                 params = {"base_query": q, "normalized_country_code[]": "USA", "normalized_state_name[]": state,
@@ -418,11 +453,18 @@ def src_foorilla() -> list[dict]:
         raise RuntimeError("no FOORILLA_API_KEY")
     since = (NOW - timedelta(days=FOORILLA_DAYS)).strftime("%Y-%m-%dT00:00:00Z")
     remote_since = (NOW - timedelta(days=REMOTE_MAX_AGE_DAYS)).strftime("%Y-%m-%dT00:00:00Z")
-    queries = [{"location": x, "published_after": since} for x in ("Washington", "Oregon", "Idaho", "Boise")]
-    for t in ("security", "cyber", "engineer", "developer", "devops", "architect", "sre"):
-        for lvl in ("MI", "SE"):
-            queries.append({"country": 238, "has_remote": "true", "title": t, "experience_level": lvl,
-                            "published_after": remote_since})
+    pnw = ("Washington", "Oregon", "Idaho", "Boise")
+    queries = [{"location": x, "published_after": since} for x in pnw]
+    # Foorilla's own infosec categories: 102 "InfoSec & Privacy" (where isecjobs
+    # was folded in), 26 "Cybersecurity". Measured 2026-10-03: ~900 remote-US in
+    # 14 days, ~530 in Washington in 30. No experience_level filter: many rows
+    # carry none, and the rules and Jev settle level anyway.
+    for topic in (102, 26):
+        queries.append({"topic": topic, "country": 238, "has_remote": "true", "published_after": remote_since})
+    for t in ("security", "cyber", "soc analyst", "threat", "incident response", "vulnerability",
+              "penetration", "grc", "identity", "detection", "devops", "site reliability",
+              "cloud engineer", "infrastructure", "network engineer", "systems engineer", "platform engineer"):
+        queries.append({"country": 238, "has_remote": "true", "title": t, "published_after": remote_since})
     out, seen = [], set()
     for q in queries:
         page = 1
@@ -441,8 +483,16 @@ def src_foorilla() -> list[dict]:
                 if "country" in q and not remote and not where(loc):
                     continue
                 c = x.get("company") or {}
+                tail = ""
+                if remote and "remote" not in loc.lower():
+                    tail += " (remote)"
+                # The query was US-only, so the row is US even when its
+                # location is a bare city ("San Francisco", "Ford Island, HI").
+                if "country" in q and remote and not US_COUNTRY.search(loc):
+                    tail += " · United States"
+                topics = {t.get("id") for t in x.get("topics") or []}
                 out.append(posting(title=x.get("title"), company=c.get("name"), url=x.get("apply_url"),
-                                   location=loc + (" (remote)" if remote and "remote" not in loc.lower() else ""),
+                                   location=loc + tail, sec_topic=bool(topics & {102, 26}),
                                    remote=remote, posted=iso(x.get("published")),
                                    salary=money(x.get("salary_min_usd"), x.get("salary_max_usd"), "/yr"),
                                    hint=x.get("experience_level"), origin="aggregator",
@@ -558,9 +608,11 @@ JEV_QUESTIONS = {
     "track": {"type": "choice", "instructions": "Which job family is this role?", "criteria": {
         "cyber": "Cybersecurity: security engineering, security operations, detection and response, "
                  "application or cloud security, identity and access, GRC, penetration testing, security architecture.",
-        "eng": "Software, infrastructure, cloud, platform, DevOps/SRE, data, ML, network or IT systems "
-               "engineering or development, including engineering managers and solutions/sales engineers.",
-        "neither": "Anything else: sales, marketing, recruiting, support, analysts who do not engineer, "
+        "eng": "Infrastructure engineering that security teams work alongside: cloud, platform, DevOps/SRE, "
+               "network, systems, identity, endpoint or IT infrastructure engineering or administration.",
+        "neither": "Anything else, including general application or product software development (frontend, "
+                   "backend, full-stack, mobile, ML, data, games) whose main job is not infrastructure or security; "
+                   "sales, marketing, recruiting, support, analysts who do not engineer, "
                    "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering."}},
     "level": {"type": "choice", "instructions": "What seniority does this role hire at?", "criteria": {
         "entry": "Intern, new grad, junior, or level I.",
@@ -572,8 +624,15 @@ JEV_QUESTIONS = {
 }
 
 
+# Bump when JEV_QUESTIONS changes meaning, so cached answers to the old
+# questions are not read as answers to the new ones. v2 (2026-10-03): "eng"
+# narrowed from all engineering to infrastructure next to security.
+JEV_VERSION = "v2"
+
+
 def jev_key(p: dict) -> str:
-    return hashlib.sha1(f"{p['title']}|{p['company']}|{p['location']}".lower().encode()).hexdigest()[:16]
+    raw = f"{JEV_VERSION}|{p['title']}|{p['company']}|{p['location']}".lower()
+    return hashlib.sha1(raw.encode()).hexdigest()[:16]
 
 
 def ask_jev(p: dict, key: str) -> dict | None:
@@ -666,7 +725,7 @@ def main() -> int:
         a = age_days(p["posted"])
         if a is not None and a > (REMOTE_MAX_AGE_DAYS if w == "remote" else MAX_AGE_DAYS):
             continue
-        track = rule_track(p["title"])
+        track = rule_track(p["title"], p["sec_topic"])
         level = rule_level(p["title"], p["hint"])
         if not track or not level:
             continue
