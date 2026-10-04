@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The daily splat: cybersecurity and engineering openings, mid to senior,
+"""The daily splat: cybersecurity and the infra and IT around it, entry to senior,
 in the Pacific Northwest or remote from it. Built for the job-hunt cabal.
 
 Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
@@ -123,8 +123,15 @@ INFRA = re.compile(
     r"cloud|infrastructure|platform|devops|dev ops|\bsre\b|site reliability|reliability engineer|network|"
     r"systems? (engineer|administrator|architect|admin)|sysadmin|\bit (engineer|architect|systems)|"
     r"identity|endpoint|linux|windows|active directory|\bentra\b|kubernetes|\bk8s\b|terraform|"
-    r"observability|\bnoc\b|data ?center|virtualization|vmware|storage engineer|edge", re.I)
-ENG_ROLE = re.compile(r"engineer|architect|administrator|\badmin\b|\bsre\b|devops|specialist|operations", re.I)
+    r"observability|\bnoc\b|data ?center|virtualization|vmware|storage engineer|edge|"
+    # The entry lane (2026-10-04, a cabal member: "entry positions within
+    # sysadmin, cybersecurity or support engineer"): IT support and help desk
+    # are the way in, so they count as infra.
+    r"help ?desk|service desk|desktop support|technical support|tech support|support engineer|"
+    r"\bit (support|specialist|technician|analyst|administrator|associate|operations)|"
+    r"system administrator|systems administrator|field it|end.user (support|computing)", re.I)
+ENG_ROLE = re.compile(r"engineer|architect|administrator|\badmin\b|\bsre\b|devops|specialist|operations|"
+                      r"support|technician|\bdesk\b|analyst|associate", re.I)
 NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     r"\bsales\b(?! engineer)|account executive|account manager|business development|marketing|"
     r"recruit|talent|counsel|attorney|paralegal|legal|customer success manager|\bsdr\b|\bbdr\b|"
@@ -134,12 +141,23 @@ NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     r"mechanical|electrical|civil|structural|chemical|manufacturing|process engineer|field service|"
     r"maintenance|facilities|hvac|construction|industrial|environmental|geotechnical|biomedical|"
     r"packaging|physical design|\basic\b|\brtl\b|analog|mixed.signal|\bpcb\b|\brf engineer|"
-    r"technician|nurse|clinical|pharmac|driver|warehouse|"
+    # "technician" alone is not here: IT and data-center technicians are entry roles.
+    r"(lab|automotive|surgical|veterinary|dental|wind|solar|fiber|cable|install\w*) technician|electrician|"
+    r"customer (support|service|care|experience)(?!.*engineer)|call center|"
+    r"nurse|clinical|pharmac|driver|warehouse|"
     r"semiconductor|equipment engineer|\byield\b|\bfab\b|wafer|lithograph|\betch\b|diffusion|metrology|"
     r"thin film|product engineer, deg|design validation|failure analysis|test engineer, (dram|nand)", re.I)
-TOO_JUNIOR = re.compile(
-    r"\bintern\b|internship|\bjunior\b|\bjr\.?\b|entry.level|new grad|graduate|apprentice|trainee|"
-    r"\bco-?op\b|early career|university|\b(engineer|developer|analyst|scientist)\s+(i|1)\b", re.I)
+# Internships are not jobs to apply to from here; everything else junior is the
+# entry lane.
+INTERN = re.compile(r"\bintern\b|internship|\bco-?op\b|summer 20\d\d", re.I)
+# Words that make a role entry level whatever else the title says.
+ENTRY_STRONG = re.compile(r"\bjunior\b|\bjr\.?\b|entry.level|new (college )?grad|graduate|apprentice|trainee|"
+                          r"early career", re.I)
+# Grade markers. "Sr. Security Engineer I" is senior's first grade, not entry,
+# so a senior word outranks these.
+ENTRY_WEAK = re.compile(r"\bassociate\b|\b(tier|level)\s*(1|i)\b|"
+                        r"\b(engineer|developer|analyst|scientist|administrator|technician|specialist)\s+(i|1)\b", re.I)
+ENTRY = re.compile(ENTRY_STRONG.pattern + "|" + ENTRY_WEAK.pattern, re.I)
 TOO_SENIOR = re.compile(
     r"\bdirector\b|\bvp\b|vice president|head of|\bchief\b|\bcto\b|\bciso\b|\bcio\b|\bsvp\b|\bevp\b", re.I)
 STAFF = re.compile(r"\bstaff\b|principal|distinguished|\bfellow\b", re.I)
@@ -215,7 +233,7 @@ def where(location: str, remote_flag: bool = False) -> str | None:
 
 # Data and ML platforms say "platform" and "infrastructure" too, and are not
 # the infra this page means (Jev let "Data Platform Engineer" through on 2026-10-03).
-DATA_ML = re.compile(r"\bdata\b|\bml\b|machine learning|\bai platform|recommendation|databricks|snowflake|"
+DATA_ML = re.compile(r"\bdata\b(?! ?cent(er|re))|\bml\b|machine learning|\bai platform|recommendation|databricks|snowflake|"
                      r"analytics|e-?commerce|\bmlops\b", re.I)
 SEC_ROLE = re.compile(r"engineer|architect|analyst|specialist|consultant|officer|manager|\blead\b|tester|auditor|"
                       r"administrator|researcher|hunter|responder", re.I)
@@ -235,9 +253,15 @@ def rule_track(title: str, sec_topic: bool = False) -> str | None:
 
 
 def rule_level(title: str, hint: str | None = None) -> str | None:
-    """'mid' | 'senior' | 'staff' | None (out of range)."""
-    if TOO_JUNIOR.search(title) or TOO_SENIOR.search(title) or hint in ("EN", "EX"):
+    """'entry' | 'mid' | 'senior' | 'staff' | None (intern or executive: out)."""
+    if INTERN.search(title) or TOO_SENIOR.search(title) or hint == "EX":
         return None
+    if ENTRY_STRONG.search(title):
+        return "entry"
+    if ENTRY_WEAK.search(title) and not (STAFF.search(title) or SENIOR.search(title)):
+        return "entry"
+    if hint == "EN" and not (STAFF.search(title) or SENIOR.search(title)):
+        return "entry"
     if STAFF.search(title):
         return "staff"
     if SENIOR.search(title) or hint == "SE":
@@ -392,7 +416,8 @@ def src_workday(tenant: str, host: str, site: str, name: str) -> list[dict]:
                if p and "location" in p.lower() and where(d)]
     out, seen = [], set()
     for param, fid, desc in targets:
-        for q in ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability"):
+        for q in ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
+                  "support", "administrator", "help desk"):
             offset = 0
             while offset < 400:
                 d = http_json(base, {"appliedFacets": {param: [fid]}, "limit": 20, "offset": offset, "searchText": q})
@@ -420,7 +445,8 @@ def src_amazon() -> list[dict]:
     out, seen = [], set()
     for state in ("Washington", "Oregon", "Idaho"):
         for q in ("security", "systems engineer", "systems development engineer", "devops",
-                  "site reliability", "cloud engineer", "infrastructure", "network engineer", "cloud support engineer"):
+                  "site reliability", "cloud engineer", "infrastructure", "network engineer", "cloud support engineer",
+                  "it support", "data center technician", "system administrator"):
             offset = 0
             while offset < 1000:
                 params = {"base_query": q, "normalized_country_code[]": "USA", "normalized_state_name[]": state,
@@ -463,7 +489,11 @@ def src_foorilla() -> list[dict]:
         queries.append({"topic": topic, "country": 238, "has_remote": "true", "published_after": remote_since})
     for t in ("security", "cyber", "soc analyst", "threat", "incident response", "vulnerability",
               "penetration", "grc", "identity", "detection", "devops", "site reliability",
-              "cloud engineer", "infrastructure", "network engineer", "systems engineer", "platform engineer"):
+              "cloud engineer", "infrastructure", "network engineer", "systems engineer", "platform engineer",
+              # The entry lane: where sysadmin and support careers start.
+              "help desk", "service desk", "desktop support", "technical support", "it support",
+              "support engineer", "system administrator", "systems administrator", "noc", "it specialist",
+              "data center technician"):
         queries.append({"country": 238, "has_remote": "true", "title": t, "published_after": remote_since})
     out, seen = [], set()
     for q in queries:
@@ -608,14 +638,18 @@ JEV_QUESTIONS = {
     "track": {"type": "choice", "instructions": "Which job family is this role?", "criteria": {
         "cyber": "Cybersecurity: security engineering, security operations, detection and response, "
                  "application or cloud security, identity and access, GRC, penetration testing, security architecture.",
-        "eng": "Infrastructure engineering that security teams work alongside: cloud, platform, DevOps/SRE, "
-               "network, systems, identity, endpoint or IT infrastructure engineering or administration.",
+        "eng": "Infrastructure and IT that security teams work alongside: cloud, platform, DevOps/SRE, "
+               "network, systems, identity, endpoint or IT infrastructure engineering or administration, "
+               "including system administrators, IT support, help desk, desktop support, NOC, and "
+               "technical support engineers who troubleshoot systems.",
         "neither": "Anything else, including general application or product software development (frontend, "
                    "backend, full-stack, mobile, ML, data, games) whose main job is not infrastructure or security; "
-                   "sales, marketing, recruiting, support, analysts who do not engineer, "
+                   "customer service or call-center support that is not technical; "
+                   "sales, marketing, recruiting, analysts who do not engineer, "
                    "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering."}},
     "level": {"type": "choice", "instructions": "What seniority does this role hire at?", "criteria": {
-        "entry": "Intern, new grad, junior, or level I.",
+        "intern": "Internship, co-op, or summer program.",
+        "entry": "Entry level: new grad, junior, associate, apprentice, tier 1, level I, or about 0-2 years asked.",
         "mid": "Mid-level: a few years of experience, level II, no senior title.",
         "senior": "Senior, lead, level III, or a manager of a team.",
         "staff": "Staff, principal, distinguished, or senior architect.",
@@ -626,8 +660,9 @@ JEV_QUESTIONS = {
 
 # Bump when JEV_QUESTIONS changes meaning, so cached answers to the old
 # questions are not read as answers to the new ones. v2 (2026-10-03): "eng"
-# narrowed from all engineering to infrastructure next to security.
-JEV_VERSION = "v2"
+# narrowed from all engineering to infrastructure next to security. v3
+# (2026-10-04): "eng" takes IT support and help desk; level has "intern".
+JEV_VERSION = "v3"
 
 
 def jev_key(p: dict) -> str:
@@ -647,7 +682,7 @@ def ask_jev(p: dict, key: str) -> dict | None:
     track = (a.get("track") or {}).get("choice")
     level = (a.get("level") or {}).get("choice")
     clr = (a.get("clearance") or {}).get("noul")
-    if track not in ("cyber", "eng", "neither") or level not in ("entry", "mid", "senior", "staff", "executive"):
+    if track not in ("cyber", "eng", "neither") or level not in ("intern", "entry", "mid", "senior", "staff", "executive"):
         return {"error": "malformed answer"}
     return {"track": track, "level": level, "clearance": isinstance(clr, (int, float)) and clr >= 0.6,
             "tokens": (d.get("usage") or {}).get("input_tokens", 0)}
@@ -763,13 +798,13 @@ def main() -> int:
             p["jev"] = False
             continue
         p["jev"] = True
-        if ans["track"] == "neither" or ans["level"] in ("entry", "executive"):
+        if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
             del cands[k]
             jev_stats["dropped"] += 1
             continue
         p["track"] = ans["track"]
-        # A title that says its level ("Senior", "Staff") keeps it; Jev settles the rest.
-        if not (STAFF.search(p["title"]) or SENIOR.search(p["title"])):
+        # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
+        if not (STAFF.search(p["title"]) or SENIOR.search(p["title"]) or ENTRY.search(p["title"])):
             p["level"] = ans["level"]
         p["clearance"] = p["clearance"] or ans["clearance"]
 
@@ -814,6 +849,7 @@ def main() -> int:
         "counts": {"total": len(rows), "new_today": sum(1 for j in rows if j["first_seen"] == TODAY),
                    "dropped_since_last_run": len(set(prev_jobs) - set(jobs)), "carried": carried,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
+                   "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
                    "pnw": sum(1 for j in rows if j["where"] == "pnw"),
                    "remote": sum(1 for j in rows if j["where"] == "remote")},

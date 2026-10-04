@@ -73,6 +73,17 @@ TRACK = [
     ("Systems Administrator, Linux", "eng"),
     ("Sr. Security Engineer (Detection)", "cyber"),
     ("SOC Analyst II", "cyber"),
+    # Entry-lane titles: support and sysadmin count as infra & IT.
+    ("Help Desk Technician, Tier 1", "eng"),
+    ("IT Support Specialist", "eng"),
+    ("Technical Support Engineer", "eng"),
+    ("Junior Systems Administrator", "eng"),
+    ("Desktop Support Analyst", "eng"),
+    ("Data Center Technician", "eng"),
+    ("NOC Technician", "eng"),
+    ("Customer Support Specialist", None),
+    ("Customer Service Representative", None),
+    ("Fiber Technician", None),
     ("Data Platform Engineer", None),
     ("ML Platform Engineer", None),
     ("Software Engineer - E-commerce Recommendation Infrastructure", None),
@@ -103,15 +114,26 @@ NORM = [
 ]
 
 LEVEL = [
-    ("Software Engineer I", None, None),
+    # The entry lane (2026-10-04): junior roles are kept and labelled; interns are not.
+    ("Software Engineer I", None, "entry"),
     ("Software Engineer II", None, "mid"),
     ("Security Engineering Intern", None, None),
+    ("IT Support Co-op", None, None),
+    ("Junior Systems Administrator", None, "entry"),
+    ("Associate Security Analyst", None, "entry"),
+    ("Help Desk Technician, Tier 1", None, "entry"),
+    ("SOC Analyst I", None, "entry"),
+    ("Field Security Engineer - Sr. Security Engineer I", None, "senior"),
+    ("New College Grad - IT Software Support Engineer", None, "entry"),
+    ("Senior Associate, Cyber Risk", None, "senior"),
+    ("Associate Director, Security", None, None),
     ("Director, Security Engineering", None, None),
     ("Sr. Security Engineer (Detection)", None, "senior"),
     ("Principal Site Reliability Engineer", None, "staff"),
     ("Staff+ Software Engineer, Account Creation", None, "staff"),
     ("DevOps Engineer", "SE", "senior"),
-    ("DevOps Engineer", "EN", None),
+    ("DevOps Engineer", "EN", "entry"),
+    ("DevOps Engineer", "EX", None),
     ("DevOps Engineer", None, "mid"),
 ]
 

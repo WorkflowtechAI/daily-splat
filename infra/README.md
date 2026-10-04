@@ -2,7 +2,7 @@
 
 `https://iambraun.com/cv/job-sources/daily-splat/` is a tiny job aggregator for
 the job-hunt cabal: cybersecurity openings plus the infrastructure engineering
-next to them (cloud, network, systems, DevOps), mid to senior
+next to them (cloud, network, systems, DevOps, sysadmin, IT support), entry to senior
 level, in Washington, Oregon and Idaho or remote within the US. It is rebuilt
 every morning, and a posting its source stopped listing is gone that day.
 
@@ -47,12 +47,12 @@ a wrong token shows up as a failed source, it does not break the run.
    platform, DevOps/SRE, identity, endpoint...) AND an engineering role word.
    General product software development is out: the first live run took every
    engineer title and the group's verdict was "mostly SWE roles, not infosec".
-   Sales, recruiting, hardware, mechanical, civil and the like are out. Level: no intern/junior/`Engineer I`, no director/VP/head-of/C-level.
+   Sales, recruiting, hardware, mechanical, civil and the like are out. Level: entry (junior, associate, `Engineer I`, tier 1, new grad, apprentice) through staff/principal; internships and director/VP/head-of/C-level are out. The entry lane and the IT-support titles were added 2026-10-04 for a member looking for entry sysadmin, cyber and support-engineer roles.
    Recruiter and staffing reposts are dropped: the page lists employers.
 2. **Jev** (TypeSafe's typed classifier).
    Three typed questions per new posting: track (cyber / eng / neither), level
-   (entry / mid / senior / staff / executive), clearance required. "Neither",
-   "entry" and "executive" drop the posting. A title that states its level
+   (intern / entry / mid / senior / staff / executive), clearance required. "Neither",
+   "intern" and "executive" drop the posting. A title that states its level
    keeps the rule's level. About 800 input tokens per posting at $0.042 per
    million (the first run: 5,687 postings, 4.7M tokens). Answers are cached
    under `JEV_VERSION`; bump it whenever the questions change meaning.

@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daily Splat · Infosec Jobs, PNW</title>
 <link rel="canonical" href="https://iambraun.com/cv/job-sources/daily-splat/">
-<meta name="description" content="Cybersecurity openings, plus the cloud, network and infrastructure engineering around them, mid to senior level, in the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
+<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them, entry to senior level, in the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
 <meta property="og:title" content="Daily Splat: infosec jobs, PNW and remote">
-<meta property="og:description" content="Mid to senior cybersecurity and security-adjacent infrastructure openings in WA, OR, ID or remote-US. Rebuilt daily.">
+<meta property="og:description" content="Entry to senior cybersecurity, infrastructure and IT support openings in WA, OR, ID or remote-US. Rebuilt daily.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#F4F7F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14100c" media="(prefers-color-scheme: dark)">
@@ -102,21 +102,22 @@
   <header class="mast">
     <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
     <h1>The Daily Splat</h1>
-    <p class="standfirst">Cybersecurity openings, plus the cloud, network and infrastructure engineering that sits next to security, mid to senior level, in Washington, Oregon and Idaho or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
+    <p class="standfirst">Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles that sit next to security, entry to senior level, in Washington, Oregon and Idaho or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
   </header>
 
   <section class="stats" aria-label="Today's numbers">
     <div class="stat new"><b id="s-new">–</b><span>New today</span></div>
     <div class="stat"><b id="s-total">–</b><span>Open roles</span></div>
     <div class="stat"><b id="s-cyber">–</b><span>Cyber</span></div>
-    <div class="stat"><b id="s-eng">–</b><span>Infra &amp; cloud</span></div>
+    <div class="stat"><b id="s-eng">–</b><span>Infra &amp; IT</span></div>
+    <div class="stat"><b id="s-entry">–</b><span>Entry-level</span></div>
     <div class="stat"><b id="s-pnw">–</b><span>In the PNW</span></div>
     <div class="stat"><b id="s-dropped">–</b><span>Dropped since yesterday</span></div>
   </section>
 
   <div class="bar">
     <span><span class="lbl">Track</span><span class="seg" data-key="track">
-      <button data-v="all">All</button><button data-v="cyber">Cyber</button><button data-v="eng">Infra &amp; cloud</button>
+      <button data-v="all">All</button><button data-v="cyber">Cyber</button><button data-v="eng">Infra &amp; IT</button>
     </span></span>
     <span><span class="lbl">Where</span><span class="seg" data-key="where">
       <button data-v="all">All</button><button data-v="pnw">PNW</button><button data-v="remote">Remote US</button>
@@ -124,6 +125,7 @@
   </div>
   <div class="bar">
     <span class="lbl">Level</span>
+    <button class="chip" data-level="entry">Entry</button>
     <button class="chip" data-level="mid">Mid</button>
     <button class="chip" data-level="senior">Senior</button>
     <button class="chip" data-level="staff">Staff+</button>
@@ -142,7 +144,7 @@
   <details>
     <summary>How this works</summary>
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, Remotive, RemoteOK, Jobicy, Himalayas, Working Nomads and The Muse.</p>
-    <p>It keeps a posting when the title reads as security, or as cloud, network, systems or platform engineering (general software development is left out), the level is not intern, junior or director, and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers.</p>
+    <p>It keeps a posting when the title reads as security, or as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
     <ul class="srcs" id="srcs"></ul>
@@ -160,8 +162,8 @@
   const PAGE = 60;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const LEVEL = { mid: "Mid", senior: "Senior", staff: "Staff+" };
-  const TRACK = { cyber: "Cyber", eng: "Infra & cloud" };
+  const LEVEL = { entry: "Entry", mid: "Mid", senior: "Senior", staff: "Staff+" };
+  const TRACK = { cyber: "Cyber", eng: "Infra & IT" };
 
   // Filters live in the URL hash so a filtered view can be shared in the group chat.
   const st = { track: "all", where: "all", levels: new Set(), flags: new Set(), q: "" };
@@ -279,6 +281,7 @@
     $("#s-total").textContent = c.total;
     $("#s-cyber").textContent = c.cyber;
     $("#s-eng").textContent = c.eng;
+    $("#s-entry").textContent = c.entry ?? "–";
     $("#s-pnw").textContent = c.pnw;
     $("#s-dropped").textContent = c.dropped_since_last_run;
     const when = new Date(DATA.generated_at);
