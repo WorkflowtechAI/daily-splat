@@ -1,6 +1,6 @@
-"""Rules tests for site/cv/job-sources/daily-splat/splat.py. Stdlib only.
+"""Rules tests for splat.py. Stdlib only.
 
-    python3 infra/daily-splat/test_splat.py
+    python3 infra/test_splat.py
 
 Every case below is a real location or title string a source returned on
 2026-10-02, most of them a bug the first sample run shipped.
@@ -10,8 +10,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("splat", ROOT / "site/cv/job-sources/daily-splat/splat.py")
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("splat", ROOT / "splat.py")
 splat = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(splat)
 

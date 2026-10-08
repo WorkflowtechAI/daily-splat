@@ -13,7 +13,13 @@ EnvironmentFile=/etc/daily-splat.env
 # Yesterday's postings and the Jev answer cache live here, outside the docroot,
 # and systemd hands the path to the script as $STATE_DIRECTORY.
 StateDirectory=daily-splat
-ExecStart=/usr/bin/python3 /var/www/iambraun.com/cv/job-sources/daily-splat/splat.py
+# THE REPO IS THE SOURCE: the server pulls main before each run, so a merged
+# PR is live the next morning. A failed pull (the leading "-") still runs
+# yesterday's code. The page goes into the docroot; jobs.json is written there.
+Environment=SPLAT_OUT=/var/www/iambraun.com/cv/job-sources/daily-splat/jobs.json
+ExecStartPre=-/usr/bin/git -C /home/foundry/daily-splat pull --ff-only --quiet
+ExecStartPre=/usr/bin/install -m 644 /home/foundry/daily-splat/index.html /var/www/iambraun.com/cv/job-sources/daily-splat/index.html
+ExecStart=/usr/bin/python3 /home/foundry/daily-splat/splat.py
 # Fails closed: if fewer than half the sources answer, or nothing survives the
 # filters, it writes nothing and exits non-zero. Yesterday's page stands and the
 # reason lands in `journalctl -u daily-splat.service`.

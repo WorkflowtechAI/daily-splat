@@ -6,19 +6,19 @@ next to them (cloud, network, systems, DevOps, sysadmin, IT support), entry to s
 level, in Washington, Oregon and Idaho or remote within the US. It is rebuilt
 every morning, and a posting its source stopped listing is gone that day.
 
-Same shape as `infra/job-sources` and `infra/stats`: generator in the docroot,
-systemd timer, a generated JSON the deploy is told never to stomp.
+The server pulls `main` before each daily run (05:30 Pacific), so a merged PR is
+live the next morning. Contributions are welcome: see **Contributing** below.
 
-- **Generator:** `site/cv/job-sources/daily-splat/splat.py`. Stdlib Python, no
-  pip installs. Writes `jobs.json` beside itself.
-- **Client:** `site/cv/job-sources/daily-splat/index.html` reads `jobs.json`
+- **Generator:** `splat.py`. Stdlib Python, no pip installs. Writes `jobs.json`
+  beside itself, or where `SPLAT_OUT` says (the server sets the docroot).
+- **Client:** `index.html` reads `jobs.json`
   and does all filtering in the browser. Filters live in the URL hash, so a view
   like `#track=cyber&where=pnw` can be pasted into the group chat.
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
   yesterday's postings, for "new today" and the failed-source grace, and the
   Jev answer cache, so each day only pays for its new postings.
 - **Keys:** `/etc/daily-splat.env`, root:root 0600, holding
-  `FOORILLA_API_KEY` and `TYPESAFE_API_KEY`. Kept on the server only.Neither is required; a missing one skips that
+  `FOORILLA_API_KEY` and `TYPESAFE_API_KEY`. Kept on the server only. Neither is required; a missing one skips that
   source or pass and the run says so in `jobs.json` under `sources` / `jev`.
 
 ## Where the postings come from
@@ -57,11 +57,11 @@ a wrong token shows up as a failed source, it does not break the run.
    million (the first run: 5,687 postings, 4.7M tokens). Answers are cached
    under `JEV_VERSION`; bump it whenever the questions change meaning.
 
-`infra/daily-splat/test_splat.py` holds the rule cases, most of them bugs the
+`infra/test_splat.py` holds the rule cases, most of them bugs the
 first sample run shipped. Run it after touching a regex:
 
 ```bash
-python3 infra/daily-splat/test_splat.py
+python3 infra/test_splat.py
 ```
 
 ## It fails closed
@@ -71,11 +71,12 @@ writes nothing and exits non-zero. Same if zero postings survive. Yesterday's
 `jobs.json` stays up. A single source failing is normal: its postings from the
 last two days are carried and marked "Source down today" on the page.
 
-## One-time setup on the Foundry VPS
+## One-time setup on the server
 
 ```bash
-sudo cp infra/daily-splat/daily-splat.service /etc/systemd/system/
-sudo cp infra/daily-splat/daily-splat.timer   /etc/systemd/system/
+git clone https://github.com/WorkflowtechAI/daily-splat.git /home/foundry/daily-splat
+sudo cp /home/foundry/daily-splat/infra/daily-splat.service /etc/systemd/system/
+sudo cp /home/foundry/daily-splat/infra/daily-splat.timer   /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now daily-splat.timer
 sudo systemctl start daily-splat.service      # first run now, so the page has data
@@ -87,5 +88,17 @@ sudo systemctl start daily-splat.service      # first run now, so the page has d
 - Next run: `systemctl list-timers daily-splat.timer`
 - Last run: `journalctl -u daily-splat.service -n 80`
 - Test without writing (keys from the env file):
-  `sudo systemd-run --pipe --wait -p User=foundry -p EnvironmentFile=/etc/daily-splat.env /usr/bin/python3 /var/www/iambraun.com/cv/job-sources/daily-splat/splat.py --dry-run --dump /tmp/splat.json`
+  `sudo systemd-run --pipe --wait -p User=foundry -p EnvironmentFile=/etc/daily-splat.env /usr/bin/python3 /home/foundry/daily-splat/splat.py --dry-run --dump /tmp/splat.json`
 - One source only: add `--only greenhouse` (or `workday`, `foorilla`, `ashby:openai`, ...). Partial runs never write.
+
+## Contributing
+
+1. Fork, branch, change. The usual changes: an employer's board token in the
+   dicts at the top of `splat.py`, or a rule in `where`, `rule_track` or
+   `rule_level` with a test case for it in `infra/test_splat.py`.
+2. Run the tests (`python3 infra/test_splat.py`) and, for a new source, one
+   source by hand (`python3 splat.py --dry-run --only greenhouse --dump /tmp/s.json`).
+3. Open a PR into `main`. It needs a maintainer's review; once merged it runs
+   on the next morning's build.
+
+Stdlib Python only: no pip dependencies. Never commit keys or `jobs.json`.

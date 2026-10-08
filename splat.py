@@ -29,7 +29,7 @@ Keys come from the environment (EnvironmentFile in the unit), never from this
 file: FOORILLA_API_KEY, TYPESAFE_API_KEY. Either may be absent; that source or
 pass is skipped and named in the run stats.
 
-    python3 splat.py                # full run, writes jobs.json beside itself
+    python3 splat.py                # full run, writes jobs.json beside itself (or to $SPLAT_OUT)
     python3 splat.py --dry-run      # everything except the write
     python3 splat.py --only greenhouse,amazon --no-jev
 """
@@ -52,7 +52,9 @@ from html import unescape
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "jobs.json"
+# The page's data: beside the script, or where the server says
+# (SPLAT_OUT, set in the unit to the docroot; the repo is a clone elsewhere).
+OUT = Path(os.environ.get("SPLAT_OUT") or HERE / "jobs.json")
 STATE_DIR = Path(os.environ.get("STATE_DIRECTORY") or HERE / ".state")
 STATE = STATE_DIR / "state.json"
 
