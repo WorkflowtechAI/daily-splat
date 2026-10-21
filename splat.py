@@ -174,7 +174,7 @@ INFRA = re.compile(
     r"system administrator|systems administrator|field it|end.user (support|computing)|"
     # Public-sector class titles (State of Oregon, 2026-10-21): "Information Systems
     # Specialist 6", "Information Technology Manager 2", "Senior IT Oversight Analyst".
-    r"information (systems?|technology)|database administrator|\bdba\b|backup|\bit oversight", re.I)
+    r"information (systems?|technology)|\bdatabase\b|\bdba\b|backup|\bit oversight", re.I)
 # "engine+r": Columbia Bank posted a "Senior Network Engineeer" on 2026-10-21.
 ENG_ROLE = re.compile(r"engine+r|architect|administrator|\badmin\b|\bsre\b|devops|specialist|operations|"
                       r"support|technician|\bdesk\b|analyst|associate|\bmanager\b", re.I)
@@ -190,7 +190,7 @@ NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     # "technician" alone is not here: IT and data-center technicians are entry roles.
     r"(lab|automotive|surgical|veterinary|dental|wind|solar|fiber|cable|install\w*) technician|electrician|"
     r"customer (support|service|care|experience)(?!.*engineer)|call center|"
-    r"nurse|clinical|pharmac|driver|warehouse|"
+    r"nurse|clinical|pharmac|driver|warehouse|\brn\b|dispatcher|"
     r"semiconductor|equipment engineer|\byield\b|\bfab\b|wafer|lithograph|\betch\b|diffusion|metrology|"
     r"thin film|product engineer, deg|design validation|failure analysis|test engineer, (dram|nand)", re.I)
 # Internships are not jobs to apply to from here; everything else junior is the
@@ -303,10 +303,18 @@ SEC_ROLE = re.compile(r"engineer|architect|analyst|specialist|consultant|officer
                       r"administrator|researcher|hunter|responder", re.I)
 
 
+# Providence tags its IT department's roles "IS" (Information Services):
+# "IS Customer Support Technician - On Site" is help desk, not customer service.
+# Case-sensitive, so the English word "is" never counts.
+IS_DEPT = re.compile(r"(?:^|\s)IS(?=\s|$|,)")
+
+
 def rule_track(title: str, sec_topic: bool = False) -> str | None:
     """sec_topic: the source already filed it under infosec (Foorilla topics 102/26).
     Then a role-shaped title is enough ("Principal Solutions Engineer" at a
     security vendor), and Jev has the final say."""
+    if IS_DEPT.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
+        return "cyber" if CYBER.search(title) else "eng"
     if NOT_ROLE.search(title):
         return None
     if CYBER.search(title) or (sec_topic and SEC_ROLE.search(title)):
@@ -336,6 +344,10 @@ def rule_level(title: str, hint: str | None = None) -> str | None:
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
 def http_json(url: str, data: dict | None = None, headers: dict | None = None, tries: int = 3, timeout: int = 40):
+    return json.loads(http_text(url, data, headers, tries, timeout))
+
+
+def http_text(url: str, data: dict | None = None, headers: dict | None = None, tries: int = 3, timeout: int = 40) -> str:
     body = json.dumps(data).encode() if data is not None else None
     h = {"User-Agent": UA, "Accept": "application/json", **(headers or {})}
     if body is not None:
@@ -345,7 +357,7 @@ def http_json(url: str, data: dict | None = None, headers: dict | None = None, t
         try:
             req = urllib.request.Request(url, data=body, headers=h)
             with urllib.request.urlopen(req, timeout=timeout) as r:
-                return json.loads(r.read().decode("utf-8", "replace"))
+                return r.read().decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             last = e
             if e.code in (404, 410, 401, 403, 422):
@@ -645,6 +657,76 @@ def src_workable() -> list[dict]:
     return out
 
 
+PROVIDENCE = "https://evac.fa.us2.oraclecloud.com"
+
+
+def src_providence() -> list[dict]:
+    """Providence Health, the region's largest health system, on Oracle Cloud HCM.
+    About 2,000 openings; the keyword search is loose ("help desk" returned a food
+    service job on 2026-10-21), so read them all, 200 a page, and let the rules sort."""
+    out, offset = [], 0
+    while offset < 5000:
+        finder = f"findReqs;siteNumber=CX_1,limit=200,offset={offset}"
+        d = http_json(f"{PROVIDENCE}/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true"
+                      f"&expand=requisitionList.secondaryLocations&finder={urllib.parse.quote(finder, safe=';=,')}")
+        rows = ((d.get("items") or [{}])[0]).get("requisitionList") or []
+        for r in rows:
+            locs = [r.get("PrimaryLocation") or ""] + [s.get("Name") or "" for s in r.get("secondaryLocations") or []]
+            out.append(posting(title=r.get("Title"), company="Providence",
+                               url=f"{PROVIDENCE}/hcmUI/CandidateExperience/en/sites/CX_1/job/{r.get('Id')}",
+                               location="; ".join(x for x in locs if x), remote=r.get("WorkplaceTypeCode") == "ORA_REMOTE",
+                               posted=iso(r.get("PostedDate"))))
+        if len(rows) < 200:
+            break
+        offset += 200
+        time.sleep(0.4)
+    return out
+
+
+# Portland-area public employers on NEOGOV (governmentjobs.com). No JSON: the
+# careers page's XHR answer is an HTML fragment, ten postings a page.
+NEOGOV = {"portlandor": "City of Portland", "trimet": "TriMet", "portofportland": "Port of Portland",
+          "beaverton": "City of Beaverton", "oregonmetro": "Oregon Metro"}
+NEOGOV_ITEM = re.compile(r'<li class="list-item" data-job-id="\d+">(.*?)(?=<li class="list-item"|<div class="pager-container"|$)', re.S)
+NEOGOV_LINK = re.compile(r'class="item-details-link"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', re.S)
+NEOGOV_META = re.compile(r'<ul class="list-meta">\s*<li>(.*?)</li>', re.S)
+NEOGOV_POSTED = re.compile(r'class="list-entry-starts"><span>(.*?)</span>', re.S)
+
+
+def neogov_rows(fragment: str, name: str) -> list[dict]:
+    out = []
+    for item in NEOGOV_ITEM.findall(fragment):
+        link = NEOGOV_LINK.search(item)
+        if not link:
+            continue
+        meta = NEOGOV_META.search(item)
+        loc = text(meta.group(1)) if meta else ""
+        # Every row is a Portland-area agency; "Commissioners' Office, OR" is a place only to them.
+        if where(loc) != "oregon":
+            loc = f"{loc}; Portland, OR" if loc else "Portland, OR"
+        posted = NEOGOV_POSTED.search(item)
+        out.append(posting(title=text(link.group(2)), company=name,
+                           url="https://www.governmentjobs.com" + unescape(link.group(1)), location=loc,
+                           posted=_wd_days(text(posted.group(1))) if posted else None))
+    return out
+
+
+def src_neogov(agency: str, name: str) -> list[dict]:
+    out, seen = [], set()
+    for page in range(1, 31):
+        url = f"https://www.governmentjobs.com/careers/home/index?agency={agency}&page={page}"
+        rows = neogov_rows(http_text(url, headers={"Accept": "text/html", "X-Requested-With": "XMLHttpRequest"}), name)
+        # Past its last page the site serves earlier pages again (City of Portland,
+        # 2026-10-21), so a page with nothing new is the end.
+        new = [r for r in rows if r["url"] not in seen]
+        seen.update(r["url"] for r in new)
+        out += new
+        if len(rows) < 10 or not new:
+            break
+        time.sleep(0.4)
+    return out
+
+
 def src_remotive() -> list[dict]:
     out = []
     for cat in ("software-dev", "devops", "data"):
@@ -734,7 +816,8 @@ def all_sources(only: set[str] | None):
          ("remotive", "Remotive", src_remotive, ()), ("remoteok", "RemoteOK", src_remoteok, ()),
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
          ("workingnomads", "Working Nomads", src_workingnomads, ()), ("muse", "The Muse", src_muse, ()),
-         ("workable", "Workable", src_workable, ())]
+         ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ())]
+    s += [(f"neogov:{a}", n, src_neogov, (a, n)) for a, n in NEOGOV.items()]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
     s += [(f"ashby:{t}", n, src_ashby, (t, n)) for t, n in ASHBY.items()]
