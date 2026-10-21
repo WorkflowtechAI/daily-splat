@@ -20,9 +20,20 @@ WHERE = [
     ("Seattle, WA", False, "pnw"),
     ("US-CA-Menlo Park; US-WA-Bellevue", False, "pnw"),
     ("Bellevue, Washington; Chicago, Illinois", False, "pnw"),
-    ("Portland, Oregon, USA", False, "pnw"),
+    ("Portland, Oregon, USA", False, "oregon"),
     ("Boise, ID", False, "pnw"),
-    ("United States, Washington, Redmond; United States, Oregon, Hillsboro", False, "pnw"),
+    # Listed in both states: Oregon's (2026-10-21, the page leans Portland).
+    ("United States, Washington, Redmond; United States, Oregon, Hillsboro", False, "oregon"),
+    ("Umatilla, Oregon, USA", False, "oregon"),
+    ("US, Oregon, Hillsboro", False, "oregon"),
+    ("Vancouver, WA", False, "oregon"),       # Portland metro
+    ("Redmond, OR", False, "oregon"),
+    ("Redmond, WA", False, "pnw"),
+    ("US-OR-Remote", True, "oregon"),
+    ("Salem, MA", False, None),
+    ("Medford, MA", False, None),
+    ("Oregon, WI", False, None),             # a Workday facet on 2026-10-21
+    ("Vancouver, BC, Canada", False, None),
     ("Washington, DC", False, None),
     ("Washington D.C.", False, None),
     ("San Francisco, CA | New York City, NY | Washington, DC", False, None),
@@ -52,13 +63,23 @@ WHERE = [
     ("US-WA-Spokane-AD WA (WA019), United States", False, "pnw"),
     ("Seattle, WA | Washington, DC", False, "pnw"),
     ("Keyport, Washington, United States", False, "pnw"),
-    ("Hillsboro, OR 97124", False, "pnw"),
+    ("Hillsboro, OR 97124", False, "oregon"),
     ("Remote - Seattle", True, "pnw"),
     # A Foorilla US-only query row with a bare city, after the source tags it.
     ("San Francisco (remote) · United States", True, "remote"),
 ]
 
 TRACK = [
+    # Oregon public-sector and local titles the rules dropped on 2026-10-21.
+    ("Information Systems Specialist 5", "eng"),
+    ("DDS IT User Support Analyst (Information System Support Specialist 4)", "eng"),
+    ("Information Technology Manager 2", "eng"),
+    ("Senior IT Oversight Analyst", "eng"),
+    ("Senior Database Administrator", "eng"),
+    ("Senior Network Engineeer", "eng"),
+    ("Senior Information Risk Officer", "cyber"),
+    ("Part Time Faculty Interest Pool - Computer Information Systems", None),
+    ("Software Developer", None),
     ("Staff Security Engineer - Engineer", "cyber"),
     ("Manager, MDR & Threat Hunting", "cyber"),
     # Product SWE is out: "mostly SWE roles, not infosec" (the cabal, 2026-10-03).

@@ -85,8 +85,12 @@ GREENHOUSE = {
     "grafanalabs": "Grafana Labs", "cockroachlabs": "Cockroach Labs", "planetscale": "PlanetScale",
     "fastly": "Fastly", "bugcrowd": "Bugcrowd", "roblox": "Roblox", "discord": "Discord",
     "reddit": "Reddit", "figma": "Figma", "jamasoftware": "Jama Software",
+    "opensesame": "OpenSesame", "airship": "Airship",
+    # From the job source directory (iambraun.com/job-sources): MSP-ecosystem vendors.
+    "connectwise": "ConnectWise", "kaseya": "Kaseya",
 }
-LEVER = {"palantir": "Palantir", "spotify": "Spotify", "outreach": "Outreach", "shieldai": "Shield AI"}
+LEVER = {"palantir": "Palantir", "spotify": "Spotify", "outreach": "Outreach", "shieldai": "Shield AI",
+         "smarsh": "Smarsh", "perforce": "Perforce", "instrument": "Instrument"}
 ASHBY = {
     "snowflake": "Snowflake", "ramp": "Ramp", "openai": "OpenAI", "notion": "Notion",
     "supabase": "Supabase", "linear": "Linear", "semgrep": "Semgrep", "socket": "Socket",
@@ -106,6 +110,42 @@ WORKDAY = [
     ("nordstrom", "wd501", "nordstrom_careers", "Nordstrom"),
     ("micron", "wd1", "External", "Micron"),
     ("salesforce", "wd12", "External_Career_Site", "Salesforce"),
+    # From the job source directory: MSP-ecosystem vendors.
+    ("pax8inc", "wd12", "pax8careers", "Pax8"),
+    ("acronis", "wd502", "acronis_careers", "Acronis"),
+]
+# Oregon employers, each answered with an Oregon location facet on 2026-10-21.
+# Read in 'local' mode: every job at their PNW locations, no keyword passes.
+# A tenant's site names are listed in https://{tenant}.{wdN}.myworkdayjobs.com/robots.txt.
+WORKDAY_LOCAL = [
+    ("columbiasportswearcompany", "wd5", "CSC_Careers", "Columbia Sportswear"),
+    ("dtna", "wd5", "DTNA_external", "Daimler Truck North America"),
+    ("standard", "wd1", "Search", "The Standard"),
+    ("cambiahealth", "wd504", "External", "Cambia Health Solutions"),
+    ("portlandgeneral", "wd5", "pgn", "Portland General Electric"),
+    ("columbiabank", "wd108", "Columbia", "Columbia Bank"),
+    ("latticesemi", "wd5", "latticesemiconductorscareers", "Lattice Semiconductor"),
+    ("flir", "wd1", "flircareers", "Teledyne FLIR"),
+    ("autodesk", "wd1", "Ext", "Autodesk"),
+    ("oregonstate", "wd501", "OSU_Careers_Site", "Oregon State University"),
+    ("sou", "wd1", "Southern_Oregon_University", "Southern Oregon University"),
+    ("portlandcc", "wd12", "External", "Portland Community College"),
+    ("stcharles", "wd1", "External", "St. Charles Health System"),
+    ("pacificsource", "wd5", "PacificSource", "PacificSource Health Plans"),
+    ("careoregon", "wd12", "CO", "CareOregon"),
+    ("lithia", "wd504", "LithiaCareers", "Lithia Motors"),
+    ("iberdrola", "wd3", "Iberdrola", "Avangrid"),
+    ("astound", "wd108", "Astound_Careers", "Astound Broadband"),
+    ("hp", "wd5", "ExternalCareerSite", "HP"),
+    ("nvidia", "wd5", "NVIDIAExternalCareerSite", "NVIDIA"),
+    ("analogdevices", "wd1", "External", "Analog Devices"),
+    ("cisco", "wd5", "Cisco_Careers", "Cisco"),
+]
+# Tenants whose every job is in Oregon and whose location facets name agencies,
+# not places: searched without a location facet, every row placed in Oregon.
+WORKDAY_ALL_OREGON = [
+    ("oregon", "wd5", "SOR_External_Career_Site", "State of Oregon"),
+    ("multco", "wd1", "Multco_Jobs", "Multnomah County"),
 ]
 
 # ── Classification rules ─────────────────────────────────────────────────────
@@ -115,7 +155,7 @@ CYBER = re.compile(
     r"privacy|\bisso\b|\bissm\b|"
     r"vulnerab|penetration|pen ?test|red team|blue team|purple team|malware|forensic|\bgrc\b|"
     r"governance,? risk|identity (and|&) access|\biam\b|zero trust|cryptograph|privacy engineer|"
-    r"\bsiem\b|offensive|defensive|trust (and|&) safety engineer", re.I)
+    r"\bsiem\b|offensive|defensive|trust (and|&) safety engineer|information (risk|assurance)", re.I)
 # "Engineering" here means the infrastructure security people work in and next
 # to, not general software development. The first live run (2026-10-03) took
 # every engineer title and landed 4,539 engineering rows against 657 cyber,
@@ -131,9 +171,13 @@ INFRA = re.compile(
     # are the way in, so they count as infra.
     r"help ?desk|service desk|desktop support|technical support|tech support|support engineer|"
     r"\bit (support|specialist|technician|analyst|administrator|associate|operations)|"
-    r"system administrator|systems administrator|field it|end.user (support|computing)", re.I)
-ENG_ROLE = re.compile(r"engineer|architect|administrator|\badmin\b|\bsre\b|devops|specialist|operations|"
-                      r"support|technician|\bdesk\b|analyst|associate", re.I)
+    r"system administrator|systems administrator|field it|end.user (support|computing)|"
+    # Public-sector class titles (State of Oregon, 2026-10-21): "Information Systems
+    # Specialist 6", "Information Technology Manager 2", "Senior IT Oversight Analyst".
+    r"information (systems?|technology)|database administrator|\bdba\b|backup|\bit oversight", re.I)
+# "engine+r": Columbia Bank posted a "Senior Network Engineeer" on 2026-10-21.
+ENG_ROLE = re.compile(r"engine+r|architect|administrator|\badmin\b|\bsre\b|devops|specialist|operations|"
+                      r"support|technician|\bdesk\b|analyst|associate|\bmanager\b", re.I)
 NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     r"\bsales\b(?! engineer)|account executive|account manager|business development|marketing|"
     r"recruit|talent|counsel|attorney|paralegal|legal|customer success manager|\bsdr\b|\bbdr\b|"
@@ -166,21 +210,33 @@ STAFF = re.compile(r"\bstaff\b|principal|distinguished|\bfellow\b", re.I)
 SENIOR = re.compile(r"senior|\bsr\.?\b|\blead\b|\biii\b|\biv\b|\b(engineer|developer)\s+(3|4)\b|manager|architect", re.I)
 CLEARANCE = re.compile(r"clearance|\bts/sci\b|top secret|\bsecret\b|polygraph", re.I)
 
+# Oregon is the page's home (2026-10-21: 18 of 252 PNW rows were Oregon, all
+# Amazon, Intel or Nike), so it gets its own bucket. Vancouver, Camas and
+# Washougal are Portland metro and count with it.
+OR_CITY = re.compile(
+    r"portland|beaverton|hillsboro|tigard|tualatin|lake oswego|wilsonville|gresham|happy valley|"
+    r"milwaukie|clackamas|oregon city|west linn|sherwood|forest grove|troutdale|vancouver,?\s*(wa|washington)|"
+    r"\bcamas\b|washougal|salem|eugene|springfield,?\s*(or|oregon)|corvallis|albany,?\s*(or|oregon)|\bbend\b|"
+    r"redmond,?\s*(or|oregon)|medford|ashland,?\s*(or|oregon)|klamath falls|roseburg|grants pass|"
+    r"the dalles|hood river|prineville|hermiston|umatilla|boardman|pendleton|astoria|newport,?\s*(or|oregon)", re.I)
 PNW_CITY = re.compile(
     r"seattle|bellevue|redmond|kirkland|bothell|everett|tacoma|olympia|spokane|renton|issaquah|"
     r"lynnwood|tukwila|sammamish|woodinville|mukilteo|bellingham|richland|kennewick|pullman|"
-    r"portland|beaverton|hillsboro|eugene|corvallis|tigard|lake oswego|wilsonville|"
-    r"\bbend\b|boise|meridian|nampa|coeur d.alene|idaho falls|puget sound", re.I)
+    r"boise|meridian|nampa|coeur d.alene|idaho falls|puget sound", re.I)
 PNW_STATE = re.compile(r"\bwashington\b|\boregon\b|\bidaho\b", re.I)
+OR_STATE = re.compile(r"\boregon\b", re.I)
 # Only the shapes a state code actually takes in a location: ", WA", "US-WA",
 # "WA 98101". A bare " OR " is the English word ("NY OR US Remote" was read as
 # Oregon on 2026-10-03). Case-sensitive on purpose.
 PNW_ABBR = re.compile(r"(?:,\s*|\bUSA?\s*-\s*|\bUSA?-)(WA|OR|ID)\b|\b(WA|OR|ID)\s+\d{5}\b")
+OR_ABBR = re.compile(r"(?:,\s*|\bUSA?\s*-\s*|\bUSA?-)OR\b|\bOR\s+\d{5}\b")
 # A segment that names DC, or Washington as a street, is not Washington State.
 NOT_WA_STATE = re.compile(r"\bd\.?\s?c\.?\b|district of columbia|washington\s+(st|street|ave|avenue|blvd|rd|road)\b", re.I)
 # Same-named cities elsewhere.
 NOT_PNW_CITY = re.compile(r"portland,?\s*(me\b|maine)|meridian,?\s*(ms\b|mississippi)|everett,?\s*(ma\b|mass)|"
-                          r"bellevue,?\s*(ne\b|nebraska)|richland,?\s*(ms\b|mississippi)", re.I)
+                          r"bellevue,?\s*(ne\b|nebraska)|richland,?\s*(ms\b|mississippi)|"
+                          r"salem,?\s*(ma\b|mass|nh\b|new hampshire|va\b|virginia)|medford,?\s*(ma\b|mass|nj\b|ny\b)|"
+                          r"oregon,?\s*(wi\b|wisconsin|il\b|illinois|oh\b|ohio|mo\b|missouri)", re.I)
 REMOTE = re.compile(r"remote|anywhere|work from home|\bwfh\b|distributed|virtual|telecommute", re.I)
 US_COUNTRY = re.compile(r"\bU\.?S\.?A?\b|united states", re.I)
 WORLD = re.compile(r"worldwide|global|anywhere|international", re.I)
@@ -206,17 +262,23 @@ NOT_US = re.compile(
 
 
 def where(location: str, remote_flag: bool = False) -> str | None:
-    """'pnw', 'remote', or None. PNW wins: a PNW hybrid that also allows remote is local."""
+    """'oregon', 'pnw' (WA/ID), 'remote', or None. Local wins: a PNW hybrid that
+    also allows remote is local, and a role listed in Seattle and Portland is Oregon's."""
     loc = location or ""
     # One segment at a time: "Seattle, WA | Washington, DC" is PNW by its first
     # segment, and the DC in the second must not veto it.
+    pnw = False
     for seg in re.split(r"[;|\n]", loc):
         if NOT_PNW_CITY.search(seg):
             continue
+        if OR_CITY.search(seg) or OR_ABBR.search(seg) or OR_STATE.search(seg):
+            return "oregon"
         if PNW_CITY.search(seg) or PNW_ABBR.search(seg):
-            return "pnw"
-        if PNW_STATE.search(seg) and not NOT_WA_STATE.search(seg):
-            return "pnw"
+            pnw = True
+        elif PNW_STATE.search(seg) and not NOT_WA_STATE.search(seg):
+            pnw = True
+    if pnw:
+        return "pnw"
     said_remote = bool(REMOTE.search(loc))
     if not (said_remote or remote_flag):
         return None
@@ -411,18 +473,33 @@ def _wd_days(s: str) -> str | None:
     return (NOW - timedelta(days=int(m.group(1)))).date().isoformat() if m else None
 
 
-def src_workday(tenant: str, host: str, site: str, name: str) -> list[dict]:
+WD_QUERIES = ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
+              "support", "administrator", "help desk")
+
+
+def src_workday(tenant: str, host: str, site: str, name: str, mode: str = "search") -> list[dict]:
+    """mode 'search': every PNW or remote location facet, one keyword search at a time.
+    'local': the PNW facets only, every job under them, no keywords; an Oregon
+    employer's local list is short, and eleven searches per facet would blow the
+    unit's time budget across 25 tenants. 'all_oregon': no facet at all, every job."""
     base = f"https://{tenant}.{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs"
-    first = http_json(base, {"appliedFacets": {}, "limit": 1, "offset": 0, "searchText": ""})
-    targets = [(p, i, d) for p, i, d in _wd_facets(first.get("facets") or [], [])
-               if p and "location" in p.lower() and where(d)]
+    if mode == "all_oregon":
+        targets = [(None, None, "Oregon")]
+    else:
+        first = http_json(base, {"appliedFacets": {}, "limit": 1, "offset": 0, "searchText": ""})
+        keep = ("oregon", "pnw") if mode == "local" else ("oregon", "pnw", "remote")
+        targets = [(p, i, d) for p, i, d in _wd_facets(first.get("facets") or [], [])
+                   if p and "location" in p.lower() and where(d) in keep]
+    all_oregon = mode == "all_oregon"
+    queries = WD_QUERIES if mode == "search" else ("",)
+    cap = 400 if mode == "search" else 1000
     out, seen = [], set()
     for param, fid, desc in targets:
-        for q in ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
-                  "support", "administrator", "help desk"):
+        for q in queries:
             offset = 0
-            while offset < 400:
-                d = http_json(base, {"appliedFacets": {param: [fid]}, "limit": 20, "offset": offset, "searchText": q})
+            while offset < cap:
+                facets = {param: [fid]} if param else {}
+                d = http_json(base, {"appliedFacets": facets, "limit": 20, "offset": offset, "searchText": q})
                 rows = d.get("jobPostings") or []
                 for j in rows:
                     path = j.get("externalPath") or ""
@@ -430,6 +507,8 @@ def src_workday(tenant: str, host: str, site: str, name: str) -> list[dict]:
                         continue
                     seen.add(path)
                     loc = j.get("locationsText") or ""
+                    if all_oregon and not where(loc):
+                        loc = f"{loc}, Oregon" if loc and not re.match(r"\d+ Locations", loc) else "Oregon"
                     out.append(posting(title=j.get("title"), company=name,
                                        url=f"https://{tenant}.{host}.myworkdayjobs.com/{site}{path}",
                                        location=desc if re.match(r"\d+ Locations", loc) else loc,
@@ -538,6 +617,34 @@ def src_foorilla() -> list[dict]:
     return out
 
 
+def src_workable() -> list[dict]:
+    """Workable's cross-employer search (jobs.workable.com), no key. It is where the
+    small Portland employers are (Energy Trust, Galois, local MSPs). Its matching is
+    loose, so the title rules do the real filtering."""
+    out, seen = [], set()
+    for loc in ("Portland, Oregon", "Salem, Oregon", "Eugene, Oregon", "Bend, Oregon", "Seattle, Washington"):
+        for q in ("security", "cyber", "systems administrator", "network engineer", "cloud engineer", "devops",
+                  "help desk", "IT support", "infrastructure", "IT specialist"):
+            token = None
+            for _ in range(5):
+                params = {"query": q, "location": loc, **({"pageToken": token} if token else {})}
+                d = http_json("https://jobs.workable.com/api/v1/jobs?" + urllib.parse.urlencode(params))
+                for j in d.get("jobs") or []:
+                    if j.get("id") in seen:
+                        continue
+                    seen.add(j.get("id"))
+                    locs = [x for x in j.get("locations") or [] if x.upper() != "TELECOMMUTE"]
+                    out.append(posting(title=j.get("title"), company=(j.get("company") or {}).get("title"),
+                                       url=j.get("url"), location="; ".join(locs),
+                                       remote=j.get("workplace") == "remote", posted=iso(j.get("created")),
+                                       desc=text(j.get("description")), origin="aggregator"))
+                token = d.get("nextPageToken")
+                if not token or not d.get("jobs"):
+                    break
+                time.sleep(0.4)
+    return out
+
+
 def src_remotive() -> list[dict]:
     out = []
     for cat in ("software-dev", "devops", "data"):
@@ -602,9 +709,11 @@ def src_workingnomads() -> list[dict]:
 
 def src_muse() -> list[dict]:
     out = []
-    for loc in ("Seattle, WA", "Bellevue, WA", "Redmond, WA", "Portland, OR", "Boise, ID", "Flexible / Remote"):
+    for loc in ("Portland, OR", "Beaverton, OR", "Hillsboro, OR", "Salem, OR", "Eugene, OR", "Bend, OR",
+                "Vancouver, WA", "Seattle, WA", "Bellevue, WA", "Redmond, WA", "Boise, ID", "Flexible / Remote"):
         for page in range(0, 5):
-            params = [("page", page), ("location", loc), ("level", "Mid Level"), ("level", "Senior Level"),
+            params = [("page", page), ("location", loc), ("level", "Entry Level"), ("level", "Mid Level"),
+                      ("level", "Senior Level"),
                       ("category", "Software Engineering"), ("category", "Computer and IT"),
                       ("category", "Data and Analytics"), ("category", "IT")]
             d = http_json("https://www.themuse.com/api/public/jobs?" + urllib.parse.urlencode(params))
@@ -624,11 +733,14 @@ def all_sources(only: set[str] | None):
     s = [("foorilla", "Foorilla", src_foorilla, ()), ("amazon", "Amazon", src_amazon, ()),
          ("remotive", "Remotive", src_remotive, ()), ("remoteok", "RemoteOK", src_remoteok, ()),
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
-         ("workingnomads", "Working Nomads", src_workingnomads, ()), ("muse", "The Muse", src_muse, ())]
+         ("workingnomads", "Working Nomads", src_workingnomads, ()), ("muse", "The Muse", src_muse, ()),
+         ("workable", "Workable", src_workable, ())]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
     s += [(f"ashby:{t}", n, src_ashby, (t, n)) for t, n in ASHBY.items()]
     s += [(f"workday:{w[0]}", w[3], src_workday, w) for w in WORKDAY]
+    s += [(f"workday:{w[0]}", w[3], src_workday, (*w, "local")) for w in WORKDAY_LOCAL]
+    s += [(f"workday:{w[0]}", w[3], src_workday, (*w, "all_oregon")) for w in WORKDAY_ALL_OREGON]
     if only:
         s = [x for x in s if x[0] in only or x[0].split(":")[0] in only]
     return s
@@ -738,8 +850,9 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 - one source never fails the run
             return sid, label, [], str(e)[:200], time.time() - t0
 
-    # Foorilla and Amazon pace themselves; the boards are separate hosts.
-    with ThreadPoolExecutor(8) as ex:
+    # Foorilla and Amazon pace themselves; the boards are separate hosts. 16, not
+    # 8, since 2026-10-21 added 25 Workday tenants and the unit allows 45 minutes.
+    with ThreadPoolExecutor(16) as ex:
         for sid, label, rows, err, secs in ex.map(run, sources):
             stats[sid] = {"label": label, "ok": err is None, "fetched": len(rows), "kept": 0,
                           "error": err, "secs": round(secs, 1)}
@@ -853,7 +966,9 @@ def main() -> int:
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
-                   "pnw": sum(1 for j in rows if j["where"] == "pnw"),
+                   # "pnw" stays all three states so old counts and links mean what they did.
+                   "pnw": sum(1 for j in rows if j["where"] in ("oregon", "pnw")),
+                   "oregon": sum(1 for j in rows if j["where"] == "oregon"),
                    "remote": sum(1 for j in rows if j["where"] == "remote")},
         "sources": [{"id": sid, **{k: v for k, v in s.items() if k != "secs"}} for sid, s in sorted(stats.items())],
         "jev": jev_stats,

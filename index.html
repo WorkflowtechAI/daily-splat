@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daily Splat · Infosec Jobs, PNW</title>
+<title>Daily Splat · Infosec Jobs, Portland &amp; PNW</title>
 <link rel="canonical" href="https://iambraun.com/cv/job-sources/daily-splat/">
-<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them, entry to senior level, in the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
-<meta property="og:title" content="Daily Splat: infosec jobs, PNW and remote">
-<meta property="og:description" content="Entry to senior cybersecurity, infrastructure and IT support openings in WA, OR, ID or remote-US. Rebuilt daily.">
+<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them, entry to senior level, in Portland, Oregon and the rest of the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
+<meta property="og:title" content="Daily Splat: infosec jobs, Portland, PNW and remote">
+<meta property="og:description" content="Entry to senior cybersecurity, infrastructure and IT support openings in Oregon, WA, ID or remote-US. Rebuilt daily.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#F4F7F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14100c" media="(prefers-color-scheme: dark)">
@@ -102,7 +102,7 @@
   <header class="mast">
     <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
     <h1>The Daily Splat</h1>
-    <p class="standfirst">Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles that sit next to security, entry to senior level, in Washington, Oregon and Idaho or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
+    <p class="standfirst">Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles that sit next to security, entry to senior level, in Portland and the rest of Oregon, Washington and Idaho, or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
   </header>
 
   <section class="stats" aria-label="Today's numbers">
@@ -111,7 +111,8 @@
     <div class="stat"><b id="s-cyber">–</b><span>Cyber</span></div>
     <div class="stat"><b id="s-eng">–</b><span>Infra &amp; IT</span></div>
     <div class="stat"><b id="s-entry">–</b><span>Entry-level</span></div>
-    <div class="stat"><b id="s-pnw">–</b><span>In the PNW</span></div>
+    <div class="stat"><b id="s-oregon">–</b><span>Portland &amp; Oregon</span></div>
+    <div class="stat"><b id="s-pnw">–</b><span>All PNW</span></div>
     <div class="stat"><b id="s-dropped">–</b><span>Dropped since yesterday</span></div>
   </section>
 
@@ -120,7 +121,7 @@
       <button data-v="all">All</button><button data-v="cyber">Cyber</button><button data-v="eng">Infra &amp; IT</button>
     </span></span>
     <span><span class="lbl">Where</span><span class="seg" data-key="where">
-      <button data-v="all">All</button><button data-v="pnw">PNW</button><button data-v="remote">Remote US</button>
+      <button data-v="all">All</button><button data-v="oregon">Portland &amp; OR</button><button data-v="pnw">All PNW</button><button data-v="remote">Remote US</button>
     </span></span>
   </div>
   <div class="bar">
@@ -143,7 +144,7 @@
 
   <details>
     <summary>How this works</summary>
-    <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, Remotive, RemoteOK, Jobicy, Himalayas, Working Nomads and The Muse.</p>
+    <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, Remotive, RemoteOK, Jobicy, Himalayas, Working Nomads and The Muse.</p>
     <p>It keeps a posting when the title reads as security, or as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
@@ -170,7 +171,7 @@
   function readHash() {
     const h = new URLSearchParams(location.hash.slice(1));
     st.track = ["cyber", "eng"].includes(h.get("track")) ? h.get("track") : "all";
-    st.where = ["pnw", "remote"].includes(h.get("where")) ? h.get("where") : "all";
+    st.where = ["oregon", "pnw", "remote"].includes(h.get("where")) ? h.get("where") : "all";
     st.levels = new Set((h.get("level") || "").split(",").filter((x) => x in LEVEL));
     st.flags = new Set((h.get("only") || "").split(",").filter((x) => ["new", "pay", "noclr"].includes(x)));
     st.q = h.get("q") || "";
@@ -210,7 +211,8 @@
 
   function matches(j) {
     if (st.track !== "all" && j.track !== st.track) return false;
-    if (st.where !== "all" && j.where !== st.where) return false;
+    // "pnw" is all three states, Oregon included, so links shared before the split still work.
+    if (st.where === "pnw" ? !["oregon", "pnw"].includes(j.where) : st.where !== "all" && j.where !== st.where) return false;
     if (st.levels.size && !st.levels.has(j.level)) return false;
     if (st.flags.has("new") && j.first_seen !== today) return false;
     if (st.flags.has("pay") && !j.salary) return false;
@@ -229,7 +231,7 @@
     if (j.first_seen === today) tags.append(el("span", { class: "tag new", text: "NEW" }));
     tags.append(el("span", { class: `tag ${j.track}`, text: TRACK[j.track] || j.track }));
     tags.append(el("span", { class: "tag", text: LEVEL[j.level] || j.level }));
-    tags.append(el("span", { class: "tag", text: j.where === "pnw" ? "PNW" : "Remote US" }));
+    tags.append(el("span", { class: "tag", text: { oregon: "Portland & OR", pnw: "WA / ID", remote: "Remote US" }[j.where] || j.where }));
     if (j.salary) tags.append(el("span", { class: "tag pay", text: j.salary }));
     if (j.clearance) tags.append(el("span", { class: "tag warn", text: "Clearance" }));
     if (j.carried) tags.append(el("span", { class: "tag warn", text: "Source down today" }));
@@ -282,6 +284,7 @@
     $("#s-cyber").textContent = c.cyber;
     $("#s-eng").textContent = c.eng;
     $("#s-entry").textContent = c.entry ?? "–";
+    $("#s-oregon").textContent = c.oregon ?? "–";
     $("#s-pnw").textContent = c.pnw;
     $("#s-dropped").textContent = c.dropped_since_last_run;
     const when = new Date(DATA.generated_at);
