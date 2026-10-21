@@ -1,0 +1,61 @@
+# The check a PR into main waits for. Merging main IS the deploy: the Foundry VPS
+# pulls main at 05:30 Pacific and runs it (infra/daily-splat.service), so a
+# broken splat.py or index.html is live the next morning with nobody watching.
+#
+# Until 2026-10-21 this repo had no CI and main's only gate was one human
+# approving review, which David cannot give his own PRs. The tests ran by hand.
+# This makes them the gate, so branch protection can require "rules-tests".
+#
+# No network: the job never runs splat.py itself, only its rules tests, so a
+# job board being down cannot fail a PR, and no key is ever needed here.
+
+name: rules-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per branch. push and pull_request fire on the same commit, and
+# github.ref differs between them, so the group keys on the branch name.
+concurrency:
+  group: rules-tests-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  rules-tests:
+    # Hosted, not the self-hosted pool: this repo is public, so hosted minutes
+    # are free, and a public repo's fork PRs must never reach the pool.
+    # ubuntu-24.04's system python3 is 3.12, the same as the VPS (Ubuntu
+    # 24.04.5, Python 3.12.3), so no setup-python: the stdlib is all it needs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Python version
+        run: python3 --version
+
+      - name: Compile
+        run: python3 -m py_compile splat.py infra/test_splat.py
+
+      - name: Rules tests
+        run: python3 infra/test_splat.py
+
+      # index.html ships as-is next to jobs.json; a syntax error in its one
+      # inline script empties the page for everyone. node is on the runner.
+      - name: Page script parses
+        run: |
+          python3 - <<'EOF'
+          import re
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
+          assert scripts, "no inline <script> found in index.html"
+          Path("page.js").write_text("\n".join(scripts), encoding="utf-8")
+          EOF
+          node --check page.js
