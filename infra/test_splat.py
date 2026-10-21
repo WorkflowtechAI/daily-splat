@@ -80,6 +80,16 @@ TRACK = [
     ("Senior Information Risk Officer", "cyber"),
     ("Part Time Faculty Interest Pool - Computer Information Systems", None),
     ("Software Developer", None),
+    # Providence's "IS" (Information Services) department tag, 2026-10-21.
+    ("IS Customer Support Technician - On Site", "eng"),
+    ("IS Support Administrator - On Site", "eng"),
+    ("Senior Security Engineer IS - Identity and Access Management, Remote", "cyber"),
+    ("Data Engineer I IS - Remote", None),
+    ("Customer Support Technician", None),
+    ("Advanced Specialty Staff RN - Medical Forensic", None),
+    ("Dispatcher - Security", None),
+    ("Engineer, Senior, Site and Database Reliability", "eng"),   # TriMet
+    ("Database Marketing Manager", None),
     ("Staff Security Engineer - Engineer", "cyber"),
     ("Manager, MDR & Threat Hunting", "cyber"),
     # Product SWE is out: "mostly SWE roles, not infosec" (the cabal, 2026-10-03).
@@ -159,8 +169,53 @@ LEVEL = [
 ]
 
 
+# A governmentjobs.com fragment as the City of Portland served it on 2026-10-21,
+# cut to two postings and their markup.
+NEOGOV_FRAGMENT = """
+<ul class="unstyled search-results-listing-container job-listing-container ">
+  <li class="list-item" data-job-id="5468381">
+    <h3 class="job-item-link-container">
+      <a aria-label="x" class="item-details-link" data-department-name="BTS" href="/careers/portlandor/jobs/5468381/it-security-analyst" rel="">Information Technology Security Analyst</a>
+    </h3>
+    <ul class="list-meta">
+      <li>Commissioners&#39; Office, OR</li>
+      <li>Full-Time</li>
+    </ul>
+    <div class="list-published">
+      <span class="list-entry-starts"><span>Posted 3 days ago</span></span>
+    </div>
+  </li>
+  <li class="list-item" data-job-id="5430025">
+    <h3 class="job-item-link-container">
+      <a aria-label="x" class="item-details-link" href="/careers/portlandor/jobs/5430025/water-operator" rel="">Water Operator &amp; Mechanic</a>
+    </h3>
+    <ul class="list-meta">
+      <li>Portland, OR</li>
+    </ul>
+    <div class="list-published">
+      <span class="list-entry-starts"><span>Posted more than 30 days ago</span></span>
+    </div>
+  </li>
+</ul>
+<div class="pager-container"></div>
+"""
+
+
+def check_neogov() -> int:
+    rows = splat.neogov_rows(NEOGOV_FRAGMENT, "City of Portland")
+    got = [(r["title"], r["url"], splat.where(r["location"]), splat.age_days(r["posted"])) for r in rows]
+    want = [("Information Technology Security Analyst",
+             "https://www.governmentjobs.com/careers/portlandor/jobs/5468381/it-security-analyst", "oregon", 3),
+            ("Water Operator & Mechanic",
+             "https://www.governmentjobs.com/careers/portlandor/jobs/5430025/water-operator", "oregon", 30)]
+    if got != want:
+        print(f"neogov_rows = {got!r}, want {want!r}")
+        return 1
+    return 0
+
+
 def main() -> int:
-    bad = 0
+    bad = check_neogov()
     for loc, flag, want in WHERE:
         got = splat.where(loc, flag)
         if got != want:
@@ -185,7 +240,7 @@ def main() -> int:
         if splat.norm(a) != splat.norm(b):
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
-    total = len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(LEVEL) + len(NORM)
+    total = len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(LEVEL) + len(NORM) + 1
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 
