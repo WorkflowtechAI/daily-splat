@@ -314,6 +314,7 @@ APPLY_JEV = [
 # aggregators or the telecoms).
 TECH_SOURCE = [
     ("greenhouse:stripe", True), ("workday:nvidia", True), ("workday:nike", False), ("workday:tmobile", False),
+    ("eightfold:autodesk", True), ("eightfold:lamresearch", True), ("eightfold:fortive", False),
     ("providence", False), ("neogov:portlandor", False), ("amazon", False), ("himalayas", False),
     ("foorilla", False), ("workable", False),
 ]
@@ -392,6 +393,31 @@ NEOGOV_FRAGMENT = """
 """
 
 
+# Two positions as Eightfold's /api/pcsx/search returned them for Autodesk on
+# 2026-11-04, cut to the fields eightfold_rows reads.
+EIGHTFOLD_POSITIONS = [
+    {"id": 1443152973589, "name": "Software Development Manager, Horizontal Services",
+     "locations": ["AMER - United States - Oregon - Remote", "Oregon, USA - Remote", "Montreal, QC, Canada"],
+     "postedTs": 1793145600, "workLocationOption": "remote", "positionUrl": "/careers/job/1443152973589"},
+    {"id": 1443154213410, "name": "Principal Visual Experience Designer",
+     "locations": ["Portland, OR, USA", "San Francisco, CA, USA"],
+     "postedTs": 1793491200, "workLocationOption": "onsite", "positionUrl": "/careers/job/1443154213410"},
+]
+
+
+def check_eightfold() -> int:
+    rows = splat.eightfold_rows(EIGHTFOLD_POSITIONS, "jobs.autodesk.com", "Autodesk")
+    got = [(r["title"], r["url"], splat.where(r["location"], r["remote"]), r["remote"], r["posted"]) for r in rows]
+    want = [("Software Development Manager, Horizontal Services", "https://jobs.autodesk.com/careers/job/1443152973589",
+             "oregon", True, "2026-10-28"),
+            ("Principal Visual Experience Designer", "https://jobs.autodesk.com/careers/job/1443154213410",
+             "oregon", False, "2026-11-01")]
+    if got != want:
+        print(f"eightfold_rows = {got!r}, want {want!r}")
+        return 1
+    return 0
+
+
 def check_neogov() -> int:
     rows = splat.neogov_rows(NEOGOV_FRAGMENT, "City of Portland")
     got = [(r["title"], r["url"], splat.where(r["location"]), splat.age_days(r["posted"])) for r in rows]
@@ -406,7 +432,7 @@ def check_neogov() -> int:
 
 
 def main() -> int:
-    bad = check_neogov()
+    bad = check_neogov() + check_eightfold()
     for loc, flag, want in WHERE:
         got = splat.where(loc, flag)
         if got != want:
@@ -453,7 +479,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + 1)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + 2)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

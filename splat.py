@@ -128,7 +128,6 @@ WORKDAY_LOCAL = [
     ("columbiabank", "wd108", "Columbia", "Columbia Bank"),
     ("latticesemi", "wd5", "latticesemiconductorscareers", "Lattice Semiconductor"),
     ("flir", "wd1", "flircareers", "Teledyne FLIR"),
-    ("autodesk", "wd1", "Ext", "Autodesk"),
     ("oregonstate", "wd501", "OSU_Careers_Site", "Oregon State University"),
     ("sou", "wd1", "Southern_Oregon_University", "Southern Oregon University"),
     ("portlandcc", "wd12", "External", "Portland Community College"),
@@ -837,6 +836,44 @@ def src_workable() -> list[dict]:
     return out
 
 
+# Employers on Eightfold's careers platform: (key, host, domain, name, locations).
+# Its search answers without a login (/api/pcsx/search, ten a page). Autodesk
+# left Workday for it about 2026-11-03 (its Workday board fell to 5 jobs, none
+# here); Lam Research (Tualatin), Ralliant (Tektronix, Beaverton) and Fortive
+# (Everett) were on it already. Each answered from the VPS on 2026-11-04.
+EIGHTFOLD = [
+    ("autodesk", "jobs.autodesk.com", "autodesk.com", "Autodesk", ("Portland, OR", "Seattle, WA")),
+    ("lamresearch", "careers.lamresearch.com", "lamresearch.com", "Lam Research", ("Oregon",)),
+    ("ralliant", "ralliant.eightfold.ai", "ralliant.com", "Tektronix (Ralliant)", ("Oregon",)),
+    ("fortive", "fortive.eightfold.ai", "fortive.com", "Fortive", ("Washington", "Oregon")),
+]
+
+
+def eightfold_rows(positions: list, host: str, name: str) -> list[dict]:
+    return [posting(title=j.get("name"), company=name, url=f"https://{host}{j.get('positionUrl') or ''}",
+                    location="; ".join(j.get("locations") or []),
+                    remote=(j.get("workLocationOption") or "").lower() == "remote", posted=iso(j.get("postedTs")))
+            for j in positions]
+
+
+def src_eightfold(key: str, host: str, domain: str, name: str, locations: tuple) -> list[dict]:
+    out, seen = [], set()
+    for loc in locations:
+        start = 0
+        while start < 600:
+            params = {"domain": domain, "query": "", "location": loc, "start": start}
+            d = (http_json(f"https://{host}/api/pcsx/search?" + urllib.parse.urlencode(params)) or {}).get("data") or {}
+            rows = d.get("positions") or []
+            fresh = [j for j in rows if j.get("id") not in seen]
+            seen.update(j.get("id") for j in fresh)
+            out += eightfold_rows(fresh, host, name)
+            start += len(rows)
+            if not rows or start >= (d.get("count") or 0):
+                break
+            time.sleep(0.3)
+    return out
+
+
 PROVIDENCE = "https://evac.fa.us2.oraclecloud.com"
 
 
@@ -908,15 +945,15 @@ def src_neogov(agency: str, name: str) -> list[dict]:
 
 
 def src_remotive() -> list[dict]:
-    out = []
-    for cat in ("software-dev", "devops", "data"):
-        d = http_json(f"https://remotive.com/api/remote-jobs?category={cat}")
-        for j in d.get("jobs", []):
-            out.append(posting(title=j.get("title"), company=j.get("company_name"), url=j.get("url"),
-                               location="Remote · " + (j.get("candidate_required_location") or ""), remote=True,
-                               posted=iso(j.get("publication_date")), salary=j.get("salary") or None,
-                               desc=text(j.get("description")), origin="aggregator"))
-    return out
+    # One call. Since about 2026-11 the public API ignores category, search,
+    # limit and company_name and returns the same ~11 newest jobs whatever is
+    # asked, so the three category calls this made were the same call thrice.
+    d = http_json("https://remotive.com/api/remote-jobs")
+    return [posting(title=j.get("title"), company=j.get("company_name"), url=j.get("url"),
+                    location="Remote · " + (j.get("candidate_required_location") or ""), remote=True,
+                    posted=iso(j.get("publication_date")), salary=j.get("salary") or None,
+                    desc=text(j.get("description")), origin="aggregator")
+            for j in d.get("jobs", [])]
 
 
 def src_remoteok() -> list[dict]:
@@ -1002,12 +1039,15 @@ def src_muse() -> list[dict]:
 # (T-Mobile's and Astound's PMs are mostly retail and care).
 TECH_SOURCES = {"greenhouse", "lever", "ashby"}
 TECH_WORKDAY = {"crowdstrike", "zillow", "ffive", "intel", "micron", "salesforce", "pax8inc", "acronis",
-                "latticesemi", "flir", "autodesk", "hp", "nvidia", "analogdevices", "cisco"}
+                "latticesemi", "flir", "hp", "nvidia", "analogdevices", "cisco"}
+# Fortive is an industrial holding company, so not here.
+TECH_EIGHTFOLD = {"autodesk", "lamresearch", "ralliant"}
 
 
 def tech_source(sid: str) -> bool:
     family, _, name = sid.partition(":")
-    return family in TECH_SOURCES or (family == "workday" and name in TECH_WORKDAY)
+    return (family in TECH_SOURCES or (family == "workday" and name in TECH_WORKDAY)
+            or (family == "eightfold" and name in TECH_EIGHTFOLD))
 
 
 def all_sources(only: set[str] | None):
@@ -1017,6 +1057,7 @@ def all_sources(only: set[str] | None):
          ("workingnomads", "Working Nomads", src_workingnomads, ()), ("muse", "The Muse", src_muse, ()),
          ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ())]
     s += [(f"neogov:{a}", n, src_neogov, (a, n)) for a, n in NEOGOV.items()]
+    s += [(f"eightfold:{e[0]}", e[3], src_eightfold, e) for e in EIGHTFOLD]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
     s += [(f"ashby:{t}", n, src_ashby, (t, n)) for t, n in ASHBY.items()]
