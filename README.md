@@ -74,6 +74,12 @@ a wrong token shows up as a failed source, it does not break the run.
    as Infra & IT, as before). "PM" in shift hours ("3 PM - 11 PM", "PM
    Shift", "AM & PM") and "TPM" the chip are not project managers. In a PM
    title "Manager" is the job, not the grade: "Product Manager" is mid.
+   **The rules only propose PM rows; Jev confirms them.** A pm row Jev has
+   not answered is held back (`jev.pm_unconfirmed` in `jobs.json`) and asked
+   again the next day, so with no Jev key the PM track is empty. Three review
+   rounds showed no word list separates a technology PM from a public-works,
+   utility or care PM ("engineering", "systems", "infrastructure" and
+   "security" mean both); Jev's track question names the PMs that are out.
 2. **Jev** (TypeSafe's typed classifier).
    Three typed questions per new posting: track (cyber / eng / pm / neither), level
    (intern / entry / mid / senior / staff / executive), clearance required. "Neither",

@@ -317,19 +317,33 @@ IS_DEPT = re.compile(r"(?:^|\s)IS(?=\s|$|,)")
 # and agile coaches were not asked for and stay out (NOT_ROLE has "scrum"). Delivery
 # managers are not part of it; an infrastructure delivery manager still reads as
 # Infra & IT, as it did before.
-PM_ROLE = re.compile(r"\b(project|program|programme|product)\s+(manager|mgr|lead|owner|coordinator)\b", re.I)
-PRODUCT = re.compile(r"\bproduct\s+(manager|mgr|lead|owner|management)\b", re.I)
+# The rules only propose a PM row; Jev confirms it (main() publishes no pm row
+# Jev has not answered). Three review rounds on 2026-11-03 showed no word list
+# tells a technology PM from a public-works, utility or care PM every time:
+# "engineering", "systems", "infrastructure" and "security" all mean both. Jev's
+# question names the PMs that are out. The rules still matter: a title wrongly
+# read as a PM is taken from cyber or eng, and every candidate costs a Jev call.
+PM_ROLE = re.compile(r"\b(project|program|programme|product)\s+(manager|mgr|lead|owner|coordinator)s?\b", re.I)
+PRODUCT = re.compile(r"\bproduct\s+(manager|mgr|lead|owner|management)s?\b", re.I)
 # A team name or an abbreviation is the job only when no other job noun sits
 # beside it. For a team name that means another discipline ("Software Engineer,
 # Project Management Tools"); PMO analysts and administrators are PMO roles. For
 # "PM"/"TPM" any other job noun means it is not the job ("TPM Security Consultant").
 # Whole words: "Engineering" and "Developer Platform" are teams a TPM works in.
 PM_TEAM = re.compile(r"\b(project|program|programme|product)\s+management\b|\bpmo\b", re.I)
-PM_ABBR = re.compile(r"\bT?PMs?\b")  # case-sensitive: "Sr. TPM", "PM, Identity", Amazon's "PM-T"
-NOT_PM_TEAM = re.compile(r"\b(engineers?|developers?|architects?|researchers?|scientists?|technicians?|designers?)\b"
+PM_ABBR = re.compile(r"\bT?PMs?\b")  # case-sensitive; strips the abbreviation for level_text
+# The abbreviation is the job only where a job title starts: "Sr. TPM, Cloud",
+# "PM, Identity", "Security TPM", Amazon's "PM-T". Elsewhere it is a shift ("SOC
+# Supervisor - PM") or a module ("SAP PM/EAM Functional Lead").
+PM_ABBR_LEAD = re.compile(r"^\W*((?i:sr\.?|senior|lead|principal|staff|group|associate|technical|it|security|cloud|"
+                          r"data|platform|infrastructure|identity|network|ai|ml|software|hardware|systems|enterprise|"
+                          r"product|program)\s+)*T?PMs?\b")
+NOT_PM_TEAM = re.compile(r"\b(engineers?|developers?|architects?|researchers?|scientists?|technicians?|designers?|"
+                         r"systems? administrators?|sysadmins?|writers?|assistants?|business partners?)\b"
                          r"(?!\s+(platform|infrastructure|tools|experience|productivity))", re.I)
 NOT_PM_ABBR = re.compile(NOT_PM_TEAM.pattern + r"|\b(analysts?|administrators?|specialists?|associates?|agents?|"
-                         r"operators?|consultants?|coordinators?|support|tier\s*\d|desk)\b", re.I)
+                         r"operators?|consultants?|coordinators?|support|tier\s*\d|desk|officers?|supervisors?|"
+                         r"guards?|facilitators?)\b", re.I)
 # "TPM" the security chip, or Total Productive Maintenance.
 TPM_CHIP = re.compile(r"pluton|firmware|secure boot|attestation|\bhsm\b|trusted platform|total productive|"
                       r"maintenance|\bchip|silicon", re.I)
@@ -337,13 +351,16 @@ TPM_CHIP = re.compile(r"pluton|firmware|secure boot|attestation|\bhsm\b|trusted 
 # "AM/PM", "AM & PM", "PM Shift", "(PM)", "Days/PM", "1800-0600 PM" (the 2026-11-03
 # reviews). Stripped before any PM test.
 CLOCK = re.compile(r"\b\d{1,4}(:\d{2})?\s*[AP]\.?M\b\.?|\bAM\s*[/&,-]\s*PM\b|\bPM\s*[/&,-]\s*AM\b|"
-                   r"\b(days?|nights?|evenings?|weekends?)\s*/\s*PM\b|\bPM\s+shifts?\b|\(\s*PM\s*\)", re.I)
+                   r"\b(swing|days?|nights?|evenings?|weekends?)\s*/\s*PM\b|"
+                   r"\bPM\s*/\s*(swing|noc|days?|nights?|evenings?|weekends?)\b|\bPM\s+shifts?\b|\(\s*PM\s*\)", re.I)
 
 # Three tiers decide a PM title (after the reviews of 2026-11-03):
 # 1. PM_HARD_NOT: never technology PMs, whatever else the title says.
 PM_HARD_NOT = re.compile(r"construction|facilit(y|ies)|marketing|\bsales\b|\blegal\b|counsel|attorney|paralegal|"
                          r"recruit|talent acquisition|scrum|agile coach|physical security|(?<!data )loss prevention|"
-                         r"security guard|\bcivil\b|structural|hvac|architectural|landscap", re.I)
+                         r"security guard|security officer|executive protection|fire alarm|\bcctv\b|"
+                         r"(electronic|aviation|airport|transit|port|campus|corporate|event|hospital) security|"
+                         r"\bcivil\b|structural|hvac|architectural|landscap", re.I)
 # 2. PM_CARE: patient-care PMs, out unless a health-IT word (PM_STRONG) says the
 #    job is the systems: "Clinical Applications Project Manager", "Nursing
 #    Informatics Project Manager", "Epic Project Manager (RN preferred)".
@@ -361,18 +378,25 @@ IT_ABBR = re.compile(r"\bIT\b|\bPM-T\b|\bTPMs?\b")
 # title catch "Food Insecurity", "Early Detection", "Knowledge Management" and
 # "Windows & Doors" (the second review).
 PM_TECH = re.compile(
-    r"\b(technical|technology|technologies|information|software|cyber\w*|infosec|appsec|devsecops|secops|soc|siem|"
+    r"\b(technical(?!\s+assistance)|technology|technologies|information (technology|systems?|security|services)|"
+    r"software|cyber\w*|infosec|appsec|devsecops|secops|soc|siem|"
     r"soar|iam|pam|grc|mfa|sso|dlp|edr|xdr|mdr|zero[- ]?trust|vulnerabilit\w*|vuln|penetration|pen ?test\w*|"
     r"red team|incident response|threat (intel\w*|detection|hunting|modeling)|insider threat|"
     r"detection (and|&) response|data loss prevention|identity (and|&) access|"
     r"identity (management|governance|platform|security|services|engineering)|privacy|isso|issm|fedramp|cmmc|"
-    r"nist|okta|sailpoint|cloud|infrastructure|platforms?|data|(?<!provider )network\w*|systems?|digital|"
-    r"engineering|devops|sre|site reliability|saas|apis?|ai|ml|erp|crm|sap|servicenow|salesforce|workday|"
+    r"nist|okta|sailpoint|cloud|(?<!green )(?<!water )(?<!charging )(?<!civil )infrastructure|platforms?|data|"
+    r"(?<!provider )network(s|ing)?(?!\s+(development|adequacy|contracting|relations))|systems?|digital|"
+    # Engineering only as a software discipline or an EPM, not "Electrical
+    # Engineering Project Manager" or a public-works "Engineering Project Manager".
+    r"(software|platform|cloud|security|data|infrastructure|systems|network|reliability|production|developer|"
+    r"machine learning|ml|ai) engineering|engineering program (manag\w*|lead)|"
+    r"devops|sre|site reliability|saas|apis?|ai|ml|erp|crm|sap|servicenow|salesforce|workday|"
     r"(enterprise|business|software|web|mobile|cloud|clinical) (applications?|apps)|apps|noc|data cent(er|re)s?|"
-    r"kubernetes|linux|active directory|endpoint|servers?|storage|virtualization|vmware|observability|help ?desk|"
-    r"service desk|desktop|end.user|telecom\w*|voip|firewalls?|disaster recovery|ehr|emr|epic|cerner|meditech|"
-    r"informatics|eclinicalworks|allscripts|athenahealth|oracle health|web)\b|"
-    r"(?<!food )(?<!water )(?<!income )(?<!social )(?<!housing )(?<!economic )(?<!physical )(?<!homeland )\bsecurity\b|"
+    r"kubernetes|linux|active directory|endpoint|servers?|(?<!energy )(?<!battery )storage|virtualization|vmware|"
+    r"observability|help ?desk|service desk|desktop|end.user|telecom\w*|voip|firewalls?|disaster recovery|ehr|emr|"
+    r"epic|cerner|meditech|informatics|eclinicalworks|allscripts|athenahealth|oracle health|web)\b|"
+    r"(?<!food )(?<!water )(?<!income )(?<!social )(?<!housing )(?<!economic )(?<!physical )(?<!homeland )"
+    r"(?<!financial )(?<!energy )(?<!retirement )(?<!nutrition )(?<!employment )\bsecurity\b|"
     r"[-,]\s*tech\b", re.I)  # Amazon's "Sr. Product Manager - Tech"
 # A program or project manager in operations is not technology work, even at a
 # technology employer (Intel's supply chain, Amazon's grocery logistics). Product
@@ -388,7 +412,7 @@ def is_pm(title: str) -> bool:
         return True
     if PM_TEAM.search(t) and not NOT_PM_TEAM.search(t):
         return True
-    return bool(PM_ABBR.search(t) and not NOT_PM_ABBR.search(t) and not TPM_CHIP.search(t))
+    return bool(PM_ABBR_LEAD.search(t) and not NOT_PM_ABBR.search(t) and not TPM_CHIP.search(t))
 
 
 def pm_track(title: str, tech_employer: bool = False, sec_topic: bool = False) -> bool:
@@ -429,8 +453,13 @@ def settle_level(title: str, rule_track_: str, rule_level_: str, jev_track: str,
     return rule_level_ if (STAFF.search(lt) or SENIOR.search(lt) or ENTRY.search(lt)) else jev_level
 
 
-def apply_jev(p: dict, ans: dict) -> bool:
-    """Fold Jev's answer into a candidate. False: Jev says it is not for this page."""
+def apply_jev(p: dict, ans: dict | None) -> bool:
+    """Fold Jev's answer (None: none yet) into a candidate. False: not for the page
+    today, because Jev says so, or because it is a pm row Jev has not confirmed
+    (see PM_ROLE); that row is asked again tomorrow."""
+    p["jev"] = ans is not None
+    if ans is None:
+        return p["track"] != "pm"
     if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
         return False
     # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
@@ -1148,7 +1177,7 @@ def main() -> int:
             cands[k] = p
 
     # Jev refines track and level on postings it has not seen.
-    jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "tokens": 0, "error": None}
+    jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "tokens": 0, "error": None}
     key = os.environ.get("TYPESAFE_API_KEY", "").strip()
     if args.no_jev or not key:
         jev_stats["error"] = "skipped" if args.no_jev else "no TYPESAFE_API_KEY"
@@ -1167,13 +1196,9 @@ def main() -> int:
     for k in list(cands):
         p = cands[k]
         ans = jev_cache.get(jev_key(p))
-        if not ans:
-            p["jev"] = False
-            continue
-        p["jev"] = True
         if not apply_jev(p, ans):
             del cands[k]
-            jev_stats["dropped"] += 1
+            jev_stats["dropped" if ans else "pm_unconfirmed"] += 1
 
     # Assemble: today's postings, plus a failed source's postings within grace.
     jobs: dict[str, dict] = {}

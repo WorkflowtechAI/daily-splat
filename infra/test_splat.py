@@ -141,6 +141,16 @@ TRACK = [
     ("Firmware Security Engineer - TPM", "cyber"),
     ("TPM Engineer", None),
     ("Delivery Manager, Cloud", "eng"),                 # not a PM; Infra & IT as before
+    # "PM" or a PM team name that is not the job (the third review).
+    ("SOC Supervisor - PM", "cyber"),
+    ("Network Operations Center Supervisor - PM/Nights", "eng"),
+    ("Data Center Operations Manager - PM", "eng"),
+    ("PM Security Officer", None),
+    ("SAP PM/EAM Functional Lead", None),
+    ("TPM Facilitator", None),
+    ("Systems Administrator, Project Management Tools", "eng"),
+    ("Technical Writer, Product Management", None),
+    ("Help Desk Lead (2 PM - 10 PM)", "eng"),            # only CLOCK keeps this one out of pm
     ("Semiconductor Equipment Engineer", None),
     ("Sr. Design Validation Product Engineer, DEG", None),
 ]
@@ -258,6 +268,22 @@ TRACK_PM = [
     ("Hardware Security Specialist - TPM", False, "cyber"),          # the chip; cyber as before
     ("TPM Specialist", True, None),
     ("TPM Coordinator", True, None),
+    # The third review: engineering disciplines, and words with a non-IT sense.
+    ("Engineering Project Manager - Public Works", False, None),
+    ("Electrical Engineering Project Manager", False, None),
+    ("Engineering Program Manager", False, "pm"),
+    ("Aviation Security Program Manager", False, None),
+    ("Security Officer - Swing/PM", False, None),
+    ("Financial Security Program Manager", False, None),
+    ("Energy Storage Program Manager", False, None),
+    ("Green Infrastructure Program Manager", False, None),
+    ("Technical Assistance Program Manager", False, None),
+    ("Records and Information Management Program Manager", False, None),
+    ("Network Development Program Manager", False, None),
+    ("Executive Business Partner, Product Management", True, None),
+    ("Product Managers - Cloud Security", False, "pm"),
+    ("Security Program Managers", False, "pm"),
+    ("Security TPM", False, "pm"),
     # A TPM outranks an operations word; a plain program manager does not (Amazon, live 2026-11-03).
     ("Principal Technical Program Manager, Customer Logistics Security (CLS)", False, "pm"),
     ("Senior Program Manager, Business Operations, Customer Logistics Security (CLS)", False, None),
@@ -276,6 +302,9 @@ APPLY_JEV = [
     ("Network Manager", "eng", "senior", "eng", "mid", ("eng", "senior")),
     ("DevOps Engineer", "eng", "mid", "eng", "entry", ("eng", "entry")),
     ("Program Manager, Store Operations", "pm", "mid", "neither", "mid", None),
+    # No answer from Jev yet: a pm row waits, cyber and eng rows publish on the rules.
+    ("Food Systems Program Manager", "pm", "mid", None, None, None),
+    ("SOC Analyst II", "cyber", "mid", None, None, ("cyber", "mid")),
 ]
 
 # Only technology employers' own boards are tech sources (not Amazon, the
@@ -411,7 +440,7 @@ def main() -> int:
             print(f"tech_source({sid!r}) = {splat.tech_source(sid)!r}, want {want!r}")
     for title, rt, rl, jt, jl, want in APPLY_JEV:
         p = {"title": title, "track": rt, "level": rl, "clearance": False}
-        kept = splat.apply_jev(p, {"track": jt, "level": jl, "clearance": False})
+        kept = splat.apply_jev(p, {"track": jt, "level": jl, "clearance": False} if jt else None)
         got = (p["track"], p["level"]) if kept else None
         if got != want:
             bad += 1
