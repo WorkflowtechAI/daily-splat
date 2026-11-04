@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""The daily splat: cybersecurity and the infra and IT around it, entry to senior,
-in the Pacific Northwest or remote from it. Built for the job-hunt cabal.
+"""The daily splat: cybersecurity, the infra and IT around it, and the project,
+program and product managers of technology work, entry to senior, in the Pacific
+Northwest or remote from it. Built for the job-hunt cabal.
 
 Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
 
@@ -8,7 +9,8 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
      Workday, Amazon) and the open aggregators (Remotive, RemoteOK, Jobicy,
      Himalayas, Working Nomads, The Muse) return what is open today; Foorilla
      (keyed) returns the last FOORILLA_DAYS days with an `expired` flag.
-  2. FILTERS with rules: a title that reads as security or engineering, a level
+  2. FILTERS with rules: a title that reads as security, infra engineering or a
+     technology project, program or product manager, a level
      that is not intern/junior/director, and a location in WA/OR/ID or remote
      within the US.
   3. ASKS JEV (TypeSafe's typed classifier) what track and level each NEW
@@ -182,7 +184,8 @@ NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     r"\bsales\b(?! engineer)|account executive|account manager|business development|marketing|"
     r"recruit|talent|counsel|attorney|paralegal|legal|customer success manager|\bsdr\b|\bbdr\b|"
     r"security guard|(?<!information )(?<!systems )(?<!system )security officer(?!.*\bisso\b)|physical security|loss prevention|securities|social security|"
-    r"sourcing|procurement|program manager(?!.*secur)|product manager|project manager|designer|"
+    # Project, program and product managers are their own track since 2026-11-03 (PM_ROLE below).
+    r"sourcing|procurement|designer|"
     r"\bux\b|writer|scrum|data analyst|business analyst|"
     r"mechanical|electrical|civil|structural|chemical|manufacturing|process engineer|field service|"
     r"maintenance|facilities|hvac|construction|industrial|environmental|geotechnical|biomedical|"
@@ -308,11 +311,177 @@ SEC_ROLE = re.compile(r"engineer|architect|analyst|specialist|consultant|officer
 # Case-sensitive, so the English word "is" never counts.
 IS_DEPT = re.compile(r"(?:^|\s)IS(?=\s|$|,)")
 
+# The PM track (2026-11-03, asked for by the group): project, program and
+# technical program managers, project coordinators and PMO roles, and product
+# managers and owners, when the work is technology, IT or security. Scrum masters
+# and agile coaches were not asked for and stay out (NOT_ROLE has "scrum"). Delivery
+# managers are not part of it; an infrastructure delivery manager still reads as
+# Infra & IT, as it did before.
+# The rules only propose a PM row; Jev confirms it (main() publishes no pm row
+# Jev has not answered). Three review rounds on 2026-11-03 showed no word list
+# tells a technology PM from a public-works, utility or care PM every time:
+# "engineering", "systems", "infrastructure" and "security" all mean both. Jev's
+# question names the PMs that are out. The rules still matter: a title wrongly
+# read as a PM is taken from cyber or eng, and every candidate costs a Jev call.
+PM_ROLE = re.compile(r"\b(project|program|programme|product)\s+(manager|mgr|lead|owner|coordinator)s?\b", re.I)
+PRODUCT = re.compile(r"\bproduct\s+(manager|mgr|lead|owner|management)s?\b", re.I)
+# A team name or an abbreviation is the job only when no other job noun sits
+# beside it. For a team name that means another discipline ("Software Engineer,
+# Project Management Tools"); PMO analysts and administrators are PMO roles. For
+# "PM"/"TPM" any other job noun means it is not the job ("TPM Security Consultant").
+# Whole words: "Engineering" and "Developer Platform" are teams a TPM works in.
+PM_TEAM = re.compile(r"\b(project|program|programme|product)\s+management\b|\bpmo\b", re.I)
+PM_ABBR = re.compile(r"\bT?PMs?\b")  # case-sensitive; strips the abbreviation for level_text
+# The abbreviation is the job only where a job title starts: "Sr. TPM, Cloud",
+# "PM, Identity", "Security TPM", Amazon's "PM-T". Elsewhere it is a shift ("SOC
+# Supervisor - PM") or a module ("SAP PM/EAM Functional Lead").
+PM_ABBR_LEAD = re.compile(r"^\W*((?i:sr\.?|senior|lead|principal|staff|group|associate|technical|it|security|cloud|"
+                          r"data|platform|infrastructure|identity|network|ai|ml|software|hardware|systems|enterprise|"
+                          r"product|program)\s+)*T?PMs?\b")
+NOT_PM_TEAM = re.compile(r"\b(engineers?|developers?|architects?|researchers?|scientists?|technicians?|designers?|"
+                         r"systems? administrators?|sysadmins?|writers?|assistants?|business partners?)\b"
+                         r"(?!\s+(platform|infrastructure|tools|experience|productivity))", re.I)
+NOT_PM_ABBR = re.compile(NOT_PM_TEAM.pattern + r"|\b(analysts?|administrators?|specialists?|associates?|agents?|"
+                         r"operators?|consultants?|coordinators?|support|tier\s*\d|desk|officers?|supervisors?|"
+                         r"guards?|facilitators?)\b", re.I)
+# "TPM" the security chip, or Total Productive Maintenance.
+TPM_CHIP = re.compile(r"pluton|firmware|secure boot|attestation|\bhsm\b|trusted platform|total productive|"
+                      r"maintenance|\bchip|silicon", re.I)
+# Shift hours are not project managers: "SOC Analyst (3 PM - 11 PM)", "2:30PM",
+# "AM/PM", "AM & PM", "PM Shift", "(PM)", "Days/PM", "1800-0600 PM" (the 2026-11-03
+# reviews). Stripped before any PM test.
+CLOCK = re.compile(r"\b\d{1,4}(:\d{2})?\s*[AP]\.?M\b\.?|\bAM\s*[/&,-]\s*PM\b|\bPM\s*[/&,-]\s*AM\b|"
+                   r"\b(swing|days?|nights?|evenings?|weekends?)\s*/\s*PM\b|"
+                   r"\bPM\s*/\s*(swing|noc|days?|nights?|evenings?|weekends?)\b|\bPM\s+shifts?\b|\(\s*PM\s*\)", re.I)
 
-def rule_track(title: str, sec_topic: bool = False) -> str | None:
+# Three tiers decide a PM title (after the reviews of 2026-11-03):
+# 1. PM_HARD_NOT: never technology PMs, whatever else the title says.
+PM_HARD_NOT = re.compile(r"construction|facilit(y|ies)|marketing|\bsales\b|\blegal\b|counsel|attorney|paralegal|"
+                         r"recruit|talent acquisition|scrum|agile coach|physical security|(?<!data )loss prevention|"
+                         r"security guard|security officer|executive protection|fire alarm|\bcctv\b|"
+                         r"(electronic|aviation|airport|transit|port|campus|corporate|event|hospital) security|"
+                         r"\bcivil\b|structural|hvac|architectural|landscap", re.I)
+# 2. PM_CARE: patient-care PMs, out unless a health-IT word (PM_STRONG) says the
+#    job is the systems: "Clinical Applications Project Manager", "Nursing
+#    Informatics Project Manager", "Epic Project Manager (RN preferred)".
+PM_CARE = re.compile(r"clinical|nurs(e|es|ing)|pharmac|\brn\b|patient care|surgical|dental|behavioral health|"
+                     r"mental health", re.I)
+PM_STRONG = re.compile(r"information (technology|systems|services|security)|clinical (applications?|apps|systems?|informatics)|"
+                       r"technical (program|project|product)|"  # a TPM is technical by definition
+                       r"\b(ehr|emr|epic|cerner|meditech|informatics|eclinicalworks|allscripts|athenahealth|"
+                       r"software|cyber\w*|cloud|sap|servicenow|erp)\b", re.I)
+IT_ABBR = re.compile(r"\bIT\b|\bPM-T\b|\bTPMs?\b")
+# 3. The rest of NOT_ROLE (manufacturing, warehouse, field service, electrical...)
+#    gives way to any technology word: "Industrial Cybersecurity Program Manager",
+#    "IT Project Manager / Business Analyst", "Cloud Data Warehouse Program Manager".
+# Technology words. Specific phrases, not CYBER's and INFRA's stems, which in a PM
+# title catch "Food Insecurity", "Early Detection", "Knowledge Management" and
+# "Windows & Doors" (the second review).
+PM_TECH = re.compile(
+    r"\b(technical(?!\s+assistance)|technology|technologies|information (technology|systems?|security|services)|"
+    r"software|cyber\w*|infosec|appsec|devsecops|secops|soc|siem|"
+    r"soar|iam|pam|grc|mfa|sso|dlp|edr|xdr|mdr|zero[- ]?trust|vulnerabilit\w*|vuln|penetration|pen ?test\w*|"
+    r"red team|incident response|threat (intel\w*|detection|hunting|modeling)|insider threat|"
+    r"detection (and|&) response|data loss prevention|identity (and|&) access|"
+    r"identity (management|governance|platform|security|services|engineering)|privacy|isso|issm|fedramp|cmmc|"
+    r"nist|okta|sailpoint|cloud|(?<!green )(?<!water )(?<!charging )(?<!civil )infrastructure|platforms?|data|"
+    r"(?<!provider )network(s|ing)?(?!\s+(development|adequacy|contracting|relations))|systems?|digital|"
+    # Engineering only as a software discipline or an EPM, not "Electrical
+    # Engineering Project Manager" or a public-works "Engineering Project Manager".
+    r"(software|platform|cloud|security|data|infrastructure|systems|network|reliability|production|developer|"
+    r"machine learning|ml|ai) engineering|engineering program (manag\w*|lead)|"
+    r"devops|sre|site reliability|saas|apis?|ai|ml|erp|crm|sap|servicenow|salesforce|workday|"
+    r"(enterprise|business|software|web|mobile|cloud|clinical) (applications?|apps)|apps|noc|data cent(er|re)s?|"
+    r"kubernetes|linux|active directory|endpoint|servers?|(?<!energy )(?<!battery )storage|virtualization|vmware|"
+    r"observability|help ?desk|service desk|desktop|end.user|telecom\w*|voip|firewalls?|disaster recovery|ehr|emr|"
+    r"epic|cerner|meditech|informatics|eclinicalworks|allscripts|athenahealth|oracle health|web)\b|"
+    r"(?<!food )(?<!water )(?<!income )(?<!social )(?<!housing )(?<!economic )(?<!physical )(?<!homeland )"
+    r"(?<!financial )(?<!energy )(?<!retirement )(?<!nutrition )(?<!employment )\bsecurity\b|"
+    r"[-,]\s*tech\b", re.I)  # Amazon's "Sr. Product Manager - Tech"
+# A program or project manager in operations is not technology work, even at a
+# technology employer (Intel's supply chain, Amazon's grocery logistics). Product
+# managers are exempt: Zillow's "Product Manager, Real Estate Transactions" builds software.
+PM_NOT_TECH = re.compile(r"supply chain|logistics|grocery|retail|merchandis|apparel|footwear|real estate|workplace|"
+                         r"health (and|&) safety|workforce management|labor and scheduling|perishable|fulfillment|"
+                         r"warehouse|transportation", re.I)
+
+
+def is_pm(title: str) -> bool:
+    t = CLOCK.sub(" ", title)
+    if PM_ROLE.search(t):
+        return True
+    if PM_TEAM.search(t) and not NOT_PM_TEAM.search(t):
+        return True
+    return bool(PM_ABBR_LEAD.search(t) and not NOT_PM_ABBR.search(t) and not TPM_CHIP.search(t))
+
+
+def pm_track(title: str, tech_employer: bool = False, sec_topic: bool = False) -> bool:
+    """A project, program or product manager of technology work. sec_topic: filed
+    under Foorilla's infosec topics, so a security PM whatever the title says."""
+    if not is_pm(title):
+        return False
+    t = CLOCK.sub(" ", title)
+    if PM_HARD_NOT.search(t):
+        return False
+    strong = bool(PM_STRONG.search(t) or IT_ABBR.search(t) or IS_DEPT.search(t))
+    if PM_CARE.search(t) and not strong:
+        return False
+    tech = strong or bool(PM_TECH.search(t))
+    if NOT_ROLE.search(PM_CARE.sub(" ", t)) and not tech:
+        return False
+    if not PRODUCT.search(t) and PM_NOT_TECH.search(t) and not strong:
+        return False
+    return tech or sec_topic or tech_employer
+
+
+def level_text(title: str, track: str | None) -> str:
+    """The title as the level rules should read it. In a PM title "Manager" is
+    the job, not a grade: "Product Manager" is mid, "Senior Product Manager" senior."""
+    if track != "pm":
+        return title
+    t = CLOCK.sub(" ", title)
+    return PM_ABBR.sub(" ", PM_TEAM.sub(" ", PM_ROLE.sub(" ", t)))
+
+
+def settle_level(title: str, rule_track_: str, rule_level_: str, jev_track: str, jev_level: str) -> str:
+    """Jev's level, unless the title states its level. Whether "Manager" states a
+    level depends on the job: if the rules or Jev call it a PM, "Manager" is the
+    job, so a "Technical Program Manager" the rules filed pm/mid and Jev calls
+    eng/senior is senior, and a "Product Manager" filed cyber/senior that Jev
+    calls pm/mid is mid."""
+    lt = level_text(title, "pm" if "pm" in (rule_track_, jev_track) else rule_track_)
+    return rule_level_ if (STAFF.search(lt) or SENIOR.search(lt) or ENTRY.search(lt)) else jev_level
+
+
+def apply_jev(p: dict, ans: dict | None) -> bool:
+    """Fold Jev's answer (None: none yet) into a candidate. False: not for the page
+    today, because Jev says so, or because it is a pm row Jev has not confirmed
+    (see PM_ROLE); that row is asked again tomorrow."""
+    p["jev"] = ans is not None
+    if ans is None:
+        return p["track"] != "pm"
+    if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
+        return False
+    # Jev may move a row into pm only when the title is a PM job: in the audit of
+    # 2026-11-03 it filed "Cloud Architect, Product Management" and "Robotics
+    # Systems Engineer III" there. Otherwise the rules' track stands.
+    track = ans["track"] if ans["track"] != "pm" or is_pm(p["title"]) else p["track"]
+    # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
+    p["level"] = settle_level(p["title"], p["track"], p["level"], track, ans["level"])
+    p["track"] = track
+    p["clearance"] = p["clearance"] or ans["clearance"]
+    return True
+
+
+def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False) -> str | None:
     """sec_topic: the source already filed it under infosec (Foorilla topics 102/26).
     Then a role-shaped title is enough ("Principal Solutions Engineer" at a
-    security vendor), and Jev has the final say."""
+    security vendor), and Jev has the final say. tech_employer: the posting is on
+    a technology company's own board, so a PM there is tech work (see tech_source).
+    A PM title that is not technology work is out, as every PM title was before
+    the PM track."""
+    if is_pm(title):
+        return "pm" if pm_track(title, tech_employer, sec_topic) else None
     if IS_DEPT.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
         return "cyber" if CYBER.search(title) else "eng"
     if NOT_ROLE.search(title):
@@ -324,10 +493,11 @@ def rule_track(title: str, sec_topic: bool = False) -> str | None:
     return None
 
 
-def rule_level(title: str, hint: str | None = None) -> str | None:
+def rule_level(title: str, hint: str | None = None, track: str | None = None) -> str | None:
     """'entry' | 'mid' | 'senior' | 'staff' | None (intern or executive: out)."""
     if INTERN.search(title) or TOO_SENIOR.search(title) or hint == "EX":
         return None
+    title = level_text(title, track)
     if ENTRY_STRONG.search(title):
         return "entry"
     if ENTRY_WEAK.search(title) and not (STAFF.search(title) or SENIOR.search(title)):
@@ -486,7 +656,9 @@ def _wd_days(s: str) -> str | None:
 
 
 WD_QUERIES = ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
-              "support", "administrator", "help desk")
+              "support", "administrator", "help desk",
+              # The PM track (2026-11-03). 'local' and 'all_oregon' tenants read every job and need no keyword.
+              "project manager", "program manager", "product manager")
 
 
 def src_workday(tenant: str, host: str, site: str, name: str, mode: str = "search") -> list[dict]:
@@ -539,7 +711,11 @@ def src_amazon() -> list[dict]:
     for state in ("Washington", "Oregon", "Idaho"):
         for q in ("security", "systems engineer", "systems development engineer", "devops",
                   "site reliability", "cloud engineer", "infrastructure", "network engineer", "cloud support engineer",
-                  "it support", "data center technician", "system administrator"):
+                  "it support", "data center technician", "system administrator",
+                  # The PM track. Not plain "program manager": Amazon's are mostly
+                  # operations and logistics, thousands of them in Washington alone.
+                  "technical program manager", "product manager technical", "security program manager",
+                  "it project manager"):
             offset = 0
             while offset < 1000:
                 params = {"base_query": q, "normalized_country_code[]": "USA", "normalized_state_name[]": state,
@@ -586,7 +762,10 @@ def src_foorilla() -> list[dict]:
               # The entry lane: where sysadmin and support careers start.
               "help desk", "service desk", "desktop support", "technical support", "it support",
               "support engineer", "system administrator", "systems administrator", "noc", "it specialist",
-              "data center technician"):
+              "data center technician",
+              # The PM track (2026-11-03).
+              "technical program manager", "security program manager", "it project manager", "project manager",
+              "program manager", "product manager", "product owner"):
         queries.append({"country": 238, "has_remote": "true", "title": t, "published_after": remote_since})
     out, seen = [], set()
     for q in queries:
@@ -636,7 +815,8 @@ def src_workable() -> list[dict]:
     out, seen = [], set()
     for loc in ("Portland, Oregon", "Salem, Oregon", "Eugene, Oregon", "Bend, Oregon", "Seattle, Washington"):
         for q in ("security", "cyber", "systems administrator", "network engineer", "cloud engineer", "devops",
-                  "help desk", "IT support", "infrastructure", "IT specialist"):
+                  "help desk", "IT support", "infrastructure", "IT specialist",
+                  "project manager", "program manager", "product manager"):
             token = None
             for _ in range(5):
                 params = {"query": q, "location": loc, **({"pageToken": token} if token else {})}
@@ -797,7 +977,9 @@ def src_muse() -> list[dict]:
             params = [("page", page), ("location", loc), ("level", "Entry Level"), ("level", "Mid Level"),
                       ("level", "Senior Level"),
                       ("category", "Software Engineering"), ("category", "Computer and IT"),
-                      ("category", "Data and Analytics"), ("category", "IT")]
+                      ("category", "Data and Analytics"), ("category", "IT"),
+                      # The PM track; both names checked against the API on 2026-11-03.
+                      ("category", "Project Management"), ("category", "Product Management")]
             d = http_json("https://www.themuse.com/api/public/jobs?" + urllib.parse.urlencode(params))
             for j in d.get("results", []):
                 locs = "; ".join(x.get("name", "") for x in j.get("locations") or [])
@@ -809,6 +991,23 @@ def src_muse() -> list[dict]:
                 break
             time.sleep(0.4)
     return out
+
+
+# Technology employers' own boards, for the PM track: a "Product Manager,
+# Payments" on Stripe's board is technology work, the same title at Nike or the
+# State of Oregon has to say so. Every Greenhouse, Lever and Ashby board above is
+# a tech company's. Not Amazon (its program managers are mostly operations and
+# logistics), not the aggregators (they carry any employer, and a copy there
+# must not pass where the employer's own board would not), and not the telecoms
+# (T-Mobile's and Astound's PMs are mostly retail and care).
+TECH_SOURCES = {"greenhouse", "lever", "ashby"}
+TECH_WORKDAY = {"crowdstrike", "zillow", "ffive", "intel", "micron", "salesforce", "pax8inc", "acronis",
+                "latticesemi", "flir", "autodesk", "hp", "nvidia", "analogdevices", "cisco"}
+
+
+def tech_source(sid: str) -> bool:
+    family, _, name = sid.partition(":")
+    return family in TECH_SOURCES or (family == "workday" and name in TECH_WORKDAY)
 
 
 def all_sources(only: set[str] | None):
@@ -839,16 +1038,26 @@ JEV_QUESTIONS = {
                "network, systems, identity, endpoint or IT infrastructure engineering or administration, "
                "including system administrators, IT support, help desk, desktop support, NOC, and "
                "technical support engineers who troubleshoot systems.",
+        "pm": "Project, program or product management of technology work: IT and software project managers, "
+              "program and technical program managers (TPM), security program managers, project coordinators "
+              "and PMO roles on technology projects, and product managers or product owners of software, "
+              "platform, data or security products.",
         "neither": "Anything else, including general application or product software development (frontend, "
                    "backend, full-stack, mobile, ML, data, games) whose main job is not infrastructure or security; "
                    "customer service or call-center support that is not technical; "
                    "sales, marketing, recruiting, analysts who do not engineer, "
-                   "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering."}},
+                   "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering; "
+                   "project, program or product managers whose work is not technology (construction, facilities, "
+                   "data center construction or build-out, water or energy programs, clinical care, marketing, "
+                   "merchandise, apparel, supply chain, customer experience or support operations, social impact "
+                   "or philanthropy, a health plan's provider network, or other business operations); "
+                   "scrum masters and agile coaches."}},
     "level": {"type": "choice", "instructions": "What seniority does this role hire at?", "criteria": {
         "intern": "Internship, co-op, or summer program.",
         "entry": "Entry level: new grad, junior, associate, apprentice, tier 1, level I, or about 0-2 years asked.",
         "mid": "Mid-level: a few years of experience, level II, no senior title.",
-        "senior": "Senior, lead, level III, or a manager of a team.",
+        "senior": "Senior, lead, level III, or a people manager of a team. A project, program or product "
+                  "manager title alone is not senior.",
         "staff": "Staff, principal, distinguished, or senior architect.",
         "executive": "Director, VP, head of, or C-level."}},
     "clearance": {"type": "noul", "instructions": "Does this role require a US government security clearance?"},
@@ -858,8 +1067,9 @@ JEV_QUESTIONS = {
 # Bump when JEV_QUESTIONS changes meaning, so cached answers to the old
 # questions are not read as answers to the new ones. v2 (2026-10-03): "eng"
 # narrowed from all engineering to infrastructure next to security. v3
-# (2026-10-04): "eng" takes IT support and help desk; level has "intern".
-JEV_VERSION = "v3"
+# (2026-10-04): "eng" takes IT support and help desk; level has "intern". v4
+# (2026-11-03): track has "pm"; "neither" no longer covers technology PMs.
+JEV_VERSION = "v4"
 
 
 def jev_key(p: dict) -> str:
@@ -879,7 +1089,7 @@ def ask_jev(p: dict, key: str) -> dict | None:
     track = (a.get("track") or {}).get("choice")
     level = (a.get("level") or {}).get("choice")
     clr = (a.get("clearance") or {}).get("noul")
-    if track not in ("cyber", "eng", "neither") or level not in ("intern", "entry", "mid", "senior", "staff", "executive"):
+    if track not in ("cyber", "eng", "pm", "neither") or level not in ("intern", "entry", "mid", "senior", "staff", "executive"):
         return {"error": "malformed answer"}
     return {"track": track, "level": level, "clearance": isinstance(clr, (int, float)) and clr >= 0.6,
             "tokens": (d.get("usage") or {}).get("input_tokens", 0)}
@@ -958,8 +1168,8 @@ def main() -> int:
         a = age_days(p["posted"])
         if a is not None and a > (REMOTE_MAX_AGE_DAYS if w == "remote" else MAX_AGE_DAYS):
             continue
-        track = rule_track(p["title"], p["sec_topic"])
-        level = rule_level(p["title"], p["hint"])
+        track = rule_track(p["title"], p["sec_topic"], tech_source(sid))
+        level = rule_level(p["title"], p["hint"], track)
         if not track or not level:
             continue
         p.update(where=w, track=track, level=level, source=sid,
@@ -973,7 +1183,7 @@ def main() -> int:
             cands[k] = p
 
     # Jev refines track and level on postings it has not seen.
-    jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "tokens": 0, "error": None}
+    jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "tokens": 0, "error": None}
     key = os.environ.get("TYPESAFE_API_KEY", "").strip()
     if args.no_jev or not key:
         jev_stats["error"] = "skipped" if args.no_jev else "no TYPESAFE_API_KEY"
@@ -992,19 +1202,9 @@ def main() -> int:
     for k in list(cands):
         p = cands[k]
         ans = jev_cache.get(jev_key(p))
-        if not ans:
-            p["jev"] = False
-            continue
-        p["jev"] = True
-        if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
+        if not apply_jev(p, ans):
             del cands[k]
-            jev_stats["dropped"] += 1
-            continue
-        p["track"] = ans["track"]
-        # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
-        if not (STAFF.search(p["title"]) or SENIOR.search(p["title"]) or ENTRY.search(p["title"])):
-            p["level"] = ans["level"]
-        p["clearance"] = p["clearance"] or ans["clearance"]
+            jev_stats["dropped" if ans else "pm_unconfirmed"] += 1
 
     # Assemble: today's postings, plus a failed source's postings within grace.
     jobs: dict[str, dict] = {}
@@ -1049,6 +1249,7 @@ def main() -> int:
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
+                   "pm": sum(1 for j in rows if j["track"] == "pm"),
                    # "pnw" stays all three states so old counts and links mean what they did.
                    "pnw": sum(1 for j in rows if j["where"] in ("oregon", "pnw")),
                    "oregon": sum(1 for j in rows if j["where"] == "oregon"),

@@ -2,7 +2,8 @@
 
 `https://iambraun.com/cv/job-sources/daily-splat/` is a tiny job aggregator for
 the job-hunt cabal: cybersecurity openings plus the infrastructure engineering
-next to them (cloud, network, systems, DevOps, sysadmin, IT support), entry to senior
+next to them (cloud, network, systems, DevOps, sysadmin, IT support), and the
+project, program and product managers of technology work, entry to senior
 level, in Washington, Oregon and Idaho or remote within the US. It is rebuilt
 every morning, and a posting its source stopped listing is gone that day.
 
@@ -49,8 +50,38 @@ a wrong token shows up as a failed source, it does not break the run.
    engineer title and the group's verdict was "mostly SWE roles, not infosec".
    Sales, recruiting, hardware, mechanical, civil and the like are out. Level: entry (junior, associate, `Engineer I`, tier 1, new grad, apprentice) through staff/principal; internships and director/VP/head-of/C-level are out. The entry lane and the IT-support titles were added 2026-10-04 for a member looking for entry sysadmin, cyber and support-engineer roles.
    Recruiter and staffing reposts are dropped: the page lists employers.
+   The PM track (added 2026-11-03 at the group's request): project, program
+   and technical program managers, project coordinators, and product managers
+   and owners, when the work is technology, IT or security (`pm_track`). The
+   title has to name the work (`PM_TECH`: IT, software, cloud, data, platform,
+   SOC, IAM, GRC, Epic...), unless the posting is on a technology employer's
+   own board (`TECH_SOURCES` and `TECH_WORKDAY`: the Greenhouse, Lever and Ashby
+   boards and the tech Workday tenants), where "Senior Product Manager,
+   Payments" is tech work as written, or Foorilla filed it under infosec.
+   Amazon, the aggregators and the telecoms are not tech sources: their PMs
+   are mostly operations, retail or any employer's. Three tiers of exclusion:
+   construction, facilities, marketing, sales, legal, recruiting, scrum and
+   physical-security PMs are always out (`PM_HARD_NOT`); patient-care PMs are
+   out unless a health-IT word says the job is the systems ("Clinical
+   Applications Project Manager", "Nursing Informatics", Epic, Cerner); the
+   rest of the excluded words (manufacturing, warehouse, field service...) give
+   way to any technology word ("Industrial Cybersecurity Program Manager"). An
+   operations program manager (supply chain, logistics, retail) is out even at
+   a tech employer unless the title is a TPM or names IT; a product manager
+   there is not. A PM title that is not technology work is out, as every PM
+   title was before. Scrum masters and agile coaches are out; delivery
+   managers are not part of the PM track (one with an infra word still reads
+   as Infra & IT, as before). "PM" in shift hours ("3 PM - 11 PM", "PM
+   Shift", "AM & PM") and "TPM" the chip are not project managers. In a PM
+   title "Manager" is the job, not the grade: "Product Manager" is mid.
+   **The rules only propose PM rows; Jev confirms them.** A pm row Jev has
+   not answered is held back (`jev.pm_unconfirmed` in `jobs.json`) and asked
+   again the next day, so with no Jev key the PM track is empty. Three review
+   rounds showed no word list separates a technology PM from a public-works,
+   utility or care PM ("engineering", "systems", "infrastructure" and
+   "security" mean both); Jev's track question names the PMs that are out.
 2. **Jev** (TypeSafe's typed classifier).
-   Three typed questions per new posting: track (cyber / eng / neither), level
+   Three typed questions per new posting: track (cyber / eng / pm / neither), level
    (intern / entry / mid / senior / staff / executive), clearance required. "Neither",
    "intern" and "executive" drop the posting. A title that states its level
    keeps the rule's level. About 800 input tokens per posting at $0.042 per
