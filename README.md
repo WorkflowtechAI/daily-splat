@@ -26,8 +26,8 @@ live the next morning. Contributions are welcome: see **Contributing** below.
 
 | kind | sources | how removal works |
 |---|---|---|
-| Company boards | Greenhouse, Lever, Ashby, Workday tenants and Amazon, listed at the top of `splat.py` | the board stops returning the job |
-| Open aggregators | Remotive, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse | the feed stops returning the job |
+| Company boards | Greenhouse, Lever, Ashby, Workday tenants, Eightfold (Autodesk, Lam Research, Tektronix, Fortive), Amazon, Providence (Oracle HCM) and the Portland-area governments on NEOGOV (City of Portland, TriMet, Port of Portland, Beaverton, Metro), listed in `splat.py` | the board stops returning the job |
+| Open aggregators | Remotive (its API now returns its ~11 newest jobs whatever is asked), RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse, Workable search | the feed stops returning the job |
 | Foorilla (keyed) | PNW location queries over 30 days; remote-US over 14 days from its InfoSec & Privacy (102) and Cybersecurity (26) categories plus security and infra title queries | `expired` flag, or it ages out of the window |
 
 Microsoft's own careers API refuses anonymous calls, but its roles arrive
