@@ -6,7 +6,7 @@ Northwest or remote from it. Built for the job-hunt cabal.
 Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
 
   1. READS every source fresh. Company boards (Greenhouse, Lever, Ashby,
-     Workday, Amazon) and the open aggregators (Remotive, RemoteOK, Jobicy,
+     Workday, Eightfold, Amazon) and the open aggregators (RemoteOK, Jobicy,
      Himalayas, Working Nomads, The Muse) return what is open today; Foorilla
      (keyed) returns the last FOORILLA_DAYS days with an `expired` flag.
   2. FILTERS with rules: a title that reads as security, infra engineering or a
@@ -944,16 +944,9 @@ def src_neogov(agency: str, name: str) -> list[dict]:
     return out
 
 
-def src_remotive() -> list[dict]:
-    # One call. Since about 2026-11 the public API ignores category, search,
-    # limit and company_name and returns the same ~11 newest jobs whatever is
-    # asked, so the three category calls this made were the same call thrice.
-    d = http_json("https://remotive.com/api/remote-jobs")
-    return [posting(title=j.get("title"), company=j.get("company_name"), url=j.get("url"),
-                    location="Remote · " + (j.get("candidate_required_location") or ""), remote=True,
-                    posted=iso(j.get("publication_date")), salary=j.get("salary") or None,
-                    desc=text(j.get("description")), origin="aggregator")
-            for j in d.get("jobs", [])]
+# Remotive was dropped 2026-11-04: its API returns the same ~11 newest jobs
+# whatever is asked (it kept none), and its response asks that its jobs not be
+# resubmitted to third-party job sites.
 
 
 def src_remoteok() -> list[dict]:
@@ -1052,7 +1045,7 @@ def tech_source(sid: str) -> bool:
 
 def all_sources(only: set[str] | None):
     s = [("foorilla", "Foorilla", src_foorilla, ()), ("amazon", "Amazon", src_amazon, ()),
-         ("remotive", "Remotive", src_remotive, ()), ("remoteok", "RemoteOK", src_remoteok, ()),
+         ("remoteok", "RemoteOK", src_remoteok, ()),
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
          ("workingnomads", "Working Nomads", src_workingnomads, ()), ("muse", "The Muse", src_muse, ()),
          ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ())]
