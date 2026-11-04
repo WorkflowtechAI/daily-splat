@@ -302,6 +302,9 @@ APPLY_JEV = [
     ("Network Manager", "eng", "senior", "eng", "mid", ("eng", "senior")),
     ("DevOps Engineer", "eng", "mid", "eng", "entry", ("eng", "entry")),
     ("Program Manager, Store Operations", "pm", "mid", "neither", "mid", None),
+    # Jev cannot make a non-PM title a PM (the 2026-11-03 audit); the rules' track stands.
+    ("Cloud Architect, Product Management", "eng", "senior", "pm", "senior", ("eng", "senior")),
+    ("RAI Industry Specialist, Amazon Privacy", "cyber", "mid", "pm", "senior", ("cyber", "senior")),
     # No answer from Jev yet: a pm row waits, cyber and eng rows publish on the rules.
     ("Food Systems Program Manager", "pm", "mid", None, None, None),
     ("SOC Analyst II", "cyber", "mid", None, None, ("cyber", "mid")),

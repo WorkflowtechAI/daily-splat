@@ -462,9 +462,13 @@ def apply_jev(p: dict, ans: dict | None) -> bool:
         return p["track"] != "pm"
     if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
         return False
+    # Jev may move a row into pm only when the title is a PM job: in the audit of
+    # 2026-11-03 it filed "Cloud Architect, Product Management" and "Robotics
+    # Systems Engineer III" there. Otherwise the rules' track stands.
+    track = ans["track"] if ans["track"] != "pm" or is_pm(p["title"]) else p["track"]
     # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
-    p["level"] = settle_level(p["title"], p["track"], p["level"], ans["track"], ans["level"])
-    p["track"] = ans["track"]
+    p["level"] = settle_level(p["title"], p["track"], p["level"], track, ans["level"])
+    p["track"] = track
     p["clearance"] = p["clearance"] or ans["clearance"]
     return True
 
@@ -1044,7 +1048,9 @@ JEV_QUESTIONS = {
                    "sales, marketing, recruiting, analysts who do not engineer, "
                    "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering; "
                    "project, program or product managers whose work is not technology (construction, facilities, "
-                   "clinical care, marketing, merchandise, apparel, supply chain or operations); "
+                   "data center construction or build-out, water or energy programs, clinical care, marketing, "
+                   "merchandise, apparel, supply chain, customer experience or support operations, social impact "
+                   "or philanthropy, a health plan's provider network, or other business operations); "
                    "scrum masters and agile coaches."}},
     "level": {"type": "choice", "instructions": "What seniority does this role hire at?", "criteria": {
         "intern": "Internship, co-op, or summer program.",
