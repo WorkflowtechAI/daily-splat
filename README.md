@@ -53,13 +53,19 @@ a wrong token shows up as a failed source, it does not break the run.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
    and owners, when the work is technology, IT or security. The title has to
-   say so (`IT`, software, cloud, security, data, platform...), unless the
-   source is a technology employer's own board (`TECH_SOURCES` and
-   `TECH_WORKDAY` in `splat.py`), where "Senior Product Manager, Payments" is
-   tech work as written. Construction, facilities, marketing and clinical PMs
-   are out, except healthcare IT ("Clinical Applications Project Manager -
-   Epic"). Scrum masters, agile coaches and delivery managers are out. In a PM
-   title "Manager" is the job, not the grade: "Product Manager" is mid.
+   say so (`IT`, software, cloud, security, data, platform, any cyber or infra
+   word...), unless the posting is on a technology employer's own board
+   (`TECH_SOURCES` and `TECH_WORKDAY` in `splat.py`: the Greenhouse, Lever and
+   Ashby boards and the tech Workday tenants), where "Senior Product Manager,
+   Payments" is tech work as written. Amazon, the aggregators and the telecoms
+   are not tech sources: their PMs are mostly operations, retail or any
+   employer's. Construction, facilities, marketing, sales, legal and clinical
+   PMs are out, except healthcare IT ("Clinical Applications Project Manager",
+   "Cerner Project Manager"). Scrum masters and agile coaches are out. Delivery
+   managers are not part of the PM track; one with an infra word still reads
+   as Infra & IT, as before. "PM" in shift hours ("3 PM - 11 PM") and "TPM" in
+   an engineer's title (the chip) are not project managers. In a PM title
+   "Manager" is the job, not the grade: "Product Manager" is mid.
 2. **Jev** (TypeSafe's typed classifier).
    Three typed questions per new posting: track (cyber / eng / pm / neither), level
    (intern / entry / mid / senior / staff / executive), clearance required. "Neither",

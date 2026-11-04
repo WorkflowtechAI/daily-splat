@@ -130,6 +130,17 @@ TRACK = [
     ("Technical Program Manager - Security", "pm"),
     ("Product Security Manager", "cyber"),
     ("Scrum Master", None),
+    # Shift hours and the TPM chip are not project managers (2026-11-03 review):
+    # these read as they did before the PM track.
+    ("SOC Analyst - Swing Shift 3 PM - 11 PM", "cyber"),
+    ("NOC Technician (Nights 7 PM - 7 AM)", "eng"),
+    ("Help Desk Analyst - AM/PM Shifts", "eng"),
+    ("IT Support Technician - 2nd Shift (2:30 PM - 11 PM)", "eng"),
+    ("Data Center Technician, Night Shift (6 PM - 6 AM)", "eng"),
+    ("Service Desk Analyst - 2nd Shift (2:00PM - 10:30PM)", "eng"),
+    ("Firmware Security Engineer - TPM", "cyber"),
+    ("TPM Engineer", None),
+    ("Delivery Manager, Cloud", "eng"),                 # not a PM; Infra & IT as before
     ("Semiconductor Equipment Engineer", None),
     ("Sr. Design Validation Product Engineer, DEG", None),
 ]
@@ -168,6 +179,49 @@ TRACK_PM = [
     ("Scrum Master", True, None),
     ("Agile Coach", True, None),
     ("Director, Program Management", True, "pm"),                     # track yes; rule_level drops it
+    # The 2026-11-03 review. Security words count as technology at any employer
+    # (these were cyber, or dropped, before the fix).
+    ("IAM Product Owner", False, "pm"),
+    ("Product Owner, SIEM", False, "pm"),
+    ("Program Lead, Vulnerability Management", False, "pm"),
+    ("SOC Program Manager", False, "pm"),
+    ("GRC Program Manager", False, "pm"),
+    # Nothing outranks construction, marketing, sales or scrum.
+    ("Construction Project Manager - Cloud Data Centers", True, None),
+    ("Cloud Marketing Program Manager", True, None),
+    ("Software Sales Program Manager", True, None),
+    ("IT Project Manager / Scrum Master", False, None),
+    # Healthcare IT without the word Epic.
+    ("Clinical Informatics Project Manager", False, "pm"),
+    ("Clinical Applications Project Manager", False, "pm"),
+    ("Cerner Project Manager", False, "pm"),
+    ("Nursing Informatics Project Manager", False, "pm"),
+    # Amazon is not a tech source; its technical PMs say so.
+    ("Sr. Program Manager, Perishable Distribution Strategy, Worldwide Grocery Stores (WWGS) Logistics", False, None),
+    ("Sr. Product Manager - Tech, Alexa Shopping", False, "pm"),
+    ("PM-T, Ads Measurement", False, "pm"),
+    # A tech employer's non-technology PM.
+    ("Supply Chain Program Manager, Memory & Storage", True, None),
+    # Team names are a PM job only with no other job noun.
+    ("Senior Manager, Product Management", True, "pm"),
+    ("Software Engineer, Project Management Tools", True, None),
+]
+
+# settle_level: Jev's level, unless the title states one as the rules' track reads it.
+SETTLE = [
+    # (title, rule track, rule level, Jev level, expected)
+    ("Technical Program Manager", "pm", "mid", "senior", "senior"),   # Jev moved it to eng/senior
+    ("Senior Product Manager", "pm", "senior", "mid", "senior"),
+    ("Senior Security Engineer", "cyber", "senior", "mid", "senior"),
+    ("DevOps Engineer", "eng", "mid", "entry", "entry"),
+]
+
+# Only technology employers' own boards are tech sources (not Amazon, the
+# aggregators or the telecoms).
+TECH_SOURCE = [
+    ("greenhouse:stripe", True), ("workday:nvidia", True), ("workday:nike", False), ("workday:tmobile", False),
+    ("providence", False), ("neogov:portlandor", False), ("amazon", False), ("himalayas", False),
+    ("foorilla", False), ("workable", False),
 ]
 
 # PM titles carry "Manager" as the job, not the grade.
@@ -179,6 +233,7 @@ LEVEL_PM = [
     ("Technical Program Manager III", "senior"),
     ("Project Coordinator", "mid"),
     ("Director, Program Management", None),
+    ("Senior Manager, Product Management", "senior"),
 ]
 
 NORM = [
@@ -288,16 +343,21 @@ def main() -> int:
         if got != want:
             bad += 1
             print(f"rule_level({title!r}, track='pm') = {got!r}, want {want!r}")
-    for sid, want in (("greenhouse:stripe", True), ("workday:nvidia", True), ("workday:nike", False),
-                      ("providence", False), ("neogov:portlandor", False), ("amazon", True)):
+    for sid, want in TECH_SOURCE:
         if splat.tech_source(sid) != want:
             bad += 1
             print(f"tech_source({sid!r}) = {splat.tech_source(sid)!r}, want {want!r}")
+    for title, rt, rl, jl, want in SETTLE:
+        got = splat.settle_level(title, rt, rl, jl)
+        if got != want:
+            bad += 1
+            print(f"settle_level({title!r}, {rt!r}, {rl!r}, {jl!r}) = {got!r}, want {want!r}")
     for a, b in NORM:
         if splat.norm(a) != splat.norm(b):
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
-    total = len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM) + 7
+    total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
+             + len(TECH_SOURCE) + len(SETTLE) + 1)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 
