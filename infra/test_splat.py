@@ -125,8 +125,11 @@ TRACK = [
     ("Sr. Manager, Electrical Engineer - Data Centers", None),
     ("Security Officer", None),
     ("Account Executive, Security", None),
-    ("Senior Product Manager, Platform", None),
-    ("Technical Program Manager - Security", "cyber"),
+    # Since 2026-11-03 these are the PM track (see TRACK_PM), not out and not cyber.
+    ("Senior Product Manager, Platform", "pm"),
+    ("Technical Program Manager - Security", "pm"),
+    ("Product Security Manager", "cyber"),
+    ("Scrum Master", None),
     ("Semiconductor Equipment Engineer", None),
     ("Sr. Design Validation Product Engineer, DEG", None),
 ]
@@ -137,6 +140,45 @@ TRACK_SEC_TOPIC = [
     ("Principal Solutions Engineer", "cyber"),
     ("Mid-Level Data Engineer", "cyber"),
     ("Account Executive", None),
+]
+
+# The PM track (2026-11-03): (title, tech employer, expected). A PM title counts
+# when it names technology work, or when the source is a tech employer's board.
+TRACK_PM = [
+    ("IT Project Manager", False, "pm"),
+    ("Technical Program Manager", False, "pm"),
+    ("Sr. TPM, Cloud Infrastructure", False, "pm"),
+    ("Security Program Manager", False, "pm"),
+    ("Product Owner - Identity Platform", False, "pm"),
+    ("Associate Product Manager, Data", False, "pm"),
+    ("Project Coordinator - Information Technology", False, "pm"),
+    ("Clinical Applications Project Manager - Epic", False, "pm"),   # healthcare IT, despite "clinical"
+    ("Senior Product Manager, Payments", True, "pm"),                # at Stripe
+    ("Senior Product Manager, Payments", False, None),               # at a bank, the title has to say so
+    ("Program Manager", True, "pm"),
+    ("Program Manager", False, None),
+    ("Product Manager, Footwear", False, None),                      # Nike
+    ("Construction Project Manager", True, None),
+    ("Infrastructure Construction Project Manager", False, None),
+    ("Physical Security Program Manager", False, None),
+    ("Marketing Program Manager", True, None),
+    ("Clinical Program Manager", False, None),
+    ("Facilities Project Manager - Data Center", False, None),
+    ("Product Marketing Manager, Security", True, None),
+    ("Scrum Master", True, None),
+    ("Agile Coach", True, None),
+    ("Director, Program Management", True, "pm"),                     # track yes; rule_level drops it
+]
+
+# PM titles carry "Manager" as the job, not the grade.
+LEVEL_PM = [
+    ("Product Manager", "mid"),
+    ("Senior Product Manager", "senior"),
+    ("Associate Product Manager", "entry"),
+    ("Principal Product Manager", "staff"),
+    ("Technical Program Manager III", "senior"),
+    ("Project Coordinator", "mid"),
+    ("Director, Program Management", None),
 ]
 
 NORM = [
@@ -236,11 +278,26 @@ def main() -> int:
         if got != want:
             bad += 1
             print(f"rule_track({title!r}, sec_topic) = {got!r}, want {want!r}")
+    for title, tech, want in TRACK_PM:
+        got = splat.rule_track(title, tech_employer=tech)
+        if got != want:
+            bad += 1
+            print(f"rule_track({title!r}, tech_employer={tech}) = {got!r}, want {want!r}")
+    for title, want in LEVEL_PM:
+        got = splat.rule_level(title, None, "pm")
+        if got != want:
+            bad += 1
+            print(f"rule_level({title!r}, track='pm') = {got!r}, want {want!r}")
+    for sid, want in (("greenhouse:stripe", True), ("workday:nvidia", True), ("workday:nike", False),
+                      ("providence", False), ("neogov:portlandor", False), ("amazon", True)):
+        if splat.tech_source(sid) != want:
+            bad += 1
+            print(f"tech_source({sid!r}) = {splat.tech_source(sid)!r}, want {want!r}")
     for a, b in NORM:
         if splat.norm(a) != splat.norm(b):
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
-    total = len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(LEVEL) + len(NORM) + 1
+    total = len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM) + 7
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

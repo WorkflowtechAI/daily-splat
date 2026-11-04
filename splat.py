@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""The daily splat: cybersecurity and the infra and IT around it, entry to senior,
-in the Pacific Northwest or remote from it. Built for the job-hunt cabal.
+"""The daily splat: cybersecurity, the infra and IT around it, and the project,
+program and product managers of technology work, entry to senior, in the Pacific
+Northwest or remote from it. Built for the job-hunt cabal.
 
 Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
 
@@ -8,7 +9,8 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
      Workday, Amazon) and the open aggregators (Remotive, RemoteOK, Jobicy,
      Himalayas, Working Nomads, The Muse) return what is open today; Foorilla
      (keyed) returns the last FOORILLA_DAYS days with an `expired` flag.
-  2. FILTERS with rules: a title that reads as security or engineering, a level
+  2. FILTERS with rules: a title that reads as security, infra engineering or a
+     technology project, program or product manager, a level
      that is not intern/junior/director, and a location in WA/OR/ID or remote
      within the US.
   3. ASKS JEV (TypeSafe's typed classifier) what track and level each NEW
@@ -182,7 +184,8 @@ NOT_ROLE = re.compile(  # wrong job family for this page, whatever the keywords
     r"\bsales\b(?! engineer)|account executive|account manager|business development|marketing|"
     r"recruit|talent|counsel|attorney|paralegal|legal|customer success manager|\bsdr\b|\bbdr\b|"
     r"security guard|(?<!information )(?<!systems )(?<!system )security officer(?!.*\bisso\b)|physical security|loss prevention|securities|social security|"
-    r"sourcing|procurement|program manager(?!.*secur)|product manager|project manager|designer|"
+    # Project, program and product managers are their own track since 2026-11-03 (PM_ROLE below).
+    r"sourcing|procurement|designer|"
     r"\bux\b|writer|scrum|data analyst|business analyst|"
     r"mechanical|electrical|civil|structural|chemical|manufacturing|process engineer|field service|"
     r"maintenance|facilities|hvac|construction|industrial|environmental|geotechnical|biomedical|"
@@ -308,11 +311,46 @@ SEC_ROLE = re.compile(r"engineer|architect|analyst|specialist|consultant|officer
 # Case-sensitive, so the English word "is" never counts.
 IS_DEPT = re.compile(r"(?:^|\s)IS(?=\s|$|,)")
 
+# The PM track (2026-11-03, asked for by the group): project, program and
+# technical program managers, and product managers and owners, when the work is
+# technology, IT or security. Scrum masters, agile coaches and delivery managers
+# were not asked for and stay out (NOT_ROLE has "scrum").
+PM_ROLE = re.compile(r"\b(project|program|programme|product)\s+(manager|management|mgr|lead|owner|coordinator)\b|"
+                     r"\bpmo\b", re.I)
+PM_ABBR = re.compile(r"\b(T?PMs?|PMO)\b")  # "Sr. TPM", "PM, Identity"; case-sensitive so "pm" in "2 pm shift" is not one
+# A PM title is technology work when it says so. A PM at a technology employer
+# ("Senior Product Manager, Payments" at Stripe) is assumed to be; see TECH_SOURCES.
+PM_TECH = re.compile(r"\b(technical|technology|technologies|information|software|security|cyber\w*|cloud|infrastructure|"
+                     r"platforms?|data|network\w*|systems?|digital|engineering|devops|saas|apis?|ai|ml|erp|crm|"
+                     r"integrations?|applications?|apps?|identity|privacy|ehr|emr|epic|web|mobile|telecom\w*)\b", re.I)
+IT_ABBR = re.compile(r"\bIT\b")
+# Healthcare IT PMs say "clinical applications" or "Epic"; that clinical is not
+# the clinical NOT_ROLE means. A strong IT word in a PM title outranks NOT_ROLE.
+# Not "security" or "infrastructure": "Physical Security Program Manager" and
+# "Infrastructure Construction Project Manager" are not IT.
+PM_STRONG_TECH = re.compile(r"information (technology|systems|services)|\b(ehr|emr|epic|software|cyber\w*|cloud)\b", re.I)
 
-def rule_track(title: str, sec_topic: bool = False) -> str | None:
+
+def is_pm(title: str) -> bool:
+    return bool(PM_ROLE.search(title) or PM_ABBR.search(title))
+
+
+def level_text(title: str, track: str | None) -> str:
+    """The title as the level rules should read it. In a PM title "Manager" is
+    the job, not a grade: "Product Manager" is mid, "Senior Product Manager" senior."""
+    return PM_ABBR.sub(" ", PM_ROLE.sub(" ", title)) if track == "pm" else title
+
+
+def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False) -> str | None:
     """sec_topic: the source already filed it under infosec (Foorilla topics 102/26).
     Then a role-shaped title is enough ("Principal Solutions Engineer" at a
-    security vendor), and Jev has the final say."""
+    security vendor), and Jev has the final say. tech_employer: the source is a
+    technology company's own board or a tech job board, so a PM there is tech work."""
+    if is_pm(title):
+        strong = PM_STRONG_TECH.search(title) or IT_ABBR.search(title) or IS_DEPT.search(title)
+        if NOT_ROLE.search(title) and not strong:
+            return None
+        return "pm" if strong or tech_employer or PM_TECH.search(title) else None
     if IS_DEPT.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
         return "cyber" if CYBER.search(title) else "eng"
     if NOT_ROLE.search(title):
@@ -324,10 +362,11 @@ def rule_track(title: str, sec_topic: bool = False) -> str | None:
     return None
 
 
-def rule_level(title: str, hint: str | None = None) -> str | None:
+def rule_level(title: str, hint: str | None = None, track: str | None = None) -> str | None:
     """'entry' | 'mid' | 'senior' | 'staff' | None (intern or executive: out)."""
     if INTERN.search(title) or TOO_SENIOR.search(title) or hint == "EX":
         return None
+    title = level_text(title, track)
     if ENTRY_STRONG.search(title):
         return "entry"
     if ENTRY_WEAK.search(title) and not (STAFF.search(title) or SENIOR.search(title)):
@@ -486,7 +525,9 @@ def _wd_days(s: str) -> str | None:
 
 
 WD_QUERIES = ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
-              "support", "administrator", "help desk")
+              "support", "administrator", "help desk",
+              # The PM track (2026-11-03). 'local' and 'all_oregon' tenants read every job and need no keyword.
+              "project manager", "program manager", "product manager")
 
 
 def src_workday(tenant: str, host: str, site: str, name: str, mode: str = "search") -> list[dict]:
@@ -539,7 +580,11 @@ def src_amazon() -> list[dict]:
     for state in ("Washington", "Oregon", "Idaho"):
         for q in ("security", "systems engineer", "systems development engineer", "devops",
                   "site reliability", "cloud engineer", "infrastructure", "network engineer", "cloud support engineer",
-                  "it support", "data center technician", "system administrator"):
+                  "it support", "data center technician", "system administrator",
+                  # The PM track. Not plain "program manager": Amazon's are mostly
+                  # operations and logistics, thousands of them in Washington alone.
+                  "technical program manager", "product manager technical", "security program manager",
+                  "it project manager"):
             offset = 0
             while offset < 1000:
                 params = {"base_query": q, "normalized_country_code[]": "USA", "normalized_state_name[]": state,
@@ -586,7 +631,10 @@ def src_foorilla() -> list[dict]:
               # The entry lane: where sysadmin and support careers start.
               "help desk", "service desk", "desktop support", "technical support", "it support",
               "support engineer", "system administrator", "systems administrator", "noc", "it specialist",
-              "data center technician"):
+              "data center technician",
+              # The PM track (2026-11-03).
+              "technical program manager", "security program manager", "it project manager", "project manager",
+              "program manager", "product manager", "product owner"):
         queries.append({"country": 238, "has_remote": "true", "title": t, "published_after": remote_since})
     out, seen = [], set()
     for q in queries:
@@ -636,7 +684,8 @@ def src_workable() -> list[dict]:
     out, seen = [], set()
     for loc in ("Portland, Oregon", "Salem, Oregon", "Eugene, Oregon", "Bend, Oregon", "Seattle, Washington"):
         for q in ("security", "cyber", "systems administrator", "network engineer", "cloud engineer", "devops",
-                  "help desk", "IT support", "infrastructure", "IT specialist"):
+                  "help desk", "IT support", "infrastructure", "IT specialist",
+                  "project manager", "program manager", "product manager"):
             token = None
             for _ in range(5):
                 params = {"query": q, "location": loc, **({"pageToken": token} if token else {})}
@@ -797,7 +846,9 @@ def src_muse() -> list[dict]:
             params = [("page", page), ("location", loc), ("level", "Entry Level"), ("level", "Mid Level"),
                       ("level", "Senior Level"),
                       ("category", "Software Engineering"), ("category", "Computer and IT"),
-                      ("category", "Data and Analytics"), ("category", "IT")]
+                      ("category", "Data and Analytics"), ("category", "IT"),
+                      # The PM track; both names checked against the API on 2026-11-03.
+                      ("category", "Project Management"), ("category", "Product Management")]
             d = http_json("https://www.themuse.com/api/public/jobs?" + urllib.parse.urlencode(params))
             for j in d.get("results", []):
                 locs = "; ".join(x.get("name", "") for x in j.get("locations") or [])
@@ -809,6 +860,22 @@ def src_muse() -> list[dict]:
                 break
             time.sleep(0.4)
     return out
+
+
+# Sources whose postings are technology employers', for the PM track: a
+# "Product Manager, Payments" on Stripe's own board is technology work, the same
+# title at Nike or the State of Oregon has to say so. Every Greenhouse, Lever and
+# Ashby board above is a tech company's; the remote boards and Foorilla list tech
+# jobs. Workday and the rest are mixed, so only the tech tenants are named.
+TECH_SOURCES = {"greenhouse", "lever", "ashby", "amazon", "foorilla", "remotive", "remoteok", "jobicy", "himalayas",
+                "workingnomads"}
+TECH_WORKDAY = {"crowdstrike", "zillow", "ffive", "tmobile", "intel", "micron", "salesforce", "pax8inc", "acronis",
+                "latticesemi", "flir", "autodesk", "hp", "nvidia", "analogdevices", "cisco", "astound"}
+
+
+def tech_source(sid: str) -> bool:
+    family, _, name = sid.partition(":")
+    return family in TECH_SOURCES or (family == "workday" and name in TECH_WORKDAY)
 
 
 def all_sources(only: set[str] | None):
@@ -839,16 +906,24 @@ JEV_QUESTIONS = {
                "network, systems, identity, endpoint or IT infrastructure engineering or administration, "
                "including system administrators, IT support, help desk, desktop support, NOC, and "
                "technical support engineers who troubleshoot systems.",
+        "pm": "Project, program or product management of technology work: IT and software project managers, "
+              "program and technical program managers (TPM), security program managers, project coordinators "
+              "and PMO roles on technology projects, and product managers or product owners of software, "
+              "platform, data or security products.",
         "neither": "Anything else, including general application or product software development (frontend, "
                    "backend, full-stack, mobile, ML, data, games) whose main job is not infrastructure or security; "
                    "customer service or call-center support that is not technical; "
                    "sales, marketing, recruiting, analysts who do not engineer, "
-                   "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering."}},
+                   "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering; "
+                   "project, program or product managers whose work is not technology (construction, facilities, "
+                   "clinical care, marketing, merchandise, apparel, supply chain or operations); "
+                   "scrum masters, agile coaches and delivery managers."}},
     "level": {"type": "choice", "instructions": "What seniority does this role hire at?", "criteria": {
         "intern": "Internship, co-op, or summer program.",
         "entry": "Entry level: new grad, junior, associate, apprentice, tier 1, level I, or about 0-2 years asked.",
         "mid": "Mid-level: a few years of experience, level II, no senior title.",
-        "senior": "Senior, lead, level III, or a manager of a team.",
+        "senior": "Senior, lead, level III, or a people manager of a team. A project, program or product "
+                  "manager title alone is not senior.",
         "staff": "Staff, principal, distinguished, or senior architect.",
         "executive": "Director, VP, head of, or C-level."}},
     "clearance": {"type": "noul", "instructions": "Does this role require a US government security clearance?"},
@@ -858,8 +933,9 @@ JEV_QUESTIONS = {
 # Bump when JEV_QUESTIONS changes meaning, so cached answers to the old
 # questions are not read as answers to the new ones. v2 (2026-10-03): "eng"
 # narrowed from all engineering to infrastructure next to security. v3
-# (2026-10-04): "eng" takes IT support and help desk; level has "intern".
-JEV_VERSION = "v3"
+# (2026-10-04): "eng" takes IT support and help desk; level has "intern". v4
+# (2026-11-03): track has "pm"; "neither" no longer covers technology PMs.
+JEV_VERSION = "v4"
 
 
 def jev_key(p: dict) -> str:
@@ -879,7 +955,7 @@ def ask_jev(p: dict, key: str) -> dict | None:
     track = (a.get("track") or {}).get("choice")
     level = (a.get("level") or {}).get("choice")
     clr = (a.get("clearance") or {}).get("noul")
-    if track not in ("cyber", "eng", "neither") or level not in ("intern", "entry", "mid", "senior", "staff", "executive"):
+    if track not in ("cyber", "eng", "pm", "neither") or level not in ("intern", "entry", "mid", "senior", "staff", "executive"):
         return {"error": "malformed answer"}
     return {"track": track, "level": level, "clearance": isinstance(clr, (int, float)) and clr >= 0.6,
             "tokens": (d.get("usage") or {}).get("input_tokens", 0)}
@@ -958,8 +1034,8 @@ def main() -> int:
         a = age_days(p["posted"])
         if a is not None and a > (REMOTE_MAX_AGE_DAYS if w == "remote" else MAX_AGE_DAYS):
             continue
-        track = rule_track(p["title"], p["sec_topic"])
-        level = rule_level(p["title"], p["hint"])
+        track = rule_track(p["title"], p["sec_topic"], tech_source(sid))
+        level = rule_level(p["title"], p["hint"], track)
         if not track or not level:
             continue
         p.update(where=w, track=track, level=level, source=sid,
@@ -1002,7 +1078,8 @@ def main() -> int:
             continue
         p["track"] = ans["track"]
         # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
-        if not (STAFF.search(p["title"]) or SENIOR.search(p["title"]) or ENTRY.search(p["title"])):
+        lt = level_text(p["title"], p["track"])
+        if not (STAFF.search(lt) or SENIOR.search(lt) or ENTRY.search(lt)):
             p["level"] = ans["level"]
         p["clearance"] = p["clearance"] or ans["clearance"]
 
@@ -1049,6 +1126,7 @@ def main() -> int:
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
+                   "pm": sum(1 for j in rows if j["track"] == "pm"),
                    # "pnw" stays all three states so old counts and links mean what they did.
                    "pnw": sum(1 for j in rows if j["where"] in ("oregon", "pnw")),
                    "oregon": sum(1 for j in rows if j["where"] == "oregon"),
