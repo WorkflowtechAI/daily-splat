@@ -52,20 +52,28 @@ a wrong token shows up as a failed source, it does not break the run.
    Recruiter and staffing reposts are dropped: the page lists employers.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
-   and owners, when the work is technology, IT or security. The title has to
-   say so (`IT`, software, cloud, security, data, platform, any cyber or infra
-   word...), unless the posting is on a technology employer's own board
-   (`TECH_SOURCES` and `TECH_WORKDAY` in `splat.py`: the Greenhouse, Lever and
-   Ashby boards and the tech Workday tenants), where "Senior Product Manager,
-   Payments" is tech work as written. Amazon, the aggregators and the telecoms
-   are not tech sources: their PMs are mostly operations, retail or any
-   employer's. Construction, facilities, marketing, sales, legal and clinical
-   PMs are out, except healthcare IT ("Clinical Applications Project Manager",
-   "Cerner Project Manager"). Scrum masters and agile coaches are out. Delivery
-   managers are not part of the PM track; one with an infra word still reads
-   as Infra & IT, as before. "PM" in shift hours ("3 PM - 11 PM") and "TPM" in
-   an engineer's title (the chip) are not project managers. In a PM title
-   "Manager" is the job, not the grade: "Product Manager" is mid.
+   and owners, when the work is technology, IT or security (`pm_track`). The
+   title has to name the work (`PM_TECH`: IT, software, cloud, data, platform,
+   SOC, IAM, GRC, Epic...), unless the posting is on a technology employer's
+   own board (`TECH_SOURCES` and `TECH_WORKDAY`: the Greenhouse, Lever and Ashby
+   boards and the tech Workday tenants), where "Senior Product Manager,
+   Payments" is tech work as written, or Foorilla filed it under infosec.
+   Amazon, the aggregators and the telecoms are not tech sources: their PMs
+   are mostly operations, retail or any employer's. Three tiers of exclusion:
+   construction, facilities, marketing, sales, legal, recruiting, scrum and
+   physical-security PMs are always out (`PM_HARD_NOT`); patient-care PMs are
+   out unless a health-IT word says the job is the systems ("Clinical
+   Applications Project Manager", "Nursing Informatics", Epic, Cerner); the
+   rest of the excluded words (manufacturing, warehouse, field service...) give
+   way to any technology word ("Industrial Cybersecurity Program Manager"). An
+   operations program manager (supply chain, logistics, retail) is out even at
+   a tech employer unless the title is a TPM or names IT; a product manager
+   there is not. A PM title that is not technology work is out, as every PM
+   title was before. Scrum masters and agile coaches are out; delivery
+   managers are not part of the PM track (one with an infra word still reads
+   as Infra & IT, as before). "PM" in shift hours ("3 PM - 11 PM", "PM
+   Shift", "AM & PM") and "TPM" the chip are not project managers. In a PM
+   title "Manager" is the job, not the grade: "Product Manager" is mid.
 2. **Jev** (TypeSafe's typed classifier).
    Three typed questions per new posting: track (cyber / eng / pm / neither), level
    (intern / entry / mid / senior / staff / executive), clearance required. "Neither",

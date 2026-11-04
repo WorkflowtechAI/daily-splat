@@ -151,6 +151,10 @@ TRACK_SEC_TOPIC = [
     ("Principal Solutions Engineer", "cyber"),
     ("Mid-Level Data Engineer", "cyber"),
     ("Account Executive", None),
+    # A PM under the infosec topics is a security PM (2026-11-03), not cyber.
+    ("Product Manager", "pm"),
+    ("Program Lead", "pm"),
+    ("Marketing Program Manager", None),
 ]
 
 # The PM track (2026-11-03): (title, tech employer, expected). A PM title counts
@@ -205,15 +209,73 @@ TRACK_PM = [
     # Team names are a PM job only with no other job noun.
     ("Senior Manager, Product Management", True, "pm"),
     ("Software Engineer, Project Management Tools", True, None),
+    # The second review (2026-11-03).
+    # Other NOT_ROLE words give way to a technology word; construction and the like do not.
+    ("Senior Product Manager, Manufacturing Cloud", True, "pm"),
+    ("Cloud Data Warehouse Program Manager", False, "pm"),
+    ("IT Project Manager - Manufacturing Systems", False, "pm"),
+    ("IT Program Manager, ServiceNow Field Service Management", False, "pm"),
+    ("Industrial Cybersecurity Program Manager", False, "pm"),
+    ("Cybersecurity Program Manager - Electrical Grid", False, "pm"),
+    ("IT Project Manager / Business Analyst", False, "pm"),
+    ("Software Program Manager - Linux Drivers", False, "pm"),
+    ("Data Loss Prevention Program Manager", False, "pm"),
+    ("Epic Project Manager (RN preferred)", False, "pm"),
+    ("Clinical Application Project Manager", False, "pm"),
+    ("Clinical Program Manager, Digital Health", False, None),           # care program; "digital" is not health IT
+    ("Behavioral Health Program Manager", False, None),
+    # A tech employer's product managers build software, whatever the domain.
+    ("Senior Product Manager, Real Estate Transactions", True, "pm"),     # Zillow
+    ("Senior Product Manager, Workforce Management", True, "pm"),         # Salesforce
+    ("Product Manager, Shipping & Logistics", True, "pm"),                # OfferUp
+    # Words that only look like technology in a PM title.
+    ("Knowledge Management Program Manager", False, None),
+    ("Food Insecurity Program Coordinator", False, None),
+    ("Food Security Program Manager", False, None),
+    ("Breast and Cervical Cancer Early Detection Program Manager", False, None),
+    ("Leak Detection and Repair Program Manager", False, None),
+    ("Forensic Evaluation Program Manager", False, None),
+    ("Vulnerable Populations Program Manager", False, None),
+    ("Behavioral Threat Assessment Program Manager", False, None),
+    ("Product Manager - Windows & Doors", False, None),
+    ("Surgical Tech Program Manager", False, None),
+    ("Mobile Crisis Program Manager", False, None),
+    ("Provider Network Program Manager", False, None),
+    ("Behavioral Health Integration Program Manager", False, None),
+    # TPMs working in Engineering or on a Developer Platform are still TPMs.
+    ("Sr. TPM - Data Engineering", False, "pm"),
+    ("TPM, Developer Infrastructure", False, "pm"),
+    ("Senior PM, Developer Platform", False, "pm"),
+    ("Sr. TPM, Platform Engineering", False, "pm"),
+    ("Senior TPM, Cloud Architecture", False, "pm"),
+    ("Engineering Program Management Lead", False, "pm"),
+    ("TPM - Security Engineering", False, "pm"),
+    # PMO roles are PM roles.
+    ("IT PMO Analyst", False, "pm"),
+    ("Project Management Analyst, IT", False, "pm"),
+    ("Program Management Analyst, Cybersecurity", False, "pm"),
+    # The TPM chip and maintenance, beside any job noun.
+    ("Hardware Security Specialist - TPM", False, "cyber"),          # the chip; cyber as before
+    ("TPM Specialist", True, None),
+    ("TPM Coordinator", True, None),
+    # A TPM outranks an operations word; a plain program manager does not (Amazon, live 2026-11-03).
+    ("Principal Technical Program Manager, Customer Logistics Security (CLS)", False, "pm"),
+    ("Senior Program Manager, Business Operations, Customer Logistics Security (CLS)", False, None),
 ]
 
-# settle_level: Jev's level, unless the title states one as the rules' track reads it.
-SETTLE = [
-    # (title, rule track, rule level, Jev level, expected)
-    ("Technical Program Manager", "pm", "mid", "senior", "senior"),   # Jev moved it to eng/senior
-    ("Senior Product Manager", "pm", "senior", "mid", "senior"),
-    ("Senior Security Engineer", "cyber", "senior", "mid", "senior"),
-    ("DevOps Engineer", "eng", "mid", "entry", "entry"),
+# apply_jev: what main() does with Jev's answer. (rules' track, rules' level,
+# Jev's track, Jev's level, title) -> (final track, final level), or None when
+# Jev drops the row. A title that states its level keeps it; whether "Manager"
+# states one depends on whether either side calls the job a PM.
+APPLY_JEV = [
+    ("Technical Program Manager", "pm", "mid", "eng", "senior", ("eng", "senior")),
+    ("IT Project Manager", "pm", "mid", "eng", "senior", ("eng", "senior")),
+    ("Product Manager", "cyber", "senior", "pm", "mid", ("pm", "mid")),   # a Foorilla infosec PM
+    ("Senior Product Manager", "pm", "senior", "pm", "mid", ("pm", "senior")),
+    ("Senior Security Engineer", "cyber", "senior", "cyber", "mid", ("cyber", "senior")),
+    ("Network Manager", "eng", "senior", "eng", "mid", ("eng", "senior")),
+    ("DevOps Engineer", "eng", "mid", "eng", "entry", ("eng", "entry")),
+    ("Program Manager, Store Operations", "pm", "mid", "neither", "mid", None),
 ]
 
 # Only technology employers' own boards are tech sources (not Amazon, the
@@ -347,17 +409,19 @@ def main() -> int:
         if splat.tech_source(sid) != want:
             bad += 1
             print(f"tech_source({sid!r}) = {splat.tech_source(sid)!r}, want {want!r}")
-    for title, rt, rl, jl, want in SETTLE:
-        got = splat.settle_level(title, rt, rl, jl)
+    for title, rt, rl, jt, jl, want in APPLY_JEV:
+        p = {"title": title, "track": rt, "level": rl, "clearance": False}
+        kept = splat.apply_jev(p, {"track": jt, "level": jl, "clearance": False})
+        got = (p["track"], p["level"]) if kept else None
         if got != want:
             bad += 1
-            print(f"settle_level({title!r}, {rt!r}, {rl!r}, {jl!r}) = {got!r}, want {want!r}")
+            print(f"apply_jev({title!r}, rules {rt}/{rl}, jev {jt}/{jl}) = {got!r}, want {want!r}")
     for a, b in NORM:
         if splat.norm(a) != splat.norm(b):
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(SETTLE) + 1)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + 1)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

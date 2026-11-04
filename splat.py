@@ -318,32 +318,65 @@ IS_DEPT = re.compile(r"(?:^|\s)IS(?=\s|$|,)")
 # managers are not part of it; an infrastructure delivery manager still reads as
 # Infra & IT, as it did before.
 PM_ROLE = re.compile(r"\b(project|program|programme|product)\s+(manager|mgr|lead|owner|coordinator)\b", re.I)
-# A team name or an abbreviation is the job only when no other job noun is in the
-# title: "Senior Manager, Product Management" is a PM, "Software Engineer, Project
-# Management Tools" is not, nor is "Firmware Security Engineer - TPM" (the chip).
+PRODUCT = re.compile(r"\bproduct\s+(manager|mgr|lead|owner|management)\b", re.I)
+# A team name or an abbreviation is the job only when no other job noun sits
+# beside it. For a team name that means another discipline ("Software Engineer,
+# Project Management Tools"); PMO analysts and administrators are PMO roles. For
+# "PM"/"TPM" any other job noun means it is not the job ("TPM Security Consultant").
+# Whole words: "Engineering" and "Developer Platform" are teams a TPM works in.
 PM_TEAM = re.compile(r"\b(project|program|programme|product)\s+management\b|\bpmo\b", re.I)
-PM_ABBR = re.compile(r"\b(T?PMs?|PMO)\b")  # case-sensitive: "Sr. TPM", "PM, Identity"
-OTHER_JOB = re.compile(r"engineer|developer|architect|analyst|researcher|scientist|technician|administrator|designer", re.I)
+PM_ABBR = re.compile(r"\bT?PMs?\b")  # case-sensitive: "Sr. TPM", "PM, Identity", Amazon's "PM-T"
+NOT_PM_TEAM = re.compile(r"\b(engineers?|developers?|architects?|researchers?|scientists?|technicians?|designers?)\b"
+                         r"(?!\s+(platform|infrastructure|tools|experience|productivity))", re.I)
+NOT_PM_ABBR = re.compile(NOT_PM_TEAM.pattern + r"|\b(analysts?|administrators?|specialists?|associates?|agents?|"
+                         r"operators?|consultants?|coordinators?|support|tier\s*\d|desk)\b", re.I)
+# "TPM" the security chip, or Total Productive Maintenance.
+TPM_CHIP = re.compile(r"pluton|firmware|secure boot|attestation|\bhsm\b|trusted platform|total productive|"
+                      r"maintenance|\bchip|silicon", re.I)
 # Shift hours are not project managers: "SOC Analyst (3 PM - 11 PM)", "2:30PM",
-# "AM/PM Shifts" (the 2026-11-03 review). Stripped before any PM test.
-CLOCK = re.compile(r"\b\d{1,2}(:\d{2})?\s*[AP]\.?M\b\.?|\bAM\s*/\s*PM\b", re.I)
-# A PM title is technology work when it says so (these, CYBER or INFRA). Amazon
-# marks its technical PMs "PM-T" and "Product Manager - Tech".
-PM_TECH = re.compile(r"\b(tech|technical|technology|technologies|information|software|security|cyber\w*|cloud|"
-                     r"infrastructure|platforms?|data|network\w*|systems?|digital|engineering|devops|saas|apis?|ai|ml|"
-                     r"erp|crm|integrations?|applications?|apps?|identity|privacy|ehr|emr|epic|cerner|meditech|"
-                     r"informatics|web|mobile|telecom\w*)\b", re.I)
-IT_ABBR = re.compile(r"\bIT\b|\bPM-T\b")
-# Healthcare IT PMs say "clinical applications", "informatics", Epic or Cerner;
-# that clinical is not the clinical NOT_ROLE means. These words, and only they,
-# outrank NOT_ROLE's clinical, nurse and pharmacy terms. Nothing outranks its
-# construction, facilities, marketing, sales, legal or scrum terms.
-PM_STRONG_TECH = re.compile(r"information (technology|systems|services)|clinical (applications|systems|informatics)|"
-                            r"\b(ehr|emr|epic|cerner|meditech|informatics|software|cyber\w*|cloud)\b", re.I)
-CLINICAL = re.compile(r"clinical|nurse|pharmac", re.I)
-# A technology employer still has non-technology PMs (Intel's supply chain,
-# Amazon's grocery logistics). These veto the employer shortcut, not a title
-# that names technology work.
+# "AM/PM", "AM & PM", "PM Shift", "(PM)", "Days/PM", "1800-0600 PM" (the 2026-11-03
+# reviews). Stripped before any PM test.
+CLOCK = re.compile(r"\b\d{1,4}(:\d{2})?\s*[AP]\.?M\b\.?|\bAM\s*[/&,-]\s*PM\b|\bPM\s*[/&,-]\s*AM\b|"
+                   r"\b(days?|nights?|evenings?|weekends?)\s*/\s*PM\b|\bPM\s+shifts?\b|\(\s*PM\s*\)", re.I)
+
+# Three tiers decide a PM title (after the reviews of 2026-11-03):
+# 1. PM_HARD_NOT: never technology PMs, whatever else the title says.
+PM_HARD_NOT = re.compile(r"construction|facilit(y|ies)|marketing|\bsales\b|\blegal\b|counsel|attorney|paralegal|"
+                         r"recruit|talent acquisition|scrum|agile coach|physical security|(?<!data )loss prevention|"
+                         r"security guard|\bcivil\b|structural|hvac|architectural|landscap", re.I)
+# 2. PM_CARE: patient-care PMs, out unless a health-IT word (PM_STRONG) says the
+#    job is the systems: "Clinical Applications Project Manager", "Nursing
+#    Informatics Project Manager", "Epic Project Manager (RN preferred)".
+PM_CARE = re.compile(r"clinical|nurs(e|es|ing)|pharmac|\brn\b|patient care|surgical|dental|behavioral health|"
+                     r"mental health", re.I)
+PM_STRONG = re.compile(r"information (technology|systems|services|security)|clinical (applications?|apps|systems?|informatics)|"
+                       r"technical (program|project|product)|"  # a TPM is technical by definition
+                       r"\b(ehr|emr|epic|cerner|meditech|informatics|eclinicalworks|allscripts|athenahealth|"
+                       r"software|cyber\w*|cloud|sap|servicenow|erp)\b", re.I)
+IT_ABBR = re.compile(r"\bIT\b|\bPM-T\b|\bTPMs?\b")
+# 3. The rest of NOT_ROLE (manufacturing, warehouse, field service, electrical...)
+#    gives way to any technology word: "Industrial Cybersecurity Program Manager",
+#    "IT Project Manager / Business Analyst", "Cloud Data Warehouse Program Manager".
+# Technology words. Specific phrases, not CYBER's and INFRA's stems, which in a PM
+# title catch "Food Insecurity", "Early Detection", "Knowledge Management" and
+# "Windows & Doors" (the second review).
+PM_TECH = re.compile(
+    r"\b(technical|technology|technologies|information|software|cyber\w*|infosec|appsec|devsecops|secops|soc|siem|"
+    r"soar|iam|pam|grc|mfa|sso|dlp|edr|xdr|mdr|zero[- ]?trust|vulnerabilit\w*|vuln|penetration|pen ?test\w*|"
+    r"red team|incident response|threat (intel\w*|detection|hunting|modeling)|insider threat|"
+    r"detection (and|&) response|data loss prevention|identity (and|&) access|"
+    r"identity (management|governance|platform|security|services|engineering)|privacy|isso|issm|fedramp|cmmc|"
+    r"nist|okta|sailpoint|cloud|infrastructure|platforms?|data|(?<!provider )network\w*|systems?|digital|"
+    r"engineering|devops|sre|site reliability|saas|apis?|ai|ml|erp|crm|sap|servicenow|salesforce|workday|"
+    r"(enterprise|business|software|web|mobile|cloud|clinical) (applications?|apps)|apps|noc|data cent(er|re)s?|"
+    r"kubernetes|linux|active directory|endpoint|servers?|storage|virtualization|vmware|observability|help ?desk|"
+    r"service desk|desktop|end.user|telecom\w*|voip|firewalls?|disaster recovery|ehr|emr|epic|cerner|meditech|"
+    r"informatics|eclinicalworks|allscripts|athenahealth|oracle health|web)\b|"
+    r"(?<!food )(?<!water )(?<!income )(?<!social )(?<!housing )(?<!economic )(?<!physical )(?<!homeland )\bsecurity\b|"
+    r"[-,]\s*tech\b", re.I)  # Amazon's "Sr. Product Manager - Tech"
+# A program or project manager in operations is not technology work, even at a
+# technology employer (Intel's supply chain, Amazon's grocery logistics). Product
+# managers are exempt: Zillow's "Product Manager, Real Estate Transactions" builds software.
 PM_NOT_TECH = re.compile(r"supply chain|logistics|grocery|retail|merchandis|apparel|footwear|real estate|workplace|"
                          r"health (and|&) safety|workforce management|labor and scheduling|perishable|fulfillment|"
                          r"warehouse|transportation", re.I)
@@ -353,22 +386,28 @@ def is_pm(title: str) -> bool:
     t = CLOCK.sub(" ", title)
     if PM_ROLE.search(t):
         return True
-    return bool((PM_TEAM.search(t) or PM_ABBR.search(t)) and not OTHER_JOB.search(t))
+    if PM_TEAM.search(t) and not NOT_PM_TEAM.search(t):
+        return True
+    return bool(PM_ABBR.search(t) and not NOT_PM_ABBR.search(t) and not TPM_CHIP.search(t))
 
 
-def pm_track(title: str, tech_employer: bool = False) -> bool:
-    """A project, program or product manager of technology work."""
+def pm_track(title: str, tech_employer: bool = False, sec_topic: bool = False) -> bool:
+    """A project, program or product manager of technology work. sec_topic: filed
+    under Foorilla's infosec topics, so a security PM whatever the title says."""
     if not is_pm(title):
         return False
     t = CLOCK.sub(" ", title)
-    if NOT_ROLE.search(CLINICAL.sub(" ", t)):
+    if PM_HARD_NOT.search(t):
         return False
-    strong = PM_STRONG_TECH.search(t) or IT_ABBR.search(t) or IS_DEPT.search(t)
-    if NOT_ROLE.search(t) and not strong:
+    strong = bool(PM_STRONG.search(t) or IT_ABBR.search(t) or IS_DEPT.search(t))
+    if PM_CARE.search(t) and not strong:
         return False
-    if strong or PM_TECH.search(t) or CYBER.search(t) or INFRA.search(t):
-        return True
-    return tech_employer and not PM_NOT_TECH.search(t)
+    tech = strong or bool(PM_TECH.search(t))
+    if NOT_ROLE.search(PM_CARE.sub(" ", t)) and not tech:
+        return False
+    if not PRODUCT.search(t) and PM_NOT_TECH.search(t) and not strong:
+        return False
+    return tech or sec_topic or tech_employer
 
 
 def level_text(title: str, track: str | None) -> str:
@@ -380,12 +419,25 @@ def level_text(title: str, track: str | None) -> str:
     return PM_ABBR.sub(" ", PM_TEAM.sub(" ", PM_ROLE.sub(" ", t)))
 
 
-def settle_level(title: str, rule_track_: str, rule_level_: str, jev_level: str) -> str:
-    """Jev's level, unless the title states its level as the rules read it for the
-    rules' own track. Read with the rules' track, not Jev's: a "Technical Program
-    Manager" the rules filed as pm/mid and Jev calls eng/senior is senior."""
-    lt = level_text(title, rule_track_)
+def settle_level(title: str, rule_track_: str, rule_level_: str, jev_track: str, jev_level: str) -> str:
+    """Jev's level, unless the title states its level. Whether "Manager" states a
+    level depends on the job: if the rules or Jev call it a PM, "Manager" is the
+    job, so a "Technical Program Manager" the rules filed pm/mid and Jev calls
+    eng/senior is senior, and a "Product Manager" filed cyber/senior that Jev
+    calls pm/mid is mid."""
+    lt = level_text(title, "pm" if "pm" in (rule_track_, jev_track) else rule_track_)
     return rule_level_ if (STAFF.search(lt) or SENIOR.search(lt) or ENTRY.search(lt)) else jev_level
+
+
+def apply_jev(p: dict, ans: dict) -> bool:
+    """Fold Jev's answer into a candidate. False: Jev says it is not for this page."""
+    if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
+        return False
+    # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
+    p["level"] = settle_level(p["title"], p["track"], p["level"], ans["track"], ans["level"])
+    p["track"] = ans["track"]
+    p["clearance"] = p["clearance"] or ans["clearance"]
+    return True
 
 
 def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False) -> str | None:
@@ -393,10 +445,10 @@ def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False)
     Then a role-shaped title is enough ("Principal Solutions Engineer" at a
     security vendor), and Jev has the final say. tech_employer: the posting is on
     a technology company's own board, so a PM there is tech work (see tech_source).
-    A PM title that is not technology work falls through to the rules below,
-    which is how it read before the PM track."""
-    if pm_track(title, tech_employer):
-        return "pm"
+    A PM title that is not technology work is out, as every PM title was before
+    the PM track."""
+    if is_pm(title):
+        return "pm" if pm_track(title, tech_employer, sec_topic) else None
     if IS_DEPT.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
         return "cyber" if CYBER.search(title) else "eng"
     if NOT_ROLE.search(title):
@@ -1119,14 +1171,9 @@ def main() -> int:
             p["jev"] = False
             continue
         p["jev"] = True
-        if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
+        if not apply_jev(p, ans):
             del cands[k]
             jev_stats["dropped"] += 1
-            continue
-        # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
-        p["level"] = settle_level(p["title"], p["track"], p["level"], ans["level"])
-        p["track"] = ans["track"]
-        p["clearance"] = p["clearance"] or ans["clearance"]
 
     # Assemble: today's postings, plus a failed source's postings within grace.
     jobs: dict[str, dict] = {}
