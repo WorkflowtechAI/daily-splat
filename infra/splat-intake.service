@@ -1,0 +1,16 @@
+[Unit]
+Description=Daily Splat intake form: /api/splat-intake to David's inbox via Graph
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=foundry
+# GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_SENDER, INTAKE_TO.
+# root:root 0600, never in the repo.
+EnvironmentFile=/etc/splat-intake.env
+ExecStart=/usr/bin/python3 /home/foundry/daily-splat/infra/intake.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

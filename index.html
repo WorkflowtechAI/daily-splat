@@ -87,6 +87,15 @@
 
   details{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:12px 14px;margin:14px 0 0}
   summary{cursor:pointer;font-weight:600}
+  .ask{margin:10px 0 0;font:500 14px var(--sans);padding:7px 12px;border:1px solid var(--copper);background:transparent;color:var(--copper-ink);border-radius:3px;cursor:pointer}
+  #help form{display:grid;gap:14px;margin:12px 0 0;max-width:680px}
+  #help label,#help legend{font-weight:600;font-size:.95rem}
+  #help fieldset{border:0;padding:0;margin:0;display:grid;gap:6px}
+  #help .opt{font-weight:400;display:flex;gap:8px;align-items:flex-start}
+  #help input[type=text],#help input[type=email],#help select,#help textarea{width:100%;font:15px var(--sans);padding:8px 10px;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink)}
+  #help textarea{min-height:110px;resize:vertical}
+  #help .hint{color:var(--ink-soft);font-size:.92rem;margin:0}
+  #help .trap{position:absolute;left:-9999px}
   details p,details li{color:var(--ink-soft);font-size:.93rem}
   .srcs{columns:3 200px;font-family:var(--mono);font-size:11px;padding:0;list-style:none;margin:10px 0 0}
   .srcs li{break-inside:avoid;padding:1px 0}
@@ -104,6 +113,7 @@
     <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
     <h1>The Daily Splat</h1>
     <p class="standfirst">Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles that sit next to security and the project, program and product managers who run technology work, entry to senior level, in Portland and the rest of Oregon, Washington and Idaho, or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
+    <button type="button" class="ask" id="ask">Looking for something this page doesn't do? Tell me what would help.</button>
   </header>
 
   <section class="stats" aria-label="Today's numbers">
@@ -143,6 +153,51 @@
   <p id="shown" aria-live="polite"></p>
 
   <main id="list"><p class="loading">Loading today's splat…</p></main>
+
+  <details id="help">
+    <summary>Tell me what would help (all optional)</summary>
+    <form id="help-form" novalidate>
+      <p class="hint">Everything here is optional. Write as much or as little as you like; everyone is in a different spot, and there is no wrong answer. It goes only to David, and nothing is stored on this site.</p>
+      <label>Where are you right now, and what would help?
+        <textarea name="situation" maxlength="4000" placeholder="Job hunting, changing fields, just looking, something else entirely..."></textarea></label>
+      <fieldset><legend>What kind of work?</legend>
+        <span class="opt"><input type="checkbox" name="tracks" value="Cyber"> Cyber</span>
+        <span class="opt"><input type="checkbox" name="tracks" value="Infra &amp; IT"> Infra &amp; IT</span>
+        <span class="opt"><input type="checkbox" name="tracks" value="PM"> PM</span>
+        <input type="text" name="other_tracks" maxlength="300" placeholder="Something else? Name the track you would want here"></fieldset>
+      <label>Where? <input type="text" name="region" maxlength="300" placeholder="Portland, Seattle, remote, anywhere..."></label>
+      <label>Level <select name="level"><option value="">Rather not say</option><option>Entry</option><option>Mid</option><option>Senior</option><option>Staff+</option><option>Not sure</option></select></label>
+      <p class="hint"><strong>An idea I'd like your honest take on.</strong> Sign in, and a short guided conversation builds a profile of who you are and what fulfills you at work, from your resume too. Then each job here shows how well it matches you, and one click puts it on your own radar with the full match write-up, like <a href="/cv/match/me" target="_blank" rel="noopener">this example</a>. From there: company research, a resume for that role, and a cover letter draft, in your own template if you like. It costs a little to run per person, so it would sit behind a sign-in. The job list itself stays open to everyone.</p>
+      <fieldset><legend>Would you use something like that?</legend>
+        <span class="opt"><input type="radio" name="would_use" value="Yes"> Yes</span>
+        <span class="opt"><input type="radio" name="would_use" value="Maybe"> Maybe</span>
+        <span class="opt"><input type="radio" name="would_use" value="No"> No, the list is enough</span>
+        <span class="opt"><input type="radio" name="would_use" value="Not sure"> Not sure yet</span></fieldset>
+      <fieldset><legend>Which parts would actually help?</legend>
+        <span class="opt"><input type="checkbox" name="pieces" value="Guided profile"> A profile built through a guided conversation</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="Match scores on cards"> Match scores on each job</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="My radar list"> A saved list of jobs on my radar</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="Company research"> Company research for a match</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="Resume for the role"> A resume built for a role</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="Cover letter draft"> A cover letter draft</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="My own template"> Using my own resume template</span>
+        <span class="opt"><input type="checkbox" name="pieces" value="Shareable profile"> A profile I can share with recruiters</span></fieldset>
+      <fieldset><legend>If it needed a sign-in, which would you prefer?</legend>
+        <span class="opt"><input type="radio" name="account" value="Email link, no password"> An emailed sign-in link, no password</span>
+        <span class="opt"><input type="radio" name="account" value="No account, private link"> No account, just a private link</span>
+        <span class="opt"><input type="radio" name="account" value="Don't mind"> Don't mind</span></fieldset>
+      <fieldset><legend>An optional "support the server" link, never required. How would that feel?</legend>
+        <span class="opt"><input type="radio" name="donate" value="Fine"> Fine with me</span>
+        <span class="opt"><input type="radio" name="donate" value="Neutral"> Neutral</span>
+        <span class="opt"><input type="radio" name="donate" value="Rather not see it"> I'd rather not see it</span></fieldset>
+      <label>Anything else? <textarea name="else" maxlength="4000"></textarea></label>
+      <label>Name, if you want a reply <input type="text" name="name" maxlength="120" autocomplete="name"></label>
+      <label>Email, if you want a reply <input type="email" name="email" maxlength="200" autocomplete="email"></label>
+      <input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div><button class="more" type="submit">Send to David</button></div>
+      <p id="help-status" class="hint" aria-live="polite"></p>
+    </form>
+  </details>
 
   <details>
     <summary>How this works</summary>
@@ -326,6 +381,31 @@
       $("#raw").append(el("a", { href: "jobs.json", text: "jobs.json" }), document.createTextNode(" · "));
     })
     .catch(() => { $("#list").replaceChildren(el("p", { class: "empty", text: "Today's list did not load. Try a refresh in a minute." })); });
+})();
+</script>
+<script>
+// The intake form: JSON to /api/splat-intake (infra/intake.py), which emails David.
+(() => {
+  "use strict";
+  const loaded = Date.now();
+  const help = document.getElementById("help"), form = document.getElementById("help-form");
+  const status = document.getElementById("help-status");
+  document.getElementById("ask").addEventListener("click", () => { help.open = true; help.scrollIntoView({ behavior: "smooth" }); });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = { t: loaded };
+    for (const [k, v] of new FormData(form)) data[k] = k in data ? [].concat(data[k], v) : v;
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true; status.textContent = "Sending...";
+    try {
+      const r = await fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) throw new Error(d.error || "It did not send. Please try again in a bit.");
+      form.reset(); status.textContent = "Sent. Thank you for taking the time.";
+    } catch (err) {
+      status.textContent = err.message;
+    } finally { btn.disabled = false; }
+  });
 })();
 </script>
 </body>
