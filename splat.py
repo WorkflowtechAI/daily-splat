@@ -211,20 +211,29 @@ TOO_SENIOR = re.compile(
 STAFF = re.compile(r"\bstaff\b|principal|distinguished|\bfellow\b", re.I)
 SENIOR = re.compile(r"senior|\bsr\.?\b|\blead\b|\biii\b|\biv\b|\b(engineer|developer)\s+(3|4)\b|manager|architect", re.I)
 CLEARANCE = re.compile(r"clearance|\bts/sci\b|top secret|\bsecret\b|polygraph", re.I)
+# Federal and defense contractors. Many of their roles need a clearance the title
+# never mentions (2026-11-07: 0 of 14 Peraton rows flagged, its "SOC Analyst"
+# wants an active Secret), so their rows say "Check clearance".
+FEDERAL = re.compile(
+    r"peraton|leidos|\bsaic\b|science applications|booz allen|\bcaci\b|mantech|general dynamics|\bgdit\b|"
+    r"northrop|lockheed|raytheon|\brtx\b|\bbae systems\b|l3harris|parsons corp|\bkbr\b|amentum|\bv2x\b|\bmitre\b|"
+    r"accenture federal|^ecs\b|asm research|empower ai|decisionpoint|computer world services|xcelerate solutions|"
+    r"anduril|shield ai|huntington ingalls|sierra nevada corp|general atomics|noblis|battelle", re.I)
 
 # Oregon is the page's home (2026-10-21: 18 of 252 PNW rows were Oregon, all
 # Amazon, Intel or Nike), so it gets its own bucket. Vancouver, Camas and
-# Washougal are Portland metro and count with it.
+# Washougal are Portland metro and count with it. Whole words only: on
+# 2026-11-07 "Jerusalem" read as Salem and "Trenton, NJ" as Renton.
 OR_CITY = re.compile(
-    r"portland|beaverton|hillsboro|tigard|tualatin|lake oswego|wilsonville|gresham|happy valley|"
+    r"\b(?:portland|beaverton|hillsboro|tigard|tualatin|lake oswego|wilsonville|gresham|happy valley|"
     r"milwaukie|clackamas|oregon city|west linn|sherwood|forest grove|troutdale|vancouver,?\s*(wa|washington)|"
-    r"\bcamas\b|washougal|salem|eugene|springfield,?\s*(or|oregon)|corvallis|albany,?\s*(or|oregon)|\bbend\b|"
+    r"camas|washougal|salem|eugene|springfield,?\s*(or|oregon)|corvallis|albany,?\s*(or|oregon)|bend|"
     r"redmond,?\s*(or|oregon)|medford|ashland,?\s*(or|oregon)|klamath falls|roseburg|grants pass|"
-    r"the dalles|hood river|prineville|hermiston|umatilla|boardman|pendleton|astoria|newport,?\s*(or|oregon)", re.I)
+    r"the dalles|hood river|prineville|hermiston|umatilla|boardman|pendleton|astoria|newport,?\s*(or|oregon))\b", re.I)
 PNW_CITY = re.compile(
-    r"seattle|bellevue|redmond|kirkland|bothell|everett|tacoma|olympia|spokane|renton|issaquah|"
+    r"\b(?:seattle|bellevue|redmond|kirkland|bothell|everett|tacoma|olympia|spokane|renton|issaquah|"
     r"lynnwood|tukwila|sammamish|woodinville|mukilteo|bellingham|richland|kennewick|pullman|"
-    r"boise|meridian|nampa|coeur d.alene|idaho falls|puget sound", re.I)
+    r"boise|meridian|nampa|coeur d.alene|idaho falls|puget sound)\b", re.I)
 PNW_STATE = re.compile(r"\bwashington\b|\boregon\b|\bidaho\b", re.I)
 OR_STATE = re.compile(r"\boregon\b", re.I)
 # Only the shapes a state code actually takes in a location: ", WA", "US-WA",
@@ -238,7 +247,8 @@ NOT_WA_STATE = re.compile(r"\bd\.?\s?c\.?\b|district of columbia|washington\s+(s
 NOT_PNW_CITY = re.compile(r"portland,?\s*(me\b|maine)|meridian,?\s*(ms\b|mississippi)|everett,?\s*(ma\b|mass)|"
                           r"bellevue,?\s*(ne\b|nebraska)|richland,?\s*(ms\b|mississippi)|"
                           r"salem,?\s*(ma\b|mass|nh\b|new hampshire|va\b|virginia)|medford,?\s*(ma\b|mass|nj\b|ny\b)|"
-                          r"oregon,?\s*(wi\b|wisconsin|il\b|illinois|oh\b|ohio|mo\b|missouri)", re.I)
+                          r"oregon,?\s*(wi\b|wisconsin|il\b|illinois|oh\b|ohio|mo\b|missouri)|"
+                          r"camp pendleton|richland county", re.I)
 REMOTE = re.compile(r"remote|anywhere|work from home|\bwfh\b|distributed|virtual|telecommute", re.I)
 US_COUNTRY = re.compile(r"\bU\.?S\.?A?\b|united states", re.I)
 WORLD = re.compile(r"worldwide|global|anywhere|international", re.I)
@@ -273,9 +283,12 @@ def where(location: str, remote_flag: bool = False) -> str | None:
     for seg in re.split(r"[;|\n]", loc):
         if NOT_PNW_CITY.search(seg):
             continue
-        if OR_CITY.search(seg) or OR_ABBR.search(seg) or OR_STATE.search(seg):
+        # A city name in a segment that names another country is a namesake
+        # abroad. A state name or code still counts.
+        city = not NOT_US.search(seg)
+        if (city and OR_CITY.search(seg)) or OR_ABBR.search(seg) or OR_STATE.search(seg):
             return "oregon"
-        if PNW_CITY.search(seg) or PNW_ABBR.search(seg):
+        if (city and PNW_CITY.search(seg)) or PNW_ABBR.search(seg):
             pnw = True
         elif PNW_STATE.search(seg) and not NOT_WA_STATE.search(seg):
             pnw = True
@@ -573,6 +586,9 @@ def money(lo, hi, unit: str = "") -> str | None:
     if not lo and not hi:
         return None
     k = lambda x: f"${round(x / 1000)}K" if x >= 1000 else f"${x}"  # noqa: E731
+    # Sources put an hourly range in their yearly field ("$17-$20/yr" on 2026-11-06).
+    if unit == "/yr" and max(lo, hi) < 1000:
+        unit = "/hr"
     return (f"{k(lo)}–{k(hi)}" if lo and hi and lo != hi else k(lo or hi)) + unit
 
 
@@ -588,7 +604,35 @@ def posting(**kw) -> dict:
 # Recruiters and staffing shops posting on behalf of an unnamed employer. The
 # page lists employers; a recruiter's copy of a role is noise at best.
 AGENCY = re.compile(r"recruit|staffing|talent|\bsearch\b|headhunt|mercor|remote office|consultants? inc|"
-                    r"jobgether|ladders|hackajob|haystack|swooped|remotehunter|lato jobs|greenlever", re.I)
+                    r"jobgether|ladders|hackajob|haystack|swooped|remotehunter|lato jobs|greenlever|"
+                    # Staffing firms by name (2026-11-07: TEK Systems 24 rows, Bright Vision 18).
+                    r"tek ?systems|bright vision tech|insight global|robert half|kforce|apex systems|randstad|"
+                    r"aerotek|actalent|experis|adecco|manpower|cybercoders|collabera|judge group|akkodis|"
+                    r"\bmodis\b|beacon hill|kelly services|\bvaco\b|jobot|mindlance|diverse lynx|infojini|"
+                    r"\byoh\b|system one|ascendion|\bhays\b|harnham|genesis10|signature consultants|"
+                    r"matlen silver|calance|pyramid consulting|cynet systems|intelliswift|net2source", re.I)
+
+
+def fold_remote_twins(cands: dict) -> int:
+    """A role listed locally and again as remote, the same company and title, is
+    one job (2026-11-07: 8 such pairs, mostly an aggregator's remote copy of a
+    company-board row). The local row stays and is marked also_remote, so the
+    Remote filter still finds it. Keys are company|title|where. Returns how many folded."""
+    local: dict[str, list[dict]] = {}
+    for k, p in cands.items():
+        if p["where"] != "remote":
+            local.setdefault(k.rsplit("|", 1)[0], []).append(p)
+    folded = 0
+    for k in [k for k, p in cands.items() if p["where"] == "remote"]:
+        twins = local.get(k.rsplit("|", 1)[0])
+        if not twins:
+            continue
+        for t in twins:
+            t["also_remote"] = True
+            t["posted"] = t["posted"] or cands[k]["posted"]
+        del cands[k]
+        folded += 1
+    return folded
 
 
 # ── Sources. Each returns a list of posting() dicts or raises. ───────────────
@@ -1207,7 +1251,8 @@ def main() -> int:
         if not track or not level:
             continue
         p.update(where=w, track=track, level=level, source=sid,
-                 clearance=bool(CLEARANCE.search(p["title"] + " " + p["desc"][:600])))
+                 clearance=bool(CLEARANCE.search(p["title"] + " " + p["desc"][:600])),
+                 clearance_check=bool(FEDERAL.search(p["company"])))
         k = f"{norm(p['company'])}|{norm(p['title'])}|{w}"
         old = cands.get(k)
         # One row per role: the company's own board beats an aggregator's copy.
@@ -1215,6 +1260,7 @@ def main() -> int:
             if old and not p["posted"]:
                 p["posted"] = old["posted"]
             cands[k] = p
+    folded = fold_remote_twins(cands)
 
     # Jev refines track and level on postings it has not seen.
     jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "tokens": 0, "error": None}
@@ -1253,6 +1299,10 @@ def main() -> int:
             "salary": p["salary"], "source": stats[p["source"]]["label"],
             "via": p["origin"], "clearance": p["clearance"], "checked": p["jev"],
         }
+        # Only when true, so a day-old page and this one read the same.
+        for flag in ("clearance_check", "also_remote"):
+            if p.get(flag):
+                jobs[jid][flag] = True
         keep_jev.add(jev_key(p))
         stats[p["source"]]["kept"] += 1
     carried = 0
@@ -1280,6 +1330,7 @@ def main() -> int:
                   "grace_days": GRACE_DAYS},
         "counts": {"total": len(rows), "new_today": sum(1 for j in rows if j["first_seen"] == TODAY),
                    "dropped_since_last_run": len(set(prev_jobs) - set(jobs)), "carried": carried,
+                   "remote_twins_folded": folded,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
@@ -1287,7 +1338,7 @@ def main() -> int:
                    # "pnw" stays all three states so old counts and links mean what they did.
                    "pnw": sum(1 for j in rows if j["where"] in ("oregon", "pnw")),
                    "oregon": sum(1 for j in rows if j["where"] == "oregon"),
-                   "remote": sum(1 for j in rows if j["where"] == "remote")},
+                   "remote": sum(1 for j in rows if j["where"] == "remote" or j.get("also_remote"))},
         "sources": [{"id": sid, **{k: v for k, v in s.items() if k != "secs"}} for sid, s in sorted(stats.items())],
         "jev": jev_stats,
         "jobs": rows,
