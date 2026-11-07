@@ -89,14 +89,62 @@
   summary{cursor:pointer;font-weight:600}
   .ask{margin:10px 0 0;font:500 14px var(--sans);padding:7px 12px;border:1px solid var(--copper);background:transparent;color:var(--copper-ink);border-radius:3px;cursor:pointer}
   .meta-link{margin:10px 0 0;font-size:.95rem;color:var(--ink-soft)}
-  #help form{display:grid;gap:14px;margin:12px 0 0;max-width:680px}
-  #help label,#help legend{font-weight:600;font-size:.95rem}
-  #help fieldset{border:0;padding:0;margin:0;display:grid;gap:6px}
-  #help .opt{font-weight:400;display:flex;gap:8px;align-items:flex-start}
-  #help input[type=text],#help input[type=email],#help select,#help textarea{width:100%;font:15px var(--sans);padding:8px 10px;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink)}
-  #help textarea{min-height:110px;resize:vertical}
-  #help .hint{color:var(--ink-soft);font-size:.92rem;margin:0}
+  /* The intake form ("Tell me what would help"). */
+  #help{padding:0;margin-top:34px;border-radius:6px}
+  #help>summary{list-style:none;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-family:var(--serif);font-size:1.3rem}
+  #help>summary::-webkit-details-marker{display:none}
+  #help>summary::before{content:"+";font-family:var(--mono);font-size:1rem;color:var(--copper);width:1ch}
+  #help[open]>summary::before{content:"\2212"}
+  #help .sum-note{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+  #help .help-body{padding:0 18px 22px;border-top:1px solid var(--line)}
+  #help p{color:var(--ink-soft);font-size:.95rem}
+  #help .help-intro{max-width:64ch;font-size:1rem;margin:18px 0 0}
+  #help form{max-width:780px}
+  #help .step{padding:22px 0 4px;border-top:1px solid var(--line);margin-top:18px}
+  #help .step:first-child{border-top:0;margin-top:0}
+  #help h3{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:0 0 14px;display:flex;gap:10px;align-items:center}
+  #help .num{display:inline-grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font:600 11.5px var(--mono)}
+  #help .field{display:grid;gap:6px;margin:0 0 16px}
+  #help .field>span,#help .q{font-weight:600;font-size:.93rem;color:var(--ink)}
+  #help .q{margin:0 0 8px}
+  #help fieldset{border:0;padding:0;margin:0 0 18px;min-width:0}
+  #help .two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  #help input[type=text],#help input[type=email],#help select,#help textarea{width:100%;font:15px var(--sans);padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
+  #help input:focus,#help select:focus,#help textarea:focus{outline:2px solid var(--copper);outline-offset:1px;border-color:transparent}
+  #help textarea{min-height:110px;resize:vertical;line-height:1.45}
+  #help .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+  #help .chips label{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink-soft);font-size:.92rem;line-height:1.3;cursor:pointer;user-select:none;transition:border-color .12s,background-color .12s,color .12s}
+  #help .chips label:hover{border-color:color-mix(in srgb,var(--copper) 50%,var(--line));color:var(--ink)}
+  #help .chips input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+  #help .chips label:has(input:checked){border-color:var(--copper);background:color-mix(in srgb,var(--copper) 12%,var(--card));color:var(--copper-ink);font-weight:500}
+  #help .chips label:has(input:checked)::before{content:"\2713";font-weight:600}
+  #help .chips label:has(input:focus-visible){outline:2px solid var(--copper);outline-offset:2px}
+  #help .pitch{background:color-mix(in srgb,var(--moss) 7%,var(--card));border:1px solid color-mix(in srgb,var(--moss) 28%,var(--line));border-radius:6px;padding:18px;margin:0 0 22px}
+  #help .pitch .lede{color:var(--ink);font-size:1rem;margin:0 0 16px;max-width:62ch}
+  #help ol.flow{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;counter-reset:flow}
+  #help ol.flow li{counter-increment:flow;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:12px 13px}
+  #help ol.flow li::before{content:counter(flow);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--moss);color:var(--paper);font:600 11px var(--mono);margin-bottom:8px}
+  #help ol.flow b{display:block;font-size:.95rem;line-height:1.3;margin-bottom:4px;color:var(--ink)}
+  #help ol.flow span{display:block;font-size:.87rem;line-height:1.45;color:var(--ink-soft)}
+  #help .free{display:flex;gap:8px;align-items:baseline;color:var(--ink);font-size:.95rem;margin:0 0 6px}
+  #help .free::before{content:"\2713";color:var(--moss);font-weight:700}
+  #help .costnote{font-size:.9rem;margin:0 0 12px;max-width:64ch}
+  #help .example{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.93rem}
+  #help .send-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-top:20px;margin-top:6px;border-top:1px solid var(--line)}
+  #help .send{font:600 15px var(--sans);padding:11px 20px;border:0;border-radius:4px;background:var(--ink);color:var(--paper);cursor:pointer}
+  #help .send:hover{background:var(--copper-ink)}
+  #help .send:disabled{opacity:.6;cursor:wait}
+  #help .send-note{font-size:.85rem;color:var(--ink-faint);margin:0}
+  #help #help-status{margin:12px 0 0;font-weight:500}
+  #help #help-status.ok{color:var(--moss)}
+  #help #help-status.err{color:var(--copper-ink)}
   #help .trap{position:absolute;left:-9999px}
+  @media (max-width:560px){
+    #help .two{grid-template-columns:1fr}
+    #help .help-body{padding:0 14px 18px}
+    #help>summary{padding:14px}
+  }
+  @media (prefers-reduced-motion:reduce){#help .chips label{transition:none}}
   details p,details li{color:var(--ink-soft);font-size:.93rem}
   .srcs{columns:3 200px;font-family:var(--mono);font-size:11px;padding:0;list-style:none;margin:10px 0 0}
   .srcs li{break-inside:avoid;padding:1px 0}
@@ -157,60 +205,112 @@
   <main id="list"><p class="loading">Loading today's splat…</p></main>
 
   <details id="help">
-    <summary>Tell me what would help (all optional)</summary>
+    <summary>Tell me what would help <span class="sum-note">Optional &middot; a few minutes &middot; goes only to David</span></summary>
+    <div class="help-body">
+    <p class="help-intro">Everything here is optional. Answer one question or all of them; everyone is in a different spot, and there is no wrong answer. Nothing is stored on this site.</p>
     <form id="help-form" novalidate>
-      <p class="hint">Everything here is optional. Write as much or as little as you like; everyone is in a different spot, and there is no wrong answer. It goes only to David, and nothing is stored on this site.</p>
-      <label>Where are you right now, and what would help?
-        <textarea name="situation" maxlength="4000" placeholder="Job hunting, changing fields, just looking, something else entirely..."></textarea></label>
-      <fieldset><legend>What kind of work?</legend>
-        <span class="opt"><input type="checkbox" name="tracks" value="Cyber"> Cyber</span>
-        <span class="opt"><input type="checkbox" name="tracks" value="Infra &amp; IT"> Infra &amp; IT</span>
-        <span class="opt"><input type="checkbox" name="tracks" value="PM"> PM</span>
-        <input type="text" name="other_tracks" maxlength="300" placeholder="Something else? Name the track you would want here"></fieldset>
-      <label>Where? <input type="text" name="region" maxlength="300" placeholder="Portland, Seattle, remote, anywhere..."></label>
-      <label>Level <select name="level"><option value="">Rather not say</option><option>Entry</option><option>Mid</option><option>Senior</option><option>Staff+</option><option>Not sure</option></select></label>
-      <p class="hint"><strong>An idea I'd like your honest take on.</strong> Sign in, and a short guided conversation builds a profile of who you are and what fulfills you at work, from your resume too. Then each job here shows how well it matches you, and one click puts it on your own radar with the full match write-up, like <a href="/cv/match/me" target="_blank" rel="noopener">this example</a>. From there: company research, a resume for that role, and a cover letter draft, in your own template if you like. It costs a little to run per person, so it would sit behind a sign-in. The job list itself stays open to everyone.</p>
-      <fieldset><legend>Would you use something like that?</legend>
-        <span class="opt"><input type="radio" name="would_use" value="Yes"> Yes</span>
-        <span class="opt"><input type="radio" name="would_use" value="Maybe"> Maybe</span>
-        <span class="opt"><input type="radio" name="would_use" value="No"> No, the list is enough</span>
-        <span class="opt"><input type="radio" name="would_use" value="Not sure"> Not sure yet</span></fieldset>
-      <fieldset><legend>Which parts would actually help?</legend>
-        <span class="opt"><input type="checkbox" name="pieces" value="Guided profile"> A profile built through a guided conversation</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="Match scores on cards"> Match scores on each job</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="My radar list"> A saved list of jobs on my radar</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="Company research"> Company research for a match</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="Resume for the role"> A resume built for a role</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="Cover letter draft"> A cover letter draft</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="My own template"> Using my own resume template</span>
-        <span class="opt"><input type="checkbox" name="pieces" value="Shareable profile"> A profile I can share with recruiters</span></fieldset>
-      <fieldset><legend>If it needed a sign-in, which would you prefer?</legend>
-        <span class="opt"><input type="radio" name="account" value="Email link, no password"> An emailed sign-in link, no password</span>
-        <span class="opt"><input type="radio" name="account" value="No account, private link"> No account, just a private link</span>
-        <span class="opt"><input type="radio" name="account" value="Don't mind"> Don't mind</span></fieldset>
-      <fieldset><legend>An optional "support the server" link, never required. How would that feel?</legend>
-        <span class="opt"><input type="radio" name="donate" value="Fine"> Fine with me</span>
-        <span class="opt"><input type="radio" name="donate" value="Neutral"> Neutral</span>
-        <span class="opt"><input type="radio" name="donate" value="Rather not see it"> I'd rather not see it</span></fieldset>
-      <fieldset><legend>What else would help? Pick any, or none.</legend>
-        <span class="opt"><input type="checkbox" name="extras" value="Daily job-search challenges"> Small daily job-search challenges (one outreach, one application, one follow-up)</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Skill-up labs"> Hands-on skill-up labs and drills</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Cert study plans"> Study plans for a certification</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Technical interview prep"> Technical interview prep</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Behavioral interview prep"> Behavioral interview practice (telling your stories)</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Mock interviews"> Mock interviews with feedback</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Resume review"> A resume review</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Networking and outreach"> Help with networking and reaching out</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Salary negotiation"> Salary and offer negotiation</span>
-        <span class="opt"><input type="checkbox" name="extras" value="Group check-ins"> Group check-ins, so the search is less lonely</span>
-        <input type="text" name="extras_other" maxlength="600" placeholder="Something else? Say it here"></fieldset>
-      <label>Anything else? <textarea name="else" maxlength="4000"></textarea></label>
-      <label>Name, if you want a reply <input type="text" name="name" maxlength="120" autocomplete="name"></label>
-      <label>Email, if you want a reply <input type="email" name="email" maxlength="200" autocomplete="email"></label>
+      <section class="step">
+        <h3><span class="num">1</span> Where you are</h3>
+        <label class="field"><span>Where are you right now, and what would help?</span>
+          <textarea name="situation" maxlength="4000" placeholder="Job hunting, changing fields, just looking, something else entirely..."></textarea></label>
+      </section>
+
+      <section class="step">
+        <h3><span class="num">2</span> What you're looking for</h3>
+        <fieldset><legend class="q">What kind of work?</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="tracks" value="Cyber">Cyber</label>
+            <label><input type="checkbox" name="tracks" value="Infra &amp; IT">Infra &amp; IT</label>
+            <label><input type="checkbox" name="tracks" value="PM">PM</label>
+          </div>
+          <input type="text" name="other_tracks" maxlength="300" placeholder="Something else? Name the track you'd want here" aria-label="Another track"></fieldset>
+        <div class="two">
+          <label class="field"><span>Where?</span><input type="text" name="region" maxlength="300" placeholder="Portland, Seattle, remote, anywhere..."></label>
+          <label class="field"><span>Level</span><select name="level"><option value="">Rather not say</option><option>Entry</option><option>Mid</option><option>Senior</option><option>Staff+</option><option>Not sure</option></select></label>
+        </div>
+      </section>
+
+      <section class="step">
+        <h3><span class="num">3</span> An idea I'd like your take on</h3>
+        <div class="pitch">
+          <p class="lede">Nothing here is built yet. If you signed in, it could work like this. Would you use it? "No thanks" is a fine answer.</p>
+          <ol class="flow">
+            <li><b>Build a profile you can share</b><span>An AI interviewer asks about your work and what fulfills you, and reads your resume. You get a skills profile to share with recruiters.</span></li>
+            <li><b>See your match on every job</b><span>Each job card on the Splat shows how well it fits you.</span></li>
+            <li><b>Save jobs to your Radar</b><span>"Put it on my Radar" saves a job to your own list, with a full write-up of how you match.</span></li>
+            <li><b>Get help applying</b><span>From your Radar, get company research, a resume for that role, or a cover letter draft. Your own resume template works too.</span></li>
+          </ol>
+          <p class="free">The daily job list stays free and open to everyone, always, with no sign-in.</p>
+          <p class="costnote">The AI steps cost a little to run for each person, so they would sit behind a sign-in. A "support the server" link might show up someday, and you would never have to use it.</p>
+          <a class="example" href="/cv/match/me" target="_blank" rel="noopener">See a real match write-up &rarr;</a>
+        </div>
+        <fieldset><legend class="q">Would you use something like that?</legend>
+          <div class="chips">
+            <label><input type="radio" name="would_use" value="Yes">Yes</label>
+            <label><input type="radio" name="would_use" value="Maybe">Maybe</label>
+            <label><input type="radio" name="would_use" value="No">No, the list is enough</label>
+            <label><input type="radio" name="would_use" value="Not sure">Not sure yet</label>
+          </div></fieldset>
+        <fieldset><legend class="q">Which parts would actually help?</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="pieces" value="Guided profile">A profile from a guided conversation</label>
+            <label><input type="checkbox" name="pieces" value="Shareable profile">A profile I can share with recruiters</label>
+            <label><input type="checkbox" name="pieces" value="Match scores on cards">Match scores on each job</label>
+            <label><input type="checkbox" name="pieces" value="My radar list">My own Radar list</label>
+            <label><input type="checkbox" name="pieces" value="Company research">Company research</label>
+            <label><input type="checkbox" name="pieces" value="Resume for the role">A resume for the role</label>
+            <label><input type="checkbox" name="pieces" value="Cover letter draft">A cover letter draft</label>
+            <label><input type="checkbox" name="pieces" value="My own template">Using my own resume template</label>
+          </div></fieldset>
+        <fieldset><legend class="q">If it needed a sign-in, which would you prefer?</legend>
+          <div class="chips">
+            <label><input type="radio" name="account" value="Email link, no password">An emailed link, no password</label>
+            <label><input type="radio" name="account" value="No account, private link">No account, just a private link</label>
+            <label><input type="radio" name="account" value="Don't mind">Don't mind</label>
+          </div></fieldset>
+        <fieldset><legend class="q">An optional "support the server" link, never required. How would that feel?</legend>
+          <div class="chips">
+            <label><input type="radio" name="donate" value="Fine">Fine with me</label>
+            <label><input type="radio" name="donate" value="Neutral">Neutral</label>
+            <label><input type="radio" name="donate" value="Rather not see it">I'd rather not see it</label>
+          </div></fieldset>
+      </section>
+
+      <section class="step">
+        <h3><span class="num">4</span> What else would help</h3>
+        <fieldset><legend class="q">Pick any, or none.</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="extras" value="Daily job-search challenges">Small daily job-search challenges</label>
+            <label><input type="checkbox" name="extras" value="Skill-up labs">Hands-on skill-up labs</label>
+            <label><input type="checkbox" name="extras" value="Cert study plans">Certification study plans</label>
+            <label><input type="checkbox" name="extras" value="Technical interview prep">Technical interview prep</label>
+            <label><input type="checkbox" name="extras" value="Behavioral interview prep">Practice telling my stories</label>
+            <label><input type="checkbox" name="extras" value="Mock interviews">Mock interviews with feedback</label>
+            <label><input type="checkbox" name="extras" value="Resume review">A resume review</label>
+            <label><input type="checkbox" name="extras" value="Networking and outreach">Networking and outreach</label>
+            <label><input type="checkbox" name="extras" value="Salary negotiation">Salary and offer negotiation</label>
+            <label><input type="checkbox" name="extras" value="Group check-ins">Group check-ins, so it's less lonely</label>
+          </div>
+          <input type="text" name="extras_other" maxlength="600" placeholder="Something else? Say it here" aria-label="Something else that would help"></fieldset>
+      </section>
+
+      <section class="step">
+        <h3><span class="num">5</span> Anything else</h3>
+        <label class="field"><span>Anything you want to add</span><textarea name="else" maxlength="4000"></textarea></label>
+        <div class="two">
+          <label class="field"><span>Name, if you want a reply</span><input type="text" name="name" maxlength="120" autocomplete="name"></label>
+          <label class="field"><span>Email, if you want a reply</span><input type="email" name="email" maxlength="200" autocomplete="email"></label>
+        </div>
+      </section>
+
       <input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <div><button class="more" type="submit">Send to David</button></div>
-      <p id="help-status" class="hint" aria-live="polite"></p>
+      <div class="send-row">
+        <button class="send" type="submit">Send to David</button>
+        <p class="send-note">Goes straight to David's inbox. Nothing is kept here.</p>
+      </div>
+      <p id="help-status" aria-live="polite"></p>
     </form>
+    </div>
   </details>
 
   <details>
@@ -410,14 +510,14 @@
     const data = { t: loaded };
     for (const [k, v] of new FormData(form)) data[k] = k in data ? [].concat(data[k], v) : v;
     const btn = form.querySelector("button[type=submit]");
-    btn.disabled = true; status.textContent = "Sending...";
+    btn.disabled = true; status.className = ""; status.textContent = "Sending...";
     try {
       const r = await fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) throw new Error(d.error || "It did not send. Please try again in a bit.");
-      form.reset(); status.textContent = "Sent. Thank you for taking the time.";
+      form.reset(); status.className = "ok"; status.textContent = "Sent. Thank you for taking the time. It means a lot.";
     } catch (err) {
-      status.textContent = err.message;
+      status.className = "err"; status.textContent = err.message;
     } finally { btn.disabled = false; }
   });
 })();
