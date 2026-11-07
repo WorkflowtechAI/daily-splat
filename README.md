@@ -14,7 +14,9 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   beside itself, or where `SPLAT_OUT` says (the server sets the docroot).
 - **Client:** `index.html` reads `jobs.json`
   and does all filtering in the browser. Filters live in the URL hash, so a view
-  like `#track=cyber&where=pnw` can be pasted into the group chat.
+  like `#track=cyber&where=oregon,remote` can be pasted into the group chat, and
+  the last view is remembered on each device (localStorage). Where takes more
+  than one place; an old `where=pnw` link still means Oregon plus WA/ID.
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
   yesterday's postings, for "new today" and the failed-source grace, and the
   Jev answer cache, so each day only pays for its new postings.

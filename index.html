@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daily Splat · Infosec Jobs, Portland &amp; PNW</title>
+<title>Daily Splat · Cyber, IT &amp; Tech PM Jobs · Portland, PNW &amp; Remote</title>
 <link rel="canonical" href="https://iambraun.com/cv/job-sources/daily-splat/">
 <meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them and the project, program and product managers of technology work, entry to senior level, in Portland, Oregon and the rest of the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
-<meta property="og:title" content="Daily Splat: infosec jobs, Portland, PNW and remote">
+<meta property="og:title" content="Daily Splat: cyber, IT and tech PM jobs in Portland, the PNW and remote">
 <meta property="og:description" content="Entry to senior cybersecurity, infrastructure, IT support and tech PM openings in Oregon, WA, ID or remote-US. Rebuilt daily.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#F4F7F2" media="(prefers-color-scheme: light)">
@@ -38,18 +38,18 @@
   a{color:var(--copper-ink);text-decoration-thickness:1px;text-underline-offset:2px}
   a:hover{color:var(--copper)}
 
-  header.mast{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:22px}
+  header.mast{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:18px}
   .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--copper);margin:0 0 10px}
-  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,5vw,3rem);line-height:1.05;letter-spacing:-.02em;margin:0 0 12px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,5vw,3rem);line-height:1.05;letter-spacing:-.02em;margin:0 0 10px}
   .standfirst{font-size:1.04rem;color:var(--ink-soft);margin:0;max-width:66ch}
+  .today{font-family:var(--mono);font-size:12px;color:var(--ink-faint);margin:10px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+  .today b{color:var(--moss);font-weight:600}
+  .linkbtn{font:inherit;color:var(--copper-ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+  .linkbtn:hover{color:var(--copper)}
 
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:0 0 22px}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:10px 12px}
-  .stat b{display:block;font-family:var(--serif);font-size:1.6rem;font-weight:600;line-height:1.1}
-  .stat span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
-  .stat.new b{color:var(--moss)}
-
-  .bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:0 0 12px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:0 0 10px}
+  .bar .lbl{min-width:4.6em}
+  button .n{font-family:var(--mono);font-size:10.5px;font-weight:500;opacity:.7;margin-left:1px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--card)}
   .seg button,.chip{font:500 13px/1 var(--sans);color:var(--ink-soft);background:transparent;border:0;padding:8px 11px;cursor:pointer}
   .seg button+button{border-left:1px solid var(--line)}
@@ -59,7 +59,7 @@
   .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-right:6px}
   #q{flex:1 1 240px;min-width:0;font:15px var(--sans);padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);color:var(--ink)}
   #q:focus,button:focus-visible{outline:2px solid var(--copper);outline-offset:1px}
-  #shown{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin:6px 0 0}
+  #shown{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px}
 
   h2{font-family:var(--serif);font-weight:600;font-size:1.4rem;margin:34px 0 10px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
   h2 small{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-faint);letter-spacing:.05em}
@@ -87,8 +87,7 @@
 
   details{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:12px 14px;margin:14px 0 0}
   summary{cursor:pointer;font-weight:600}
-  .ask{margin:10px 0 0;font:500 14px var(--sans);padding:7px 12px;border:1px solid var(--copper);background:transparent;color:var(--copper-ink);border-radius:3px;cursor:pointer}
-  .meta-link{margin:10px 0 0;font-size:.95rem;color:var(--ink-soft)}
+  .meta-link{margin:34px 0 0;font-size:.95rem;color:var(--ink-soft)}
   /* The intake form ("Tell me what would help"). */
   #help{padding:0;margin-top:34px;border-radius:6px}
   #help>summary{list-style:none;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-family:var(--serif);font-size:1.3rem}
@@ -151,8 +150,17 @@
   .srcs .bad{color:var(--copper-ink)}
   footer.foot{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   @media (max-width:560px){
+    .wrap{padding-top:24px}
+    .kicker{display:none}
     .job{grid-template-columns:minmax(0,1fr)}
     .when{text-align:left}
+    .standfirst{font-size:.95rem}
+    /* Phone: the chips name themselves, so the row labels go and each row fits one line. */
+    .bar .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    .bar{gap:6px;margin-bottom:8px}
+    .chip{font-size:12.5px;padding:7px 9px}
+    .seg{display:flex;width:100%}
+    .seg button{flex:1 1 auto;font-size:12.5px;padding:8px 6px;white-space:nowrap}
   }
 </style>
 </head>
@@ -161,48 +169,44 @@
   <header class="mast">
     <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
     <h1>The Daily Splat</h1>
-    <p class="standfirst">Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles that sit next to security and the project, program and product managers who run technology work, entry to senior level, in Portland and the rest of Oregon, Washington and Idaho, or remote from here. Pulled fresh each morning from company job boards and open aggregators. If a source stops listing a job, it is gone from this page the same day.</p>
-    <button type="button" class="ask" id="ask">Looking for something this page doesn't do? Tell me what would help.</button>
-    <p class="meta-link">Come say hi at <a href="https://workflowtech.ai/show-and-tell">Show &amp; Tell</a>, the monthly community call.</p>
+    <p class="standfirst">Cyber, Infra &amp; IT and tech PM jobs in Portland, Oregon and the rest of the PNW, or remote in the US. Entry to senior, straight from employer job boards, rebuilt every morning.</p>
+    <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button></p>
   </header>
 
-  <section class="stats" aria-label="Today's numbers">
-    <div class="stat new"><b id="s-new">–</b><span>New today</span></div>
-    <div class="stat"><b id="s-total">–</b><span>Open roles</span></div>
-    <div class="stat"><b id="s-cyber">–</b><span>Cyber</span></div>
-    <div class="stat"><b id="s-eng">–</b><span>Infra &amp; IT</span></div>
-    <div class="stat"><b id="s-pm">–</b><span>PM</span></div>
-    <div class="stat"><b id="s-entry">–</b><span>Entry-level</span></div>
-    <div class="stat"><b id="s-oregon">–</b><span>Portland &amp; Oregon</span></div>
-    <div class="stat"><b id="s-pnw">–</b><span>All PNW</span></div>
-    <div class="stat"><b id="s-dropped">–</b><span>Dropped since yesterday</span></div>
-  </section>
-
+  <section aria-label="Filters">
   <div class="bar">
-    <span><span class="lbl">Track</span><span class="seg" data-key="track">
-      <button data-v="all">All</button><button data-v="cyber">Cyber</button><button data-v="eng">Infra &amp; IT</button><button data-v="pm">PM</button>
-    </span></span>
-    <span><span class="lbl">Where</span><span class="seg" data-key="where">
-      <button data-v="all">All</button><button data-v="oregon">Portland &amp; OR</button><button data-v="pnw">All PNW</button><button data-v="remote">Remote US</button>
-    </span></span>
+    <span class="lbl">Track</span><span class="seg" data-key="track">
+      <button data-v="all">All<span class="n"></span></button><button data-v="cyber">Cyber<span class="n"></span></button><button data-v="eng">Infra &amp; IT<span class="n"></span></button><button data-v="pm">Tech PM<span class="n"></span></button>
+    </span>
+  </div>
+  <div class="bar">
+    <span class="lbl">Where</span>
+    <button class="chip" data-where="oregon">Portland &amp; OR<span class="n"></span></button>
+    <button class="chip" data-where="waid">WA &amp; ID<span class="n"></span></button>
+    <button class="chip" data-where="remote">Remote US<span class="n"></span></button>
   </div>
   <div class="bar">
     <span class="lbl">Level</span>
-    <button class="chip" data-level="entry">Entry</button>
-    <button class="chip" data-level="mid">Mid</button>
-    <button class="chip" data-level="senior">Senior</button>
-    <button class="chip" data-level="staff">Staff+</button>
-    <span class="lbl" style="margin-left:8px">Only</span>
-    <button class="chip" data-flag="new">New today</button>
-    <button class="chip" data-flag="pay">Pay listed</button>
-    <button class="chip" data-flag="noclr">No clearance</button>
+    <button class="chip" data-level="entry">Entry<span class="n"></span></button>
+    <button class="chip" data-level="mid">Mid<span class="n"></span></button>
+    <button class="chip" data-level="senior">Senior<span class="n"></span></button>
+    <button class="chip" data-level="staff">Staff+<span class="n"></span></button>
   </div>
   <div class="bar">
-    <input id="q" type="search" placeholder="Search title, company or city…" aria-label="Search jobs" autocomplete="off">
+    <span class="lbl">Only</span>
+    <button class="chip" data-flag="new">New today<span class="n"></span></button>
+    <button class="chip" data-flag="pay">Pay listed<span class="n"></span></button>
+    <button class="chip" data-flag="noclr" title="Hides roles that ask for a clearance, and federal or defense contractors, whose roles often need one">No clearance<span class="n"></span></button>
   </div>
-  <p id="shown" aria-live="polite"></p>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search: soc, help desk, cloud, Hillsboro…" aria-label="Search title, company or city" autocomplete="off">
+  </div>
+  <p id="shown" aria-live="polite"><span id="shown-n"></span><button type="button" class="linkbtn" id="reset" hidden>Reset filters</button><button type="button" class="linkbtn" id="copy">Copy link to this view</button></p>
+  </section>
 
   <main id="list"><p class="loading">Loading today's splat…</p></main>
+
+  <p class="meta-link">Come say hi at <a href="https://workflowtech.ai/show-and-tell">Show &amp; Tell</a>, the monthly community call.</p>
 
   <details id="help">
     <summary>Tell me what would help <span class="sum-note">Optional &middot; a few minutes &middot; goes only to David</span></summary>
@@ -315,7 +319,7 @@
   <details>
     <summary>How this works</summary>
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse and Workable.</p>
-    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers.</p>
+    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. Federal and defense contractors get a "Check clearance" tag, since many of their roles need one the title never mentions. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
     <ul class="srcs" id="srcs"></ul>
@@ -334,33 +338,59 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const LEVEL = { entry: "Entry", mid: "Mid", senior: "Senior", staff: "Staff+" };
-  const TRACK = { cyber: "Cyber", eng: "Infra & IT", pm: "PM" };
+  const TRACK = { cyber: "Cyber", eng: "Infra & IT", pm: "Tech PM" };
+  const ZONE = { oregon: "Portland & OR", waid: "WA / ID", remote: "Remote US" };
+  const FLAGS = ["new", "pay", "noclr"];
+  const SAVED = "splat-view";
+  // A search word also finds what people mean by it. Matching is from the start
+  // of a word, so "soc" finds SOC and not Associate.
+  const SYN = {
+    soc: ["soc", "security operations"], sre: ["sre", "site reliability"], helpdesk: ["help desk", "helpdesk", "service desk"],
+    iam: ["iam", "identity"], grc: ["grc", "governance", "compliance"], appsec: ["appsec", "application security", "product security"],
+    infosec: ["infosec", "information security"], tpm: ["tpm", "technical program"], pdx: ["portland"],
+  };
 
-  // Filters live in the URL hash so a filtered view can be shared in the group chat.
-  const st = { track: "all", where: "all", levels: new Set(), flags: new Set(), q: "" };
+  // Filters live in the URL hash so a filtered view can be shared in the group
+  // chat, and the last one is remembered on this device.
+  const st = { track: "all", where: new Set(), levels: new Set(), flags: new Set(), q: "" };
+  let terms = [], restored = false;
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function setQuery(q) {
+    st.q = q;
+    terms = q.toLowerCase().split(/\s+/).filter(Boolean)
+      .map((w) => new RegExp("(?:^|[^a-z0-9])(?:" + (SYN[w] || [w]).map(esc).join("|") + ")", "i"));
+  }
   function readHash() {
     const h = new URLSearchParams(location.hash.slice(1));
     st.track = ["cyber", "eng", "pm"].includes(h.get("track")) ? h.get("track") : "all";
-    st.where = ["oregon", "pnw", "remote"].includes(h.get("where")) ? h.get("where") : "all";
+    // "pnw" alone was "All PNW" (Oregon, WA and ID) before Where took more than one.
+    const w = (h.get("where") || "").split(",").flatMap((x) => x === "pnw" ? ["oregon", "waid"] : [x]);
+    st.where = new Set(w.filter((x) => x in ZONE));
     st.levels = new Set((h.get("level") || "").split(",").filter((x) => x in LEVEL));
-    st.flags = new Set((h.get("only") || "").split(",").filter((x) => ["new", "pay", "noclr"].includes(x)));
-    st.q = h.get("q") || "";
+    st.flags = new Set((h.get("only") || "").split(",").filter((x) => FLAGS.includes(x)));
+    setQuery(h.get("q") || "");
   }
-  function writeHash() {
+  function hashString() {
     const h = new URLSearchParams();
     if (st.track !== "all") h.set("track", st.track);
-    if (st.where !== "all") h.set("where", st.where);
+    if (st.where.size) h.set("where", [...st.where].join(","));
     if (st.levels.size) h.set("level", [...st.levels].join(","));
     if (st.flags.size) h.set("only", [...st.flags].join(","));
     if (st.q) h.set("q", st.q);
-    const s = h.toString();
+    return h.toString();
+  }
+  function writeHash() {
+    const s = hashString();
     history.replaceState(null, "", s ? "#" + s : location.pathname);
+    try { s ? localStorage.setItem(SAVED, s) : localStorage.removeItem(SAVED); } catch { /* private mode */ }
   }
   function syncControls() {
-    $$(".seg").forEach((seg) => $$("button", seg).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === st[seg.dataset.key]))));
+    $$("[data-key=track] button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === st.track)));
+    $$("[data-where]").forEach((b) => b.setAttribute("aria-pressed", String(st.where.has(b.dataset.where))));
     $$("[data-level]").forEach((b) => b.setAttribute("aria-pressed", String(st.levels.has(b.dataset.level))));
     $$("[data-flag]").forEach((b) => b.setAttribute("aria-pressed", String(st.flags.has(b.dataset.flag))));
     if ($("#q").value !== st.q) $("#q").value = st.q;
+    $("#reset").hidden = !hashString();
   }
 
   const el = (tag, props = {}, ...kids) => {
@@ -378,20 +408,35 @@
   let DATA = null, today = "";
   const daysAgo = (d) => d ? Math.round((Date.parse(today) - Date.parse(d)) / 864e5) : null;
   const ago = (n) => n == null ? "" : n <= 0 ? "today" : n === 1 ? "1 day ago" : `${n} days ago`;
+  const zone = (j) => j.where === "pnw" ? "waid" : j.where;
+  const inZone = (j, z) => zone(j) === z || (z === "remote" && j.also_remote);
+  const hasFlag = (j, f) => f === "new" ? j.first_seen === today : f === "pay" ? !!j.salary : !(j.clearance || j.clearance_check);
+  const fmt = (n) => n.toLocaleString();
 
-  function matches(j) {
-    if (st.track !== "all" && j.track !== st.track) return false;
-    // "pnw" is all three states, Oregon included, so links shared before the split still work.
-    if (st.where === "pnw" ? !["oregon", "pnw"].includes(j.where) : st.where !== "all" && j.where !== st.where) return false;
-    if (st.levels.size && !st.levels.has(j.level)) return false;
-    if (st.flags.has("new") && j.first_seen !== today) return false;
-    if (st.flags.has("pay") && !j.salary) return false;
-    if (st.flags.has("noclr") && j.clearance) return false;
-    if (st.q) {
-      const hay = `${j.title} ${j.company} ${j.location}`.toLowerCase();
-      if (!st.q.toLowerCase().split(/\s+/).every((w) => hay.includes(w))) return false;
+  // skip: leave one filter out, to count what each of its buttons would show.
+  function matches(j, skip) {
+    if (skip !== "track" && st.track !== "all" && j.track !== st.track) return false;
+    if (skip !== "where" && st.where.size && ![...st.where].some((z) => inZone(j, z))) return false;
+    if (skip !== "level" && st.levels.size && !st.levels.has(j.level)) return false;
+    if (skip !== "flags" && [...st.flags].some((f) => !hasFlag(j, f))) return false;
+    if (terms.length) {
+      const hay = `${j.title} ${j.company} ${j.location}`;
+      if (!terms.every((t) => t.test(hay))) return false;
     }
     return true;
+  }
+
+  function counts() {
+    const base = (skip) => DATA.jobs.filter((j) => matches(j, skip));
+    const put = (b, n) => { $(".n", b).textContent = " " + fmt(n); };  // the space: screen readers say "Cyber 570"
+    const t = base("track");
+    $$("[data-key=track] button").forEach((b) => put(b, b.dataset.v === "all" ? t.length : t.filter((j) => j.track === b.dataset.v).length));
+    const w = base("where");
+    $$("[data-where]").forEach((b) => put(b, w.filter((j) => inZone(j, b.dataset.where)).length));
+    const l = base("level");
+    $$("[data-level]").forEach((b) => put(b, l.filter((j) => j.level === b.dataset.level).length));
+    const f = base("flags");
+    $$("[data-flag]").forEach((b) => put(b, f.filter((j) => hasFlag(j, b.dataset.flag)).length));
   }
 
   function card(j) {
@@ -401,11 +446,13 @@
     if (j.first_seen === today) tags.append(el("span", { class: "tag new", text: "NEW" }));
     tags.append(el("span", { class: `tag ${j.track}`, text: TRACK[j.track] || j.track }));
     tags.append(el("span", { class: "tag", text: LEVEL[j.level] || j.level }));
-    tags.append(el("span", { class: "tag", text: { oregon: "Portland & OR", pnw: "WA / ID", remote: "Remote US" }[j.where] || j.where }));
+    tags.append(el("span", { class: "tag", text: ZONE[zone(j)] || j.where }));
+    if (j.also_remote) tags.append(el("span", { class: "tag", text: "Also listed remote" }));
     if (j.salary) tags.append(el("span", { class: "tag pay", text: j.salary }));
     if (j.clearance) tags.append(el("span", { class: "tag warn", text: "Clearance" }));
+    else if (j.clearance_check) tags.append(el("span", { class: "tag warn", text: "Check clearance", title: "Federal or defense contractor: many of its roles need a clearance the title does not mention" }));
     if (j.carried) tags.append(el("span", { class: "tag warn", text: "Source down today" }));
-    tags.append(el("span", { class: "tag", text: j.via === "company" ? `via ${j.source} board` : `via ${j.source}` }));
+    tags.append(el("span", { class: "tag", text: j.via === "company" ? "Employer's own board" : `Listed on ${j.source}` }));
     const posted = daysAgo(j.posted);
     return el("li", { class: "job" },
       el("div", {}, el("h3", {}, title), el("div", { class: "who" }, el("b", { text: j.company }), document.createTextNode(` · ${j.location}`))),
@@ -417,7 +464,7 @@
     if (!rows.length) return null;
     const box = el("section");
     const ol = el("ol", { class: "jobs" });
-    box.append(el("h2", {}, document.createTextNode(title), el("small", { text: `${rows.length}` })), ol);
+    box.append(el("h2", {}, document.createTextNode(title), el("small", { text: fmt(rows.length) })), ol);
     let shown = 0;
     const more = el("button", { class: "more", type: "button" });
     const step = () => {
@@ -433,7 +480,7 @@
   }
 
   function render() {
-    const rows = DATA.jobs.filter(matches);
+    const rows = DATA.jobs.filter((j) => matches(j));
     const age = (j) => daysAgo(j.first_seen === today ? today : (j.posted || j.first_seen)) ?? 99;
     const list = $("#list");
     list.replaceChildren();
@@ -444,21 +491,15 @@
     ];
     groups.forEach(([t, r]) => { const g = group(t, r); if (g) list.append(g); });
     if (!rows.length) list.append(el("p", { class: "empty", text: "Nothing matches those filters today." }));
-    $("#shown").textContent = `${rows.length} of ${DATA.jobs.length} roles shown`;
+    $("#shown-n").textContent = `${fmt(rows.length)} of ${fmt(DATA.jobs.length)} roles shown${restored && hashString() ? " · your last view" : ""}`;
+    counts();
   }
 
-  function stats() {
+  function header() {
     const c = DATA.counts;
-    $("#s-new").textContent = c.new_today;
-    $("#s-total").textContent = c.total;
-    $("#s-cyber").textContent = c.cyber;
-    $("#s-eng").textContent = c.eng;
-    $("#s-pm").textContent = c.pm ?? "–";
-    $("#s-entry").textContent = c.entry ?? "–";
-    $("#s-oregon").textContent = c.oregon ?? "–";
-    $("#s-pnw").textContent = c.pnw;
-    $("#s-dropped").textContent = c.dropped_since_last_run;
     const when = new Date(DATA.generated_at);
+    $("#today").replaceChildren(el("b", { text: `${fmt(c.new_today)} new today` }),
+      document.createTextNode(` · ${fmt(c.total)} open · ${fmt(c.dropped_since_last_run)} gone since yesterday · updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`));
     $("#updated").textContent = `Updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
     const ok = DATA.sources.filter((s) => s.ok).length;
     $("#src-line").textContent = `This morning: ${ok} of ${DATA.sources.length} sources answered.`;
@@ -468,28 +509,42 @@
     });
   }
 
+  function toggle(set, v) { set.has(v) ? set.delete(v) : set.add(v); changed(); }
   function wire() {
-    $$(".seg").forEach((seg) => seg.addEventListener("click", (e) => {
+    $("[data-key=track]").addEventListener("click", (e) => {
       const b = e.target.closest("button"); if (!b) return;
-      st[seg.dataset.key] = b.dataset.v; changed();
-    }));
-    $$("[data-level]").forEach((b) => b.addEventListener("click", () => {
-      st.levels.has(b.dataset.level) ? st.levels.delete(b.dataset.level) : st.levels.add(b.dataset.level); changed();
-    }));
-    $$("[data-flag]").forEach((b) => b.addEventListener("click", () => {
-      st.flags.has(b.dataset.flag) ? st.flags.delete(b.dataset.flag) : st.flags.add(b.dataset.flag); changed();
-    }));
+      st.track = b.dataset.v; changed();
+    });
+    $$("[data-where]").forEach((b) => b.addEventListener("click", () => toggle(st.where, b.dataset.where)));
+    $$("[data-level]").forEach((b) => b.addEventListener("click", () => toggle(st.levels, b.dataset.level)));
+    $$("[data-flag]").forEach((b) => b.addEventListener("click", () => toggle(st.flags, b.dataset.flag)));
     let t;
-    $("#q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value.trim(); changed(); }, 150); });
-    window.addEventListener("hashchange", () => { readHash(); syncControls(); render(); });
+    $("#q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { setQuery(e.target.value.trim()); changed(); }, 150); });
+    $("#reset").addEventListener("click", () => {
+      st.track = "all"; st.where.clear(); st.levels.clear(); st.flags.clear(); setQuery(""); changed();
+    });
+    $("#copy").addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      try { await navigator.clipboard.writeText(location.href); b.textContent = "Link copied"; }
+      catch { b.textContent = "Copy the address bar instead"; }
+      setTimeout(() => { b.textContent = "Copy link to this view"; }, 2500);
+    });
+    window.addEventListener("hashchange", () => { restored = false; readHash(); syncControls(); if (DATA) render(); });
   }
-  function changed() { writeHash(); syncControls(); render(); }
+  function changed() { restored = false; writeHash(); syncControls(); if (DATA) render(); }
 
+  // A shared link wins; with none, the view this device used last.
+  if (!location.hash) {
+    try {
+      const s = localStorage.getItem(SAVED);
+      if (s) { history.replaceState(null, "", "#" + s); restored = true; }
+    } catch { /* private mode */ }
+  }
   readHash(); syncControls(); wire();
   fetch("jobs.json", { cache: "no-cache" })
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then((d) => {
-      DATA = d; today = d.date; stats(); render();
+      DATA = d; today = d.date; header(); render();
       // Linked only once it exists: the file is written on the box, never shipped.
       $("#raw").append(el("a", { href: "jobs.json", text: "jobs.json" }), document.createTextNode(" · "));
     })

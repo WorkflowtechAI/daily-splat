@@ -67,7 +67,54 @@ WHERE = [
     ("Remote - Seattle", True, "pnw"),
     # A Foorilla US-only query row with a bare city, after the source tags it.
     ("San Francisco (remote) · United States", True, "remote"),
+    # City names inside other words, or namesakes, shown as Oregon or PNW on 2026-11-07:
+    ("Jerusalem, Israel", False, None),
+    ("USA, CA, Camp Pendleton (Bldg 110203), United States", False, None),
+    ("US - Trenton, NJ (TDY)", False, None),
+    ("Richland County", False, None),
+    ("Tel Aviv, Israel; Portland, OR", False, "oregon"),
+    # And the real ones still are:
+    ("Salem | DOJ | Justice Building", False, "oregon"),
+    ("Pendleton, OR", False, "oregon"),
+    ("Bend", False, "oregon"),
+    ("Renton, WA", False, "pnw"),
+    ("Richland, WA", False, "pnw"),
 ]
+
+MONEY = [
+    ((120000, 160000, "/yr"), "$120K–$160K/yr"),
+    ((17, 20, "/yr"), "$17–$20/hr"),   # an hourly range in a yearly field
+    ((None, None, "/yr"), None),
+]
+
+AGENCY = [
+    ("TEK Systems", True), ("TEKsystems", True), ("Bright Vision Technologies", True),
+    ("Robert Half", True), ("Insight Global", True),
+    ("Cambia Health Solutions", False), ("Tektronix", False), ("Modis Inc", True), ("Systematic Inc", False),
+]
+
+FEDERAL = [
+    ("Peraton", True), ("General Dynamics Information Technology", True), ("CACI International Inc", True),
+    ("ECS", True), ("Leidos", True),
+    ("Huntington National Bank", False), ("Specsavers", False), ("Microsoft", False), ("Deloitte", False),
+]
+
+
+def check_fold_remote_twins() -> int:
+    def p(where, posted=None):
+        return {"where": where, "posted": posted}
+    cands = {"cisco|senior security engineer|pnw": p("pnw"),
+             "cisco|senior security engineer|remote": p("remote", "2026-11-05"),
+             "acme|sre|remote": p("remote"),
+             "acme|sre ii|oregon": p("oregon")}
+    folded = splat.fold_remote_twins(cands)
+    want = {"cisco|senior security engineer|pnw": {"where": "pnw", "posted": "2026-11-05", "also_remote": True},
+            "acme|sre|remote": {"where": "remote", "posted": None},
+            "acme|sre ii|oregon": {"where": "oregon", "posted": None}}
+    if folded != 1 or cands != want:
+        print(f"fold_remote_twins -> {folded}, {cands!r}")
+        return 1
+    return 0
 
 TRACK = [
     # Oregon public-sector and local titles the rules dropped on 2026-10-21.
@@ -432,7 +479,16 @@ def check_neogov() -> int:
 
 
 def main() -> int:
-    bad = check_neogov() + check_eightfold()
+    bad = check_neogov() + check_eightfold() + check_fold_remote_twins()
+    for args, want in MONEY:
+        if splat.money(*args) != want:
+            bad += 1
+            print(f"money{args!r} = {splat.money(*args)!r}, want {want!r}")
+    for name, pattern, cases in (("AGENCY", splat.AGENCY, AGENCY), ("FEDERAL", splat.FEDERAL, FEDERAL)):
+        for company, want in cases:
+            if bool(pattern.search(company)) != want:
+                bad += 1
+                print(f"{name}.search({company!r}) = {not want}, want {want}")
     for loc, flag, want in WHERE:
         got = splat.where(loc, flag)
         if got != want:
@@ -479,7 +535,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + 2)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(AGENCY) + len(FEDERAL) + 3)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 
