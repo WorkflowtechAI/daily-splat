@@ -19,6 +19,7 @@ StateDirectory=daily-splat
 Environment=SPLAT_OUT=/var/www/iambraun.com/cv/job-sources/daily-splat/jobs.json
 ExecStartPre=-/usr/bin/git -C /home/foundry/daily-splat pull --ff-only --quiet
 ExecStartPre=/usr/bin/install -m 644 /home/foundry/daily-splat/index.html /var/www/iambraun.com/cv/job-sources/daily-splat/index.html
+ExecStartPre=/usr/bin/install -m 644 /home/foundry/daily-splat/changes.html /var/www/iambraun.com/cv/job-sources/daily-splat/changes.html
 ExecStart=/usr/bin/python3 /home/foundry/daily-splat/splat.py
 # Fails closed: if fewer than half the sources answer, or nothing survives the
 # filters, it writes nothing and exits non-zero. Yesterday's page stands and the

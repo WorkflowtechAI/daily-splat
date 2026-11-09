@@ -63,3 +63,16 @@ jobs:
           Path("page.js").write_text("\n".join(scripts), encoding="utf-8")
           EOF
           node --check page.js
+
+      # The masthead's version link names the newest entry in changes.html.
+      - name: Patch notes match the page version
+        run: |
+          python3 - <<'EOF'
+          import re
+          from pathlib import Path
+          page = re.search(r'id="version" href="changes.html"[^>]*>(v[0-9.]+)<', Path("index.html").read_text(encoding="utf-8"))
+          notes = re.search(r'<section id="(v[0-9.]+)">', Path("changes.html").read_text(encoding="utf-8"))
+          assert page and notes, "version link or patch notes entry not found"
+          assert page[1] == notes[1], f"masthead says {page[1]}, newest patch notes entry is {notes[1]}"
+          print("version", page[1])
+          EOF
