@@ -1311,8 +1311,9 @@ EF_DOMAIN = {e[1]: e[2] for e in EIGHTFOLD} | {"apply.careers.microsoft.com": "m
 def _eightfold_read(host: str, domain: str, pid) -> dict:
     d = (host_get(f"https://{host}/api/pcsx/position_details?position_id={pid}&domain={domain}&hl=en") or {}).get("data") or {}
     wl = (d.get("workLocationOption") or "").lower()
+    # Not its "onsite": Microsoft and Lam send it for roles whose text says otherwise (audit, 2026-11-09).
     return {"body": body_text(d.get("jobDescription")),
-            "mode": "remote" if "remote" in wl else "hybrid" if "hybrid" in wl else "onsite" if "site" in wl else None}
+            "mode": "remote" if "remote" in wl else "hybrid" if "hybrid" in wl else None}
 
 
 def _oracle_read(base: str, site: str, rid) -> dict:
@@ -1458,55 +1459,100 @@ def fetch_posting(p: dict) -> dict | None:
 
 # Pay: a range of two dollar amounts. Annual 25K-1.5M or hourly 10-400, the high
 # end at most 4x the low. Several ranges (pay zones) give the lowest low and the
-# highest high; one-off amounts (a bonus, a stipend) are not ranges and are ignored.
-PAY_RANGE = re.compile(
-    r"(?<![\w$])(?:USD\s*)?\$\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*([kK])?(?:\s*USD)?"
-    r"\s*(?:-|–|—|to|and)\s*(?:USD\s*)?\$?\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*([kK])?([^\n.;]{0,40})", re.I)
-HOURLY = re.compile(r"hour|hourly|/\s*hr\b|\bper hr\b", re.I)
+# highest high; a range named as OTE or commission gives way to a base range;
+# one-off amounts (a bonus, a stipend) are not ranges and are ignored. With no
+# range, one amount named as the salary will do. Audit fixes 2026-11-09: Amazon
+# writes "USA, WA, Seattle - 115,600.00 - 160,000.00 USD annually" with no $, and
+# "$121,000/year to $163,700/year" puts a unit inside the range.
+_NUM = r"(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
+_NUMC = r"(\d{1,3}(?:,\d{3})+(?:\.\d+)?)"  # comma-grouped: safe to read without a $
+_PER = r"(?:\s*/\s*(?:year|yr|annum|hour|hr))?"
+_TO = r"\s*(?:-|–|—|to|and)\s*"
+PAY_RANGES = [
+    re.compile(r"(?<![\w$])(?:USD\s*)?\$\s?" + _NUM + r"\s*([kK])?" + _PER + r"(?:\s*USD)?" + _TO
+               + r"(?:USD\s*)?\$?\s?" + _NUM + r"\s*([kK])?([^\n.;]{0,40})", re.I),
+    re.compile(r"(?<![\w$.,])" + _NUMC + r"()" + _TO + _NUMC + r"()(\s*(?:USD|annually|per year|a year)[^\n.;]{0,30})", re.I),
+    re.compile(r"\bUSD\s*" + _NUMC + r"()" + _TO + _NUMC + r"()([^\n.;]{0,40})", re.I),
+]
+PAY_ONE = re.compile(r"\b(?:salary|base pay|pay rate|pay|compensation|wage)\b[^$\n]{0,40}?(?:USD\s*)?\$\s?" + _NUM
+                     + r"\s*([kK])?(?!\s*(?:-|–|—|to)\s*(?:USD\s*)?\$?\s?\d)([^\n.;]{0,30})", re.I)
+OTE = re.compile(r"\bOTE\b|on-?target|target earnings|commission|total (?:target )?compensation", re.I)
+
+
+def _pay_unit(lo: float, hi: float) -> str | None:
+    """The size settles the unit: no hourly rate tops $1,000 and no salary is under it.
+    (A nearby "40 hours / week" once made $121,000 read as hourly.)"""
+    if hi < 1000:
+        return "/hr" if 10 <= lo and hi <= 400 else None
+    return "/yr" if 25_000 <= lo and hi <= 1_500_000 else None
 
 
 def pay_from_text(body: str) -> str | None:
-    yr, hr = [], []
-    for m in PAY_RANGE.finditer(body or ""):
-        lo = float(m[1].replace(",", "")) * (1000 if m[2] else 1)
-        hi = float(m[3].replace(",", "")) * (1000 if m[4] else 1)
-        if not lo or hi < lo or hi > lo * 4:
-            continue
-        before = body[max(0, m.start() - 60):m.start()]
-        if HOURLY.search(m[5]) or HOURLY.search(before) or hi < 1000:
-            if 10 <= lo and hi <= 400:
-                hr.append((lo, hi))
-        elif 25_000 <= lo and hi <= 1_500_000:
-            yr.append((lo, hi))
-    best, unit = (yr, "/yr") if yr else (hr, "/hr")
-    return money(min(x for x, _ in best), max(y for _, y in best), unit) if best else None
+    body = body or ""
+    found = []  # (lo, hi, unit, ote)
+    for rx in PAY_RANGES:
+        for m in rx.finditer(body):
+            lo = float(m[1].replace(",", "")) * (1000 if m[2] else 1)
+            hi = float(m[3].replace(",", "")) * (1000 if m[4] else 1)
+            if not lo or hi < lo or hi > lo * 4:
+                continue
+            before = body[max(0, m.start() - 80):m.start()]
+            unit = _pay_unit(lo, hi)
+            if unit:
+                found.append((lo, hi, unit, bool(OTE.search(before + m[5]))))
+    if not found:
+        for m in PAY_ONE.finditer(body):
+            v = float(m[1].replace(",", "")) * (1000 if m[2] else 1)
+            unit = _pay_unit(v, v)
+            if unit:
+                return money(v, None, unit)
+        return None
+    base = [f for f in found if not f[3]] or found
+    unit = "/yr" if any(f[2] == "/yr" for f in base) else "/hr"
+    base = [f for f in base if f[2] == unit]
+    return money(min(f[0] for f in base), max(f[1] for f in base), unit)
 
 
 NUM_WORD = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
             "ten": 10, "twelve": 12, "fifteen": 15}
-YEARS = re.compile(r"(?<![\d.$])(\d{1,2}|" + "|".join(NUM_WORD) + r")\s*(?:\(\d{1,2}\)\s*)?\+?\s*"
-                   r"(?:(?:-|–|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs?)\b(?:[^.;\n]{0,60}?)\bexperience", re.I)
+_YN = r"(\d{1,2}|" + "|".join(NUM_WORD) + r")\s*(?:\(\d{1,2}\)\s*)?\+?\s*(?:(?:-|–|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs?)\b"
+YEARS = [re.compile(r"(?<![\d.$])" + _YN + r"(?:[^.;\n]{0,60}?)\bexperience", re.I),
+         # a requirement bullet that opens with the number: "3+ years of one of the following..."
+         re.compile(r"^\s*(?:[-•*·]\s*)?(?:minimum (?:of )?|at least )?" + _YN, re.I | re.M)]
+PREFERRED = re.compile(r"^\s*(?:preferred|desired|nice[- ]to[- ]have|bonus|pluses|additional|it'?s a plus)", re.I | re.M)
 
 
 def years_from_text(body: str) -> int | None:
-    """The first "N years ... experience" the posting asks for."""
-    for m in YEARS.finditer(body or ""):
-        n = int(m[1]) if m[1].isdigit() else NUM_WORD[m[1].lower()]
-        if 0 <= n <= 20:
-            return n
+    """The years of experience the first requirement asks for, read before any
+    "preferred" list. The first, not the highest: Amazon lists "5+ years ..., 7+
+    years ..., 3+ years ..." with the main one first, and Microsoft lists degree
+    paths "2+ years ... OR 3+ ... OR 5+" (the audit, 2026-11-09, scored the highest
+    at 47 of 60 and the first at 56). Over 15 is not a requirement."""
+    body = body or ""
+    cut = PREFERRED.search(body)
+    for part in ((body[:cut.start()], body[cut.start():]) if cut else (body,)):
+        hits = sorted((m.start(), int(m[1]) if m[1].isdigit() else NUM_WORD[m[1].lower()])
+                      for rx in YEARS for m in rx.finditer(part))
+        hits = [n for _, n in hits if 0 <= n <= 15]
+        if hits:
+            return hits[0]
     return None
 
 
-DAYS = re.compile(r"\b(one|two|three|four|five|[1-5])\s*(?:\(\d\)\s*)?(?:days?|x)\s*(?:a|per|each|every|/)?\s*(?:work\s*)?week", re.I)
+_DN = r"(one|two|three|four|five|[1-5])"
+DAYS = re.compile(r"\b(?:" + _DN + r"\s*(?:-|–|to|or)\s*)?" + _DN + r"\s*(?:\(\d\)\s*)?(?:x\s*days?|days?|x)\s*"
+                  r"(?:a|per|each|every|/)?\s*(?:work\s*)?week", re.I)
 OFFICE = re.compile(r"office|on-?site|in[- ]person|hybrid|campus|onsite", re.I)
 
 
 def office_days(body: str) -> int | None:
-    """Days a week in the office, when a sentence about the office says so."""
+    """Days a week in the office, when a sentence about the office says so; for a
+    range ("2-3 days") the low end."""
     for line in re.split(r"\n|(?<=[.!?])\s+", body or ""):
         m = DAYS.search(line)
         if m and OFFICE.search(line):
-            return NUM_WORD.get(m[1].lower()) or int(m[1])
+            w = (m[1] or m[2]).lower()
+            return NUM_WORD.get(w) or int(w)
     return None
 
 
@@ -1524,8 +1570,15 @@ def snippet(body: str, pattern: re.Pattern, n: int = 900) -> str:
 
 CLR_WORDS = re.compile(r"clearance|\bts/sci\b|top secret|\bsecret\b|polygraph|public trust|suitability|"
                        r"security investigation|\bcleared\b|\bsci\b", re.I)
-MODE_WORDS = re.compile(r"remote|hybrid|on-?site|in-office|in the office|in person|work from home|telework|"
-                        r"days? (?:a|per) week|office", re.I)
+# Sentences about this job's own arrangement, not "remote partners" or "onsite
+# events" (the audit, 2026-11-09: 14 of 60 work modes were read from such lines).
+MODE_WORDS = re.compile(
+    r"\b(?:this|the) (?:role|position|job|opportunity)\b[^.\n]{0,60}\b(?:remote|hybrid|on-?site|in[- ]office|in[- ]person)"
+    r"|\b(?:fully|100%) remote|\bremote[- ](?:role|position|first|eligible|opportunity|work)\b|\bwork (?:remotely|from home)"
+    r"|\bhybrid (?:role|position|work|schedule|model|arrangement)\b|\bon-?site (?:role|position|daily|required|five)"
+    r"|\bwork(?:ing)? (?:from|in|at) (?:the|our|an?) (?:office|site|campus)|\bdays? (?:a|per|each) week|\bin-office"
+    r"|\btelework|\b(?:location|workplace|work) (?:type|model|arrangement)\b", re.I)
+JEV_SURE = 0.8  # the least confidence for a work-mode or remote-limit answer to be shown
 LIMIT_WORDS = re.compile(r"\breside|located in|live in|based in|states?\b|time ?zone|\b[ECMP][SD]?T\b|eastern|central|"
                          r"mountain|pacific|business hours|cannot (?:hire|employ)|eligible to work", re.I)
 EDU_WORDS = re.compile(r"degree|bachelor|master'?s|ph\.?d|diploma|\bGED\b|\bB\.?S\.?\b|\bB\.?A\.?\b|education|"
@@ -1539,7 +1592,7 @@ READ_Q = {
     "clearance": {"type": "choice", "instructions": "This is from a US job posting. What US government security "
                   "clearance must the person hired hold?", "criteria": {
         "none": "No government security clearance is required. Protecting data, 'security' as the job's subject, "
-                "drug tests or background checks are not a clearance.",
+                "drug tests, background checks and CJIS or other criminal-justice checks are not a clearance.",
         "obtain": "The person must be able to obtain a clearance, be eligible for one, or a clearance is preferred, "
                   "but an active clearance is not needed to start.",
         "public_trust": "A Public Trust position, suitability determination or other federal background "
@@ -1554,8 +1607,10 @@ READ_Q = {
         "not_stated": "The text does not say where the work is done."}},
     "limit": {"type": "choice", "instructions": "This is from a remote US job posting. Where may the person hired "
               "live and work from?", "criteria": {
-        "any_us": "Anywhere in the United States, or the text only asks for US work authorization.",
-        "some_states": "Only some named US states, cities or a region, or the text names states it cannot hire in.",
+        "any_us": "Anywhere in the United States, or the text only asks for US work authorization or US residence.",
+        "some_states": "The text says the hire must live in or near only some named US states, cities or a region, "
+                       "or names states it cannot hire in. A location label on the posting, office addresses, or "
+                       "pay ranges that differ by location do not limit where a hire may live.",
         "time_zone": "Anywhere in the US, but working hours must match a named US time zone.",
         "not_stated": "The text does not say."}},
     "education": {"type": "choice", "instructions": "This is from a job posting. What education does it require?",
@@ -1581,7 +1636,8 @@ SUB_Q = {
                "policy, third-party risk.",
         "offensive": "Offensive security: penetration testing, red team, adversary emulation, security "
                      "research, exploit development.",
-        "other": "Security work that fits none of these, or spans several equally."}},
+        "other": "Security work that fits none of these, spans several equally, or is software development of a "
+                 "security product (agents, kernel drivers, features)."}},
     "eng": {"type": "choice", "instructions": "Which kind of infrastructure or IT job is this?", "criteria": {
         "support": "IT or technical support: help desk, service desk, desktop or end-user support, IT support "
                    "specialist, technical support engineer who troubleshoots for users or customers.",
@@ -1589,9 +1645,10 @@ SUB_Q = {
                    "management, Microsoft 365, Active Directory, virtualization, storage, backup.",
         "network": "Network engineering or operations: routing, switching, firewalls, wireless, NOC, telecom.",
         "cloud": "Cloud, platform, DevOps or site reliability engineering: cloud infrastructure, Kubernetes, "
-                 "infrastructure as code, CI/CD, running production services.",
+                 "infrastructure as code, CI/CD, running production services. Not building product software.",
         "datacenter": "Data center operations: data center technicians, server hardware, racking and cabling.",
-        "other": "Infrastructure or IT work that fits none of these."}},
+        "other": "Work that fits none of these, including software development, engineering management of "
+                 "product software, and enterprise application or platform ownership (ServiceNow, ERP)."}},
 }
 MANAGER_Q = {"type": "noul", "instructions": "Does the person hired for this job manage other employees "
              "(have direct reports)?"}
@@ -1651,7 +1708,11 @@ def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
             out["error"] = out.get("error") or "jev"
             return None
         tokens += r["tokens"]
-        return (r["answers"].get(name) or {}).get("choice")
+        a = r["answers"].get(name) or {}
+        conf = a.get("confidence")
+        if name in ("mode", "limit") and isinstance(conf, (int, float)) and conf < JEV_SURE:
+            return None  # shown on the card as a fact, so only when Jev is sure
+        return a.get("choice")
 
     if body:
         clr = choice("clearance", CLR_WORDS, READ_Q["clearance"])
@@ -1699,7 +1760,9 @@ def read_key(k: str) -> str:
 def apply_read(j: dict, f: dict) -> None:
     """A posting's read facts onto its page row. Where the text was read, its own
     words replace the guesses made from the title and the company's name."""
-    if f.get("pay") and not j.get("salary"):
+    # A range read from the posting also beats a source's single figure ("$172K/yr"
+    # where the posting says "$150,000.00 to $172,000.00", audit 2026-11-09).
+    if f.get("pay") and (not j.get("salary") or ("–" in f["pay"] and "–" not in j["salary"])):
         j["salary"] = f["pay"]
     for k in ("sub", "mode", "days", "limit", "edu", "yrs"):
         if f.get(k) is not None:

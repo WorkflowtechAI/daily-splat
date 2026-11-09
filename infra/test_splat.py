@@ -499,6 +499,16 @@ PAY_TEXT = [
     ("A $5,000 - $10,000 sign-on bonus and a 401(k) match.", None),  # a bonus is not pay
     ("Revenue grew from $5M to $50M last year.", None),
     ("No pay stated here.", None),
+    # From the reader audit, 2026-11-09.
+    ("USA, WA, Seattle - 115,600.00 - 160,000.00 USD annually", "$116K–$160K/yr"),  # Amazon: no $
+    ("USA, CA, Sunnyvale - 122,600.00 - 185,000.00 USD annually\nUSA, WA, Redmond - 99,100.00 - 160,000.00 USD annually",
+     "$99K–$185K/yr"),
+    ("40 hours / week, Salary Range $121,000/year to $163,700/year.", "$121K–$164K/yr"),
+    ("United States of America: Annual Salary USD 123,500 - 285,000 in Tennessee", "$124K–$285K/yr"),
+    ("Salary: $122,000", "$122K/yr"),
+    ("The salary range for this role is USD $ 195K. This range reflects the base salary only", "$195K/yr"),
+    ("The base salary range for this position is $96,000 - $184,000. The estimated on-target earnings, or OTE, "
+     "is $120,000 - $230,000.", "$96K–$184K/yr"),  # base beats OTE
 ]
 YEARS_TEXT = [
     ("5+ years of experience in security operations", 5),
@@ -506,11 +516,21 @@ YEARS_TEXT = [
     ("2-4 years experience with Linux", 2),
     ("Bachelor's degree and 7 years of professional experience", 7),
     ("We have been in business for 25 years.", None),
+    # From the reader audit, 2026-11-09: the first requirement, a bullet that opens with it, never a preferred one.
+    ("- 5+ years of technical product or program management experience\n- 7+ years of working directly with "
+     "engineering teams experience\n- 3+ years of software development experience", 5),
+    ("Bachelor's Degree AND 2+ years technical experience\nOR Master's Degree AND 1+ year(s) technical experience\n"
+     "OR 5+ years technical experience", 2),
+    ("2 years of experience with software development or 1 year of experience with an advanced degree", 2),
+    ("- 3+ years of one of the following related domains: SRE, systems engineering", 3),
+    ("5+ years of experience in networking\nPreferred Qualifications\n10+ years of experience at scale", 5),
 ]
 DAYS_TEXT = [
     ("This is a hybrid role, in the office three days a week.", 3),
     ("Work from our Seattle office 4 days per week", 4),
     ("Our team ships 5 days a week.", None),  # no office in the sentence
+    ("This role is hybrid, requiring 2-3 days per week on-site at one of the posted locations.", 2),
+    ("This role is hybrid, requiring 2x days per week on-site at one of the posted locations.", 2),
 ]
 READER_URLS = [
     (splat.GH_URL, "https://job-boards.greenhouse.io/anthropic/jobs/4567", ("anthropic", "4567")),
