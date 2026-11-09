@@ -49,6 +49,7 @@
 
   .bar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:0 0 10px}
   .bar .lbl{min-width:4.6em}
+  .bar[hidden],.chip[hidden]{display:none}
   button .n{font-family:var(--mono);font-size:10.5px;font-weight:500;opacity:.7;margin-left:1px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--card)}
   .seg button,.chip{font:500 13px/1 var(--sans);color:var(--ink-soft);background:transparent;border:0;padding:8px 11px;cursor:pointer}
@@ -180,6 +181,9 @@
       <button data-v="all">All<span class="n"></span></button><button data-v="cyber">Cyber<span class="n"></span></button><button data-v="eng">Infra &amp; IT<span class="n"></span></button><button data-v="pm">Tech PM<span class="n"></span></button>
     </span>
   </div>
+  <div class="bar" id="subbar" hidden>
+    <span class="lbl">Kind</span>
+  </div>
   <div class="bar">
     <span class="lbl">Where</span>
     <button class="chip" data-where="oregon">Portland &amp; OR<span class="n"></span></button>
@@ -198,7 +202,7 @@
     <button class="chip" data-flag="new"><span id="new-lbl">New today</span><span class="n"></span></button>
     <button class="chip" data-flag="week" title="Posted in the last seven days">Last 7 days<span class="n"></span></button>
     <button class="chip" data-flag="pay">Pay listed<span class="n"></span></button>
-    <button class="chip" data-flag="noclr" title="Hides roles that ask for a clearance, and federal or defense contractors, whose roles often need one">No clearance<span class="n"></span></button>
+    <button class="chip" data-flag="noclr" title="Hides roles that require an active clearance, and federal or defense contractors whose posting could not be read">No clearance<span class="n"></span></button>
   </div>
   <div class="bar">
     <input id="q" type="search" placeholder="Search: soc, help desk, cloud, Hillsboro…" aria-label="Search title, company or city" autocomplete="off">
@@ -322,7 +326,8 @@
   <details>
     <summary>How this works</summary>
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse and Workable.</p>
-    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. Federal and defense contractors get a "Check clearance" tag, since many of their roles need one the title never mentions. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
+    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
+    <p>Each new posting is also read once, the day it first appears, from the employer's own system where it can be: its pay range, any clearance it requires, days in the office, where a remote hire may live, the degree and years it asks for, the kind of work, and whether the job manages people. Pay, years and office days are taken from the text as written; the rest is the classifier's reading of the few sentences that say it, so check the posting before you rely on a tag. <span id="read-line"></span> A federal or defense contractor whose posting could not be read gets "Check clearance", since many of their roles need one the title never mentions.</p>
     <p>If your last visit on this device was before yesterday, "New" counts from that visit ("New since Thu") instead of from this morning. The visit date is kept only in this browser and never leaves it.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
@@ -345,6 +350,27 @@
   const TRACK = { cyber: "Cyber", eng: "Infra & IT", pm: "Tech PM" };
   const ZONE = { oregon: "Portland & OR", waid: "WA / ID", remote: "Remote US" };
   const FLAGS = ["new", "week", "pay", "noclr"];
+  // Kinds of work within a track, read from each posting (see How this works).
+  const SUBS = {
+    cyber: { secops: ["SecOps", "SOC, detection and response, incident response, threat intel, vulnerability management"],
+             appsec: ["AppSec", "Application and product security"],
+             cloudsec: ["Cloud & infra", "Cloud, network and infrastructure security engineering and architecture"],
+             iam: ["IAM", "Identity and access management"],
+             grc: ["GRC", "Governance, risk, compliance, audit and privacy"],
+             offensive: ["Offensive", "Penetration testing, red team, security research"] },
+    eng: { support: ["Help desk & support", "Help desk, service desk, desktop and technical support"],
+           systems: ["Systems", "Windows and Linux servers, endpoints, Microsoft 365, virtualization"],
+           network: ["Network", "Routing, switching, firewalls, NOC, telecom"],
+           cloud: ["Cloud & DevOps", "Cloud, platform, DevOps and SRE"],
+           datacenter: ["Data center", "Data center technicians and hardware operations"] },
+    pm: { project: ["Project & program", "Project, program and technical program managers, coordinators, PMO"],
+          product: ["Product", "Product managers and product owners"] },
+  };
+  const SUB = Object.fromEntries(Object.entries(SUBS).flatMap(([t, m]) => Object.entries(m).map(([k, v]) => [k, { track: t, label: v[0], hint: v[1] }])));
+  const CLR = { secret: ["Clearance: Secret", "warn"], top_secret: ["Clearance: Top Secret", "warn"],
+                public_trust: ["Public Trust", ""], obtain: ["Must be clearable", ""] };
+  const EDU = { none: "No degree asked", or_exp: "Degree or experience", bachelor: "Bachelor's required", advanced: "Master's+ required" };
+  const LIMIT = { some_states: "Remote: some states only", time_zone: "Remote: set time zone" };
   const SAVED = "splat-view", VISIT = "splat-visit";
   // What a filter means, in plain words: the button's tooltip, and the line
   // under the filters while it is on (phones have no tooltips).
@@ -365,7 +391,7 @@
 
   // Filters live in the URL hash so a filtered view can be shared in the group
   // chat, and the last one is remembered on this device.
-  const st = { track: "all", where: new Set(), levels: new Set(), flags: new Set(), q: "" };
+  const st = { track: "all", subs: new Set(), where: new Set(), levels: new Set(), flags: new Set(), q: "" };
   let terms = [], restored = false;
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   function setQuery(q) {
@@ -376,6 +402,7 @@
   function readHash() {
     const h = new URLSearchParams(location.hash.slice(1));
     st.track = ["cyber", "eng", "pm"].includes(h.get("track")) ? h.get("track") : "all";
+    st.subs = new Set((h.get("sub") || "").split(",").filter((x) => SUB[x] && SUB[x].track === st.track));
     // "pnw" alone was "All PNW" (Oregon, WA and ID) before Where took more than one.
     const w = (h.get("where") || "").split(",").flatMap((x) => x === "pnw" ? ["oregon", "waid"] : [x]);
     st.where = new Set(w.filter((x) => x in ZONE));
@@ -386,6 +413,7 @@
   function hashString() {
     const h = new URLSearchParams();
     if (st.track !== "all") h.set("track", st.track);
+    if (st.subs.size) h.set("sub", [...st.subs].join(","));
     if (st.where.size) h.set("where", [...st.where].join(","));
     if (st.levels.size) h.set("level", [...st.levels].join(","));
     if (st.flags.size) h.set("only", [...st.flags].join(","));
@@ -399,6 +427,11 @@
   }
   function syncControls() {
     $$("[data-key=track] button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === st.track)));
+    $("#subbar").hidden = st.track === "all";
+    $$("[data-sub]").forEach((b) => {
+      b.hidden = SUB[b.dataset.sub].track !== st.track;
+      b.setAttribute("aria-pressed", String(st.subs.has(b.dataset.sub)));
+    });
     $$("[data-where]").forEach((b) => b.setAttribute("aria-pressed", String(st.where.has(b.dataset.where))));
     $$("[data-level]").forEach((b) => b.setAttribute("aria-pressed", String(st.levels.has(b.dataset.level))));
     $$("[data-flag]").forEach((b) => b.setAttribute("aria-pressed", String(st.flags.has(b.dataset.flag))));
@@ -454,6 +487,7 @@
   // skip: leave one filter out, to count what each of its buttons would show.
   function matches(j, skip) {
     if (skip !== "track" && st.track !== "all" && j.track !== st.track) return false;
+    if (skip !== "sub" && st.subs.size && !st.subs.has(j.sub)) return false;
     if (skip !== "where" && st.where.size && ![...st.where].some((z) => inZone(j, z))) return false;
     if (skip !== "level" && st.levels.size && !st.levels.has(j.level)) return false;
     if (skip !== "flags" && [...st.flags].some((f) => !hasFlag(j, f))) return false;
@@ -469,6 +503,8 @@
     const put = (b, n) => { $(".n", b).textContent = " " + fmt(n); };  // the space: screen readers say "Cyber 570"
     const t = base("track");
     $$("[data-key=track] button").forEach((b) => put(b, b.dataset.v === "all" ? t.length : t.filter((j) => j.track === b.dataset.v).length));
+    const s = base("sub");
+    $$("[data-sub]").forEach((b) => put(b, s.filter((j) => j.sub === b.dataset.sub).length));
     const w = base("where");
     $$("[data-where]").forEach((b) => put(b, w.filter((j) => inZone(j, b.dataset.where)).length));
     const l = base("level");
@@ -482,14 +518,27 @@
     const title = url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer nofollow", text: j.title }) : document.createTextNode(j.title);
     const tags = el("div", { class: "tags" });
     if (isNew(j)) tags.append(el("span", { class: "tag new", text: "NEW" }));
-    tags.append(el("span", { class: `tag ${j.track}`, text: TRACK[j.track] || j.track }));
-    tags.append(el("span", { class: "tag", text: LEVEL[j.level] || j.level }));
+    const sub = SUB[j.sub] && SUB[j.sub].track === j.track ? SUB[j.sub].label : "";
+    tags.append(el("span", { class: `tag ${j.track}`, text: (TRACK[j.track] || j.track) + (sub ? ` · ${sub}` : "") }));
+    tags.append(el("span", { class: "tag", text: (LEVEL[j.level] || j.level) + (j.yrs >= 1 ? ` · ${j.yrs}+ yrs` : "") }));
     tags.append(el("span", { class: "tag", text: ZONE[zone(j)] || j.where }));
+    // Work mode as the posting states it. A row filed as remote whose posting says
+    // hybrid or on site gets a warning: the listing and the posting disagree.
+    if (j.mode === "hybrid" || j.mode === "onsite") {
+      const m = (j.mode === "hybrid" ? "Hybrid" : "On-site") + (j.mode === "hybrid" && j.days ? ` · ${j.days} days in office` : "");
+      tags.append(j.where === "remote" ? el("span", { class: "tag warn", text: `Posting says ${m.toLowerCase()}` }) : el("span", { class: "tag", text: m }));
+    } else if (j.mode === "remote" && j.where !== "remote" && !j.also_remote) {
+      tags.append(el("span", { class: "tag", text: "Remote" }));
+    }
+    if (LIMIT[j.limit] && (j.where === "remote" || j.also_remote)) tags.append(el("span", { class: "tag", text: LIMIT[j.limit] }));
     if (j.also_remote) tags.append(el("span", { class: "tag", text: "Also listed remote" }));
     if ((daysAgo(j.posted || j.first_seen) ?? 0) > 21) tags.append(el("span", { class: "tag", text: "Open 3+ weeks", title: "Posted more than three weeks ago" }));
     if (j.salary) tags.append(el("span", { class: "tag pay", text: j.salary }));
-    if (j.clearance) tags.append(el("span", { class: "tag warn", text: "Clearance" }));
+    if (CLR[j.clr]) tags.append(el("span", { class: `tag ${CLR[j.clr][1]}`.trim(), text: CLR[j.clr][0] }));
+    else if (j.clearance) tags.append(el("span", { class: "tag warn", text: "Clearance" }));
     else if (j.clearance_check) tags.append(el("span", { class: "tag warn", text: "Check clearance", title: "Federal or defense contractor: many of its roles need a clearance the title does not mention" }));
+    if (EDU[j.edu]) tags.append(el("span", { class: "tag", text: EDU[j.edu] }));
+    if (j.mgr) tags.append(el("span", { class: "tag", text: "Manages people" }));
     if (j.carried) tags.append(el("span", { class: "tag warn", text: "Source down today" }));
     tags.append(el("span", { class: "tag", text: j.via === "company" ? "Employer's own board" : `Listed on ${j.source}` }));
     const posted = daysAgo(j.posted);
@@ -540,6 +589,7 @@
     $("#today").replaceChildren(el("b", { text: `${fmt(c.new_today)} new today` }),
       document.createTextNode(` · ${fmt(c.total)} open · ${fmt(c.dropped_since_last_run)} gone since yesterday · updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`));
     $("#updated").textContent = `Updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
+    if (c.read != null) $("#read-line").textContent = `${fmt(c.read)} of ${fmt(c.total)} open postings have been read so far; the rest could not be fetched or are waiting their turn.`;
     const ok = DATA.sources.filter((s) => s.ok).length;
     $("#src-line").textContent = `This morning: ${ok} of ${DATA.sources.length} sources answered.`;
     const ul = $("#srcs");
@@ -553,8 +603,14 @@
     $$("[data-key=track] button, [data-level]").forEach((b) => {
       const h = HINT[b.dataset.v || b.dataset.level]; if (h) b.title = h;
     });
+    for (const [k, v] of Object.entries(SUB)) {
+      const b = el("button", { class: "chip", "data-sub": k, title: v.hint, type: "button" }, document.createTextNode(v.label), el("span", { class: "n" }));
+      b.addEventListener("click", () => toggle(st.subs, k));
+      $("#subbar").append(b);
+    }
     $("[data-key=track]").addEventListener("click", (e) => {
       const b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.v !== st.track) st.subs.clear();  // a kind belongs to one track
       st.track = b.dataset.v; changed();
     });
     $$("[data-where]").forEach((b) => b.addEventListener("click", () => toggle(st.where, b.dataset.where)));
@@ -563,7 +619,7 @@
     let t;
     $("#q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { setQuery(e.target.value.trim()); changed(); }, 150); });
     $("#reset").addEventListener("click", () => {
-      st.track = "all"; st.where.clear(); st.levels.clear(); st.flags.clear(); setQuery(""); changed();
+      st.track = "all"; st.subs.clear(); st.where.clear(); st.levels.clear(); st.flags.clear(); setQuery(""); changed();
     });
     $("#copy").addEventListener("click", async (e) => {
       const b = e.currentTarget;

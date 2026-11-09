@@ -487,8 +487,91 @@ def check_neogov() -> int:
     return 0
 
 
+# The posting reader (2026-11-09): what code takes from a posting's own text.
+PAY_TEXT = [
+    ("The base pay range for this position is $120,000 - $150,000 per year.", "$120K–$150K/yr"),
+    ("Salary range: $85K–$110K", "$85K–$110K/yr"),
+    ("Pay: $25.00 - $32.50 per hour", "$25–$32/hr"),
+    ("$43.36 - $58.10 Hourly", "$43–$58/hr"),
+    ("Zone A: $150,000 to $200,000. Zone B: $135,000 to $180,000.", "$135K–$200K/yr"),  # pay zones: widest span
+    ("between $90,000 and $110,000 annually", "$90K–$110K/yr"),
+    ("$120,000.00 - $150,000.00 USD", "$120K–$150K/yr"),
+    ("A $5,000 - $10,000 sign-on bonus and a 401(k) match.", None),  # a bonus is not pay
+    ("Revenue grew from $5M to $50M last year.", None),
+    ("No pay stated here.", None),
+]
+YEARS_TEXT = [
+    ("5+ years of experience in security operations", 5),
+    ("Minimum of three (3) years of relevant experience", 3),
+    ("2-4 years experience with Linux", 2),
+    ("Bachelor's degree and 7 years of professional experience", 7),
+    ("We have been in business for 25 years.", None),
+]
+DAYS_TEXT = [
+    ("This is a hybrid role, in the office three days a week.", 3),
+    ("Work from our Seattle office 4 days per week", 4),
+    ("Our team ships 5 days a week.", None),  # no office in the sentence
+]
+READER_URLS = [
+    (splat.GH_URL, "https://job-boards.greenhouse.io/anthropic/jobs/4567", ("anthropic", "4567")),
+    (splat.LEVER_URL, "https://jobs.lever.co/palantir/0a1b2c3d-0000-1111-2222-333344445555/apply",
+     (None, "palantir", "0a1b2c3d-0000-1111-2222-333344445555")),
+    (splat.WD_URL, "https://gdit.wd5.myworkdayjobs.com/en-US/External_Career_Site/job/Any-Location--Remote/Lead-Cloud-Architect_RQ231565-1",
+     ("gdit", "wd5", "External_Career_Site", "job/Any-Location--Remote/Lead-Cloud-Architect_RQ231565-1")),
+    (splat.EF_URL, "https://apply.careers.microsoft.com/careers/apply?pid=/careers/job/1970393557053979",
+     ("apply.careers.microsoft.com", None, "1970393557053979")),
+    (splat.EF_URL, "https://jobs.autodesk.com/careers/job/1443152973589", ("jobs.autodesk.com", "1443152973589", None)),
+    (splat.ORACLE_URL, "https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/jobsearch/job/349868",
+     ("https://eeho.fa.us2.oraclecloud.com", "jobsearch", "349868")),
+    (splat.WORKABLE_URL, "https://apply.workable.com/j/6D2ED2A2FC/apply", ("6D2ED2A2FC",)),
+    (splat.SMARTR_URL, "https://jobs.smartrecruiters.com/Lakeshore/744000160292019-senior-it-security", ("Lakeshore", "744000160292019")),
+]
+JSONLD_PAGE = ('<html><script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting",'
+               '"description":"&lt;p&gt;Run the SOC.&lt;/p&gt;","jobLocationType":"TELECOMMUTE","baseSalary":'
+               '{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","minValue":100000,'
+               '"maxValue":130000,"unitText":"YEAR"}}}</script></html>')
+
+
+def check_reader() -> tuple[int, int]:
+    bad = total = 0
+
+    def eq(label, got, want):
+        nonlocal bad, total
+        total += 1
+        if got != want:
+            bad += 1
+            print(f"{label} = {got!r}, want {want!r}")
+
+    for s, want in PAY_TEXT:
+        eq(f"pay_from_text({s!r})", splat.pay_from_text(s), want)
+    for s, want in YEARS_TEXT:
+        eq(f"years_from_text({s!r})", splat.years_from_text(s), want)
+    for s, want in DAYS_TEXT:
+        eq(f"office_days({s!r})", splat.office_days(s), want)
+    for rx, url, want in READER_URLS:
+        m = rx.search(url)
+        eq(f"{rx.pattern[:24]}… on {url}", m.groups() if m else None, want)
+    eq("body_text(double-escaped)", splat.body_text("&lt;p&gt;Line one&lt;/p&gt;&lt;ul&gt;&lt;li&gt;A &amp;amp; B&lt;/li&gt;&lt;/ul&gt;"),
+       "Line one\nA & B")
+    eq("jsonld_posting", splat.jsonld_posting(JSONLD_PAGE), {"body": "Run the SOC.", "pay": "$100K–$130K/yr", "mode": "remote"})
+    eq("snippet(clearance)", splat.snippet("About us.\nMust hold an active TS/SCI clearance.\nGreat perks.", splat.CLR_WORDS),
+       "Must hold an active TS/SCI clearance.")
+    # The posting's own words replace the company-name clearance guess, but only once it was read.
+    j = {"clearance": False, "clearance_check": True}
+    splat.apply_read(j, {"read": True, "clr": "none", "pay": "$90K–$110K/yr", "sub": "secops"})
+    eq("apply_read(read, no clearance)", j, {"clearance": False, "salary": "$90K–$110K/yr", "sub": "secops", "read": True})
+    j = {"clearance": False, "clearance_check": True, "salary": "$1–$2/hr"}
+    splat.apply_read(j, {"read": False, "pay": "$90K–$110K/yr", "sub": "grc"})
+    eq("apply_read(unread)", j, {"clearance": False, "clearance_check": True, "salary": "$1–$2/hr", "sub": "grc"})
+    j = {"clearance": False}
+    splat.apply_read(j, {"read": True, "clr": "top_secret"})
+    eq("apply_read(top secret)", j, {"clearance": True, "clr": "top_secret", "read": True})
+    return bad, total
+
+
 def main() -> int:
-    bad = check_neogov() + check_eightfold() + check_fold_remote_twins()
+    reader_bad, reader_total = check_reader()
+    bad = check_neogov() + check_eightfold() + check_fold_remote_twins() + reader_bad
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -548,7 +631,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

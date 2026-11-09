@@ -44,12 +44,14 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from html import unescape
 from pathlib import Path
 
@@ -529,7 +531,8 @@ def http_json(url: str, data: dict | None = None, headers: dict | None = None, t
     return json.loads(http_text(url, data, headers, tries, timeout))
 
 
-def http_text(url: str, data: dict | None = None, headers: dict | None = None, tries: int = 3, timeout: int = 40) -> str:
+def http_text(url: str, data: dict | None = None, headers: dict | None = None, tries: int = 3, timeout: int = 40,
+              limit: int | None = None) -> str:
     body = json.dumps(data).encode() if data is not None else None
     h = {"User-Agent": UA, "Accept": "application/json", **(headers or {})}
     if body is not None:
@@ -539,7 +542,7 @@ def http_text(url: str, data: dict | None = None, headers: dict | None = None, t
         try:
             req = urllib.request.Request(url, data=body, headers=h)
             with urllib.request.urlopen(req, timeout=timeout) as r:
-                return r.read().decode("utf-8", "replace")
+                return (r.read(limit) if limit else r.read()).decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             last = e
             if e.code in (404, 410, 401, 403, 422):
@@ -554,6 +557,26 @@ def http_text(url: str, data: dict | None = None, headers: dict | None = None, t
 def text(html: str | None, n: int = 1500) -> str:
     s = re.sub(r"<[^>]+>", " ", unescape(html or ""))
     return re.sub(r"\s+", " ", s).strip()[:n]
+
+
+BODY_MAX = 12000
+BLOCK = re.compile(r"<\s*(?:br|/?p|/?li|/?h[1-6]|/div|/tr|/?ul|/?ol|/dd|/dt)\b[^>]*>", re.I)
+
+
+def body_text(html: str | None, n: int = BODY_MAX) -> str:
+    """A posting's HTML as plain text that keeps its line breaks, so sentences and
+    bullets can be picked out one by one. Greenhouse escapes its HTML twice."""
+    s = unescape(html or "")
+    if "&lt;" in s:
+        s = unescape(s)
+    s = unescape(re.sub(r"<[^>]+>", " ", BLOCK.sub("\n", s)))
+    lines = (re.sub(r"[ \t\r\f\v\xa0]+", " ", x).strip() for x in s.split("\n"))
+    return "\n".join(x for x in lines if x)[:n]
+
+
+def first_int(v) -> int | None:
+    m = re.search(r"\d+", str(v if v is not None else ""))
+    return int(m.group()) if m else None
 
 
 def iso(v) -> str | None:
@@ -601,8 +624,11 @@ def ashby_pay(summary: str | None) -> str | None:
 
 
 def posting(**kw) -> dict:
+    # body: the posting's full text when the list call carries it; ref: how to fetch
+    # it when it does not (see fetch_posting); mode/yrs: structured facts a source gives.
     p = {"title": "", "company": "", "url": "", "location": "", "remote": False, "posted": None,
-         "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False}
+         "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False,
+         "body": "", "ref": None, "mode": None, "yrs": None}
     p.update(kw)
     p["title"] = re.sub(r"\s+", " ", unescape(p["title"] or "")).strip()
     p["company"] = unescape(p["company"] or "").strip()
@@ -647,10 +673,29 @@ def fold_remote_twins(cands: dict) -> int:
 
 def src_greenhouse(token: str, name: str) -> list[dict]:
     d = http_json(f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs")
+    # The text is read later, one call per kept posting (ref), with its pay range.
     return [posting(title=j.get("title"), company=name, url=j.get("absolute_url"),
                     location=(j.get("location") or {}).get("name", ""),
-                    posted=iso(j.get("first_published") or j.get("updated_at")))
+                    posted=iso(j.get("first_published") or j.get("updated_at")), ref=("gh", token, j.get("id")))
             for j in d.get("jobs", [])]
+
+
+LEVER_MODE = {"remote": "remote", "hybrid": "hybrid", "onsite": "onsite", "on-site": "onsite"}
+
+
+def lever_body(j: dict) -> str:
+    """Lever splits a posting: an intro, titled lists (requirements, pay), a closing."""
+    parts = [j.get("description") or j.get("descriptionPlain") or ""]
+    parts += [f"<p>{x.get('text', '')}</p>{x.get('content', '')}" for x in j.get("lists") or []]
+    parts.append(j.get("additional") or j.get("additionalPlain") or "")
+    return body_text("<p>".join(parts))
+
+
+def lever_pay(j: dict) -> str | None:
+    r = j.get("salaryRange") or {}
+    if (r.get("currency") or "USD") != "USD":
+        return None
+    return money(r.get("min"), r.get("max"), "/hr" if "hour" in (r.get("interval") or "") else "/yr")
 
 
 def src_lever(token: str, name: str) -> list[dict]:
@@ -661,7 +706,8 @@ def src_lever(token: str, name: str) -> list[dict]:
         locs = c.get("allLocations") or [c.get("location") or ""]
         out.append(posting(title=j.get("text"), company=name, url=j.get("hostedUrl"),
                            location="; ".join(x for x in locs if x), remote=j.get("workplaceType") == "remote",
-                           posted=iso(j.get("createdAt")), desc=text(j.get("descriptionPlain") or j.get("description"))))
+                           posted=iso(j.get("createdAt")), desc=text(j.get("descriptionPlain") or j.get("description")),
+                           body=lever_body(j), salary=lever_pay(j), mode=LEVER_MODE.get(j.get("workplaceType"))))
     return out
 
 
@@ -678,8 +724,13 @@ def src_ashby(token: str, name: str) -> list[dict]:
                            # isRemote is set on hybrid roles too; workplaceType is the real answer.
                            remote=(j.get("workplaceType") or ("Remote" if j.get("isRemote") else "")) == "Remote",
                            posted=iso(j.get("publishedAt")), salary=comp,
-                           desc=text(j.get("descriptionPlain") or j.get("descriptionHtml"))))
+                           desc=text(j.get("descriptionPlain") or j.get("descriptionHtml")),
+                           body=body_text(j.get("descriptionHtml") or j.get("descriptionPlain")),
+                           mode=ASHBY_MODE.get((j.get("workplaceType") or "").lower())))
     return out
+
+
+ASHBY_MODE = {"remote": "remote", "hybrid": "hybrid", "onsite": "onsite"}
 
 
 def _wd_facets(node, out: list):
@@ -781,7 +832,9 @@ def src_amazon() -> list[dict]:
                                        url="https://www.amazon.jobs" + (j.get("job_path") or ""),
                                        location=j.get("normalized_location") or j.get("location") or "",
                                        posted=iso(j.get("posted_date")),
-                                       desc=text((j.get("description_short") or "") + " " + (j.get("basic_qualifications") or ""))))
+                                       desc=text((j.get("description_short") or "") + " " + (j.get("basic_qualifications") or "")),
+                                       body=body_text("<p>".join(j.get(k) or "" for k in (
+                                           "description", "basic_qualifications", "preferred_qualifications")))))
                 if len(rows) < 100:
                     break
                 offset += 100
@@ -849,6 +902,7 @@ def src_foorilla() -> list[dict]:
                                    remote=remote, posted=iso(x.get("published")),
                                    salary=money(x.get("salary_min_usd"), x.get("salary_max_usd"), "/yr"),
                                    hint=x.get("experience_level"), origin="aggregator",
+                                   mode="remote" if wm == 2 else None, yrs=first_int(x.get("experience_years")),
                                    desc="Skills: " + ", ".join(t.get("name", "") for t in x.get("tags") or [])))
             pages = d.get("pages") or 1
             if page >= pages:
@@ -880,7 +934,9 @@ def src_workable() -> list[dict]:
                     out.append(posting(title=j.get("title"), company=(j.get("company") or {}).get("title"),
                                        url=j.get("url"), location="; ".join(locs),
                                        remote=j.get("workplace") == "remote", posted=iso(j.get("created")),
-                                       desc=text(j.get("description")), origin="aggregator"))
+                                       desc=text(j.get("description")), origin="aggregator",
+                                       body=body_text(j.get("description")),
+                                       mode={"remote": "remote", "hybrid": "hybrid", "on_site": "onsite"}.get(j.get("workplace"))))
                 token = d.get("nextPageToken")
                 if not token or not d.get("jobs"):
                     break
@@ -901,10 +957,11 @@ EIGHTFOLD = [
 ]
 
 
-def eightfold_rows(positions: list, host: str, name: str) -> list[dict]:
+def eightfold_rows(positions: list, host: str, name: str, domain: str = "") -> list[dict]:
     return [posting(title=j.get("name"), company=name, url=f"https://{host}{j.get('positionUrl') or ''}",
                     location="; ".join(j.get("locations") or []),
-                    remote=(j.get("workLocationOption") or "").lower() == "remote", posted=iso(j.get("postedTs")))
+                    remote=(j.get("workLocationOption") or "").lower() == "remote", posted=iso(j.get("postedTs")),
+                    ref=("ef", host, domain, j.get("id")) if domain else None)
             for j in positions]
 
 
@@ -918,7 +975,7 @@ def src_eightfold(key: str, host: str, domain: str, name: str, locations: tuple)
             rows = d.get("positions") or []
             fresh = [j for j in rows if j.get("id") not in seen]
             seen.update(j.get("id") for j in fresh)
-            out += eightfold_rows(fresh, host, name)
+            out += eightfold_rows(fresh, host, name, domain)
             start += len(rows)
             if not rows or start >= (d.get("count") or 0):
                 break
@@ -944,7 +1001,9 @@ def src_providence() -> list[dict]:
             out.append(posting(title=r.get("Title"), company="Providence",
                                url=f"{PROVIDENCE}/hcmUI/CandidateExperience/en/sites/CX_1/job/{r.get('Id')}",
                                location="; ".join(x for x in locs if x), remote=r.get("WorkplaceTypeCode") == "ORA_REMOTE",
-                               posted=iso(r.get("PostedDate"))))
+                               posted=iso(r.get("PostedDate")), ref=("prov", r.get("Id")),
+                               mode={"ORA_REMOTE": "remote", "ORA_HYBRID": "hybrid",
+                                     "ORA_ON_SITE": "onsite"}.get(r.get("WorkplaceTypeCode"))))
         if len(rows) < 200:
             break
         offset += 200
@@ -1006,7 +1065,7 @@ def src_remoteok() -> list[dict]:
     return [posting(title=j.get("position"), company=j.get("company"), url=j.get("url"),
                     location="Remote · " + (j.get("location") or ""), remote=True, posted=iso(j.get("epoch")),
                     salary=money(j.get("salary_min"), j.get("salary_max"), "/yr"),
-                    desc=text(j.get("description")), origin="aggregator")
+                    desc=text(j.get("description")), origin="aggregator", body=body_text(j.get("description")))
             for j in d if isinstance(j, dict) and j.get("position")]
 
 
@@ -1020,7 +1079,8 @@ def src_jobicy() -> list[dict]:
                                posted=iso(j.get("pubDate")),
                                salary=money(j.get("annualSalaryMin"), j.get("annualSalaryMax"), "/yr"),
                                hint={"Senior": "SE", "Midweight": "MI", "Junior": "EN"}.get(j.get("jobLevel")),
-                               desc=text(j.get("jobExcerpt")), origin="aggregator"))
+                               desc=text(j.get("jobExcerpt")), origin="aggregator",
+                               body=body_text(j.get("jobDescription"))))
     return out
 
 
@@ -1036,7 +1096,8 @@ def src_himalayas() -> list[dict]:
                                location="Remote · " + (", ".join(restr) if restr else "anywhere"), remote=True,
                                posted=iso(j.get("pubDate")), salary=money(j.get("minSalary"), j.get("maxSalary"), "/yr"),
                                hint={"Senior": "SE", "Mid-level": "MI", "Entry-level": "EN"}.get(j.get("seniority", [None])[0] if isinstance(j.get("seniority"), list) and j.get("seniority") else None),
-                               desc=text(j.get("excerpt") or j.get("description")), origin="aggregator"))
+                               desc=text(j.get("excerpt") or j.get("description")), origin="aggregator",
+                               body=body_text(j.get("description"))))
         if len(rows) < 20:
             break
         time.sleep(0.4)
@@ -1047,7 +1108,7 @@ def src_workingnomads() -> list[dict]:
     d = http_json("https://www.workingnomads.com/api/exposed_jobs/")
     return [posting(title=j.get("title"), company=j.get("company_name"), url=j.get("url"),
                     location="Remote · " + (j.get("location") or ""), remote=True, posted=iso(j.get("pub_date")),
-                    desc=text(j.get("description")), origin="aggregator")
+                    desc=text(j.get("description")), origin="aggregator", body=body_text(j.get("description")))
             for j in d]
 
 
@@ -1068,7 +1129,7 @@ def src_muse() -> list[dict]:
                 out.append(posting(title=j.get("name"), company=(j.get("company") or {}).get("name"),
                                    url=(j.get("refs") or {}).get("landing_page"), location=locs,
                                    remote="remote" in locs.lower(), posted=iso(j.get("publication_date")),
-                                   desc=text(j.get("contents")), origin="aggregator"))
+                                   desc=text(j.get("contents")), origin="aggregator", body=body_text(j.get("contents"))))
             if page + 1 >= (d.get("page_count") or 0):
                 break
             time.sleep(0.4)
@@ -1181,6 +1242,479 @@ def ask_jev(p: dict, key: str) -> dict | None:
             "tokens": (d.get("usage") or {}).get("input_tokens", 0)}
 
 
+# ── Reading each posting once ────────────────────────────────────────────────
+# A title says little about pay, clearance, office days, degree or years. Those
+# are in the posting's own text, so each kept posting is read once, the day it is
+# first seen, and its facts cached under READ_VERSION. Code takes what code can
+# (pay, years, days a week); Jev answers bounded choices over the few sentences
+# that matter, never the whole posting: in the operator's own tests a long
+# haystack moved its answers, a few hundred relevant characters fixed them.
+
+READ_VERSION = "r1"   # bump when a question or a code rule below changes meaning
+READ_MAX_PER_RUN = 2500
+READ_MIN = 600        # characters of text before a fact it lacks counts as "not stated"
+_HOSTS: dict[str, threading.BoundedSemaphore] = {}
+_HOSTS_LOCK = threading.Lock()
+_JEV_SLOTS = threading.BoundedSemaphore(6)  # TypeSafe allows 40 requests a second
+
+
+def host_get(url: str, as_json: bool = True, headers: dict | None = None):
+    """Three requests at a time per host at most: the boards are employers' sites."""
+    host = urllib.parse.urlsplit(url).netloc.lower()
+    with _HOSTS_LOCK:
+        slot = _HOSTS.setdefault(host, threading.BoundedSemaphore(3))
+    with slot:
+        # A page is cut at 3 MB; an API answer is not (Ashby's boards run past it).
+        s = http_text(url, headers=headers, tries=2, timeout=30, limit=None if as_json else 3_000_000)
+    return json.loads(s) if as_json else s
+
+
+def _gh_read(token: str, jid) -> dict:
+    d = host_get(f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs/{jid}?pay_transparency=true")
+    usd = [r for r in d.get("pay_input_ranges") or [] if (r.get("currency_type") or "USD") == "USD" and r.get("min_cents")]
+    pay = money(min(r["min_cents"] for r in usd) / 100, max(r.get("max_cents") or 0 for r in usd) / 100, "/yr") if usd else None
+    return {"body": body_text(d.get("content")), "pay": pay}
+
+
+def _lever_read(m) -> dict:
+    j = host_get(f"https://api{'.eu' if m[1] else ''}.lever.co/v0/postings/{m[2]}/{m[3]}")
+    return {"body": lever_body(j), "pay": lever_pay(j), "mode": LEVER_MODE.get(j.get("workplaceType"))}
+
+
+@lru_cache(maxsize=128)
+def _ashby_board(org: str) -> dict:
+    d = host_get(f"https://api.ashbyhq.com/posting-api/job-board/{org}?includeCompensation=true")
+    return {j.get("id"): j for j in d.get("jobs") or []}
+
+
+def _ashby_read(m) -> dict | None:
+    j = _ashby_board(urllib.parse.unquote(m[1])).get(m[2])
+    if not j:
+        return None
+    return {"body": body_text(j.get("descriptionHtml") or j.get("descriptionPlain")),
+            "pay": ashby_pay((j.get("compensation") or {}).get("compensationTierSummary")),
+            "mode": ASHBY_MODE.get((j.get("workplaceType") or "").lower())}
+
+
+def _workday_read(m) -> dict:
+    d = host_get(f"https://{m[1]}.{m[2]}.myworkdayjobs.com/wday/cxs/{m[1]}/{m[3]}/{m[4]}")
+    info = d.get("jobPostingInfo") or {}
+    rt = (info.get("remoteType") or "").lower()
+    return {"body": body_text(info.get("jobDescription")),
+            "mode": "remote" if "remote" in rt else "hybrid" if "hybrid" in rt else "onsite" if "site" in rt else None}
+
+
+EF_DOMAIN = {e[1]: e[2] for e in EIGHTFOLD} | {"apply.careers.microsoft.com": "microsoft.com"}
+
+
+def _eightfold_read(host: str, domain: str, pid) -> dict:
+    d = (host_get(f"https://{host}/api/pcsx/position_details?position_id={pid}&domain={domain}&hl=en") or {}).get("data") or {}
+    wl = (d.get("workLocationOption") or "").lower()
+    return {"body": body_text(d.get("jobDescription")),
+            "mode": "remote" if "remote" in wl else "hybrid" if "hybrid" in wl else "onsite" if "site" in wl else None}
+
+
+def _oracle_read(base: str, site: str, rid) -> dict:
+    """Oracle Cloud HCM (Providence and the other tenants Foorilla links to)."""
+    finder = f'ById;Id="{rid}",siteNumber={site}'
+    d = host_get(f"{base}/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true"
+                 f"&finder={urllib.parse.quote(finder, safe=';=,')}")
+    it = (d.get("items") or [{}])[0]
+    return {"body": body_text("<p>".join(it.get(k) or "" for k in (
+        "ExternalDescriptionStr", "ExternalResponsibilitiesStr", "ExternalQualificationsStr")))}
+
+
+def _rippling_read(m) -> dict:
+    d = host_get(f"https://ats.rippling.com/api/v2/board/{m[1]}/jobs/{m[2]}")
+    desc = d.get("description")
+    html = "<p>".join(str(v) for v in desc.values()) if isinstance(desc, dict) else str(desc or "")
+    return {"body": body_text(html)}
+
+
+def _smartrecruiters_read(m) -> dict:
+    d = host_get(f"https://api.smartrecruiters.com/v1/companies/{m[1]}/postings/{m[2]}")
+    secs = (d.get("jobAd") or {}).get("sections") or {}
+    html = "<p>".join((secs.get(k) or {}).get("text") or "" for k in (
+        "jobDescription", "qualifications", "additionalInformation", "companyDescription"))
+    return {"body": body_text(html), "mode": "remote" if (d.get("location") or {}).get("remote") else None}
+
+
+def _bamboohr_read(m) -> dict:
+    op = ((host_get(f"https://{m[1]}.bamboohr.com/careers/{m[2]}/detail") or {}).get("result") or {}).get("jobOpening") or {}
+    return {"body": body_text(op.get("description")), "pay": pay_from_text(str(op.get("compensation") or "")),
+            "mode": {"0": "onsite", "1": "remote", "2": "hybrid"}.get(str(op.get("locationType")))}
+
+
+def _workable_read(code: str) -> dict | None:
+    """apply.workable.com/j/CODE redirects to /ACCOUNT/j/CODE; the job API wants the account."""
+    req = urllib.request.Request(f"https://apply.workable.com/j/{code}", headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        m = re.search(r"apply\.workable\.com/([\w-]+)/j/", r.geturl())
+    if not m:
+        return None
+    d = host_get(f"https://apply.workable.com/api/v2/accounts/{m[1]}/jobs/{code}")
+    unit = "/hr" if "hour" in str(d.get("salary_frequency") or "").lower() else "/yr"
+    pay = money(d.get("salary_from"), d.get("salary_to"), unit) if (d.get("salary_currency_iso_code") or "USD") == "USD" else None
+    return {"body": body_text("<p>".join(d.get(k) or "" for k in ("description", "requirements", "benefits"))),
+            "pay": pay, "mode": {"remote": "remote", "hybrid": "hybrid", "on_site": "onsite"}.get(d.get("workplace"))}
+
+
+NEOGOV_DETAILS = re.compile(r'id="details-info"[^>]*>(.*?)(?=id="benefits-info"|id="questions-info"|<footer)', re.S | re.I)
+NEOGOV_SALARY = re.compile(r">\s*Salary\s*<.*?>\s*([^<]*\d[^<]*)<", re.S | re.I)
+
+
+def _neogov_read(url: str) -> dict:
+    page = host_get(url, as_json=False, headers={"Accept": "text/html"})
+    d, s = NEOGOV_DETAILS.search(page), NEOGOV_SALARY.search(page)
+    return {"body": body_text(d.group(1)) if d else "", "pay": pay_from_text(s.group(1)) if s else None}
+
+
+LDJSON = re.compile(r"<script[^>]+application/ld\+json[^>]*>(.*?)</script>", re.S | re.I)
+
+
+def _ld_nodes(x):
+    if isinstance(x, dict):
+        yield x
+        for v in x.values():
+            yield from _ld_nodes(v)
+    elif isinstance(x, list):
+        for v in x:
+            yield from _ld_nodes(v)
+
+
+def ld_pay(sal) -> str | None:
+    if not isinstance(sal, dict) or (sal.get("currency") or "USD") != "USD":
+        return None
+    v = sal.get("value") if isinstance(sal.get("value"), dict) else sal
+    unit = "/hr" if "HOUR" in str(v.get("unitText") or sal.get("unitText") or "").upper() else "/yr"
+    return money(v.get("minValue") or v.get("value"), v.get("maxValue"), unit)
+
+
+def jsonld_posting(html: str) -> dict | None:
+    """The schema.org JobPosting most career sites embed for search engines."""
+    for blob in LDJSON.findall(html):
+        try:
+            data = json.loads(blob.strip())
+        except ValueError:
+            continue
+        for node in _ld_nodes(data):
+            if "JobPosting" in str(node.get("@type")):
+                return {"body": body_text(node.get("description")), "pay": ld_pay(node.get("baseSalary")),
+                        "mode": "remote" if "TELECOMMUTE" in str(node.get("jobLocationType")).upper() else None}
+    return None
+
+
+GH_URL = re.compile(r"(?:boards|job-boards)(?:\.eu)?\.greenhouse\.io/(?:embed/job_app\?for=)?([\w-]+)/jobs/(\d+)", re.I)
+LEVER_URL = re.compile(r"jobs\.(eu\.)?lever\.co/([\w.-]+)/([0-9a-f-]{36})", re.I)
+ASHBY_URL = re.compile(r"jobs\.ashbyhq\.com/([^/?#]+)/([0-9a-f-]{36})", re.I)
+WD_URL = re.compile(r"https?://([\w-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}-[A-Z]{2}/)?([\w-]+)/(job/[^?#]+)", re.I)
+# Eightfold: /careers/job/ID, or Microsoft's /careers/apply?pid=/careers/job/ID.
+EF_URL = re.compile(r"https?://([\w.-]+)/careers/(?:job/(\d+)|[^#]*?\bpid=\D*(\d+))", re.I)
+NEOGOV_URL = re.compile(r"governmentjobs\.com/careers/[\w-]+/jobs/\d+", re.I)
+ORACLE_URL = re.compile(r"(https://[\w-]+\.fa\.[\w-]+\.oraclecloud\.com)/hcmUI/CandidateExperience/[\w-]+/sites/([\w-]+)/job/(\d+)", re.I)
+RIPPLING_URL = re.compile(r"ats\.rippling\.com/([\w-]+)/jobs/([0-9a-f-]{36})", re.I)
+SMARTR_URL = re.compile(r"jobs\.smartrecruiters\.com/([\w-]+)/(\d+)", re.I)
+BAMBOO_URL = re.compile(r"https://([\w-]+)\.bamboohr\.com/careers/(\d+)", re.I)
+WORKABLE_URL = re.compile(r"apply\.workable\.com/(?:[\w-]+/)?j/([0-9A-F]{6,12})", re.I)
+
+
+def fetch_posting(p: dict) -> dict | None:
+    """The posting's text (and any pay or work mode stated beside it), from the
+    employer's own system where we know its API, else the page's JobPosting data."""
+    ref, url = p.get("ref"), p.get("url") or ""
+    if ref and ref[0] == "gh":
+        return _gh_read(ref[1], ref[2])
+    if ref and ref[0] == "ef":
+        return _eightfold_read(ref[1], ref[2], ref[3])
+    if ref and ref[0] == "prov":
+        return _oracle_read(PROVIDENCE, "CX_1", ref[1])
+    if m := GH_URL.search(url):
+        return _gh_read(m[1], m[2])
+    if m := LEVER_URL.search(url):
+        return _lever_read(m)
+    if m := ASHBY_URL.search(url):
+        return _ashby_read(m)
+    if m := WD_URL.search(url):
+        return _workday_read(m)
+    if (m := EF_URL.search(url)) and EF_DOMAIN.get(m[1].lower()):
+        return _eightfold_read(m[1].lower(), EF_DOMAIN[m[1].lower()], m[2] or m[3])
+    if m := ORACLE_URL.search(url):
+        return _oracle_read(m[1], m[2], m[3])
+    if m := RIPPLING_URL.search(url):
+        return _rippling_read(m)
+    if m := SMARTR_URL.search(url):
+        return _smartrecruiters_read(m)
+    if m := BAMBOO_URL.search(url):
+        return _bamboohr_read(m)
+    if m := WORKABLE_URL.search(url):
+        return _workable_read(m[1])
+    if NEOGOV_URL.search(url):
+        return _neogov_read(url)
+    if url.startswith("https://"):
+        return jsonld_posting(host_get(url, as_json=False, headers={"Accept": "text/html"}))
+    return None
+
+
+# Pay: a range of two dollar amounts. Annual 25K-1.5M or hourly 10-400, the high
+# end at most 4x the low. Several ranges (pay zones) give the lowest low and the
+# highest high; one-off amounts (a bonus, a stipend) are not ranges and are ignored.
+PAY_RANGE = re.compile(
+    r"(?<![\w$])(?:USD\s*)?\$\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*([kK])?(?:\s*USD)?"
+    r"\s*(?:-|–|—|to|and)\s*(?:USD\s*)?\$?\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*([kK])?([^\n.;]{0,40})", re.I)
+HOURLY = re.compile(r"hour|hourly|/\s*hr\b|\bper hr\b", re.I)
+
+
+def pay_from_text(body: str) -> str | None:
+    yr, hr = [], []
+    for m in PAY_RANGE.finditer(body or ""):
+        lo = float(m[1].replace(",", "")) * (1000 if m[2] else 1)
+        hi = float(m[3].replace(",", "")) * (1000 if m[4] else 1)
+        if not lo or hi < lo or hi > lo * 4:
+            continue
+        before = body[max(0, m.start() - 60):m.start()]
+        if HOURLY.search(m[5]) or HOURLY.search(before) or hi < 1000:
+            if 10 <= lo and hi <= 400:
+                hr.append((lo, hi))
+        elif 25_000 <= lo and hi <= 1_500_000:
+            yr.append((lo, hi))
+    best, unit = (yr, "/yr") if yr else (hr, "/hr")
+    return money(min(x for x, _ in best), max(y for _, y in best), unit) if best else None
+
+
+NUM_WORD = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+            "ten": 10, "twelve": 12, "fifteen": 15}
+YEARS = re.compile(r"(?<![\d.$])(\d{1,2}|" + "|".join(NUM_WORD) + r")\s*(?:\(\d{1,2}\)\s*)?\+?\s*"
+                   r"(?:(?:-|–|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs?)\b(?:[^.;\n]{0,60}?)\bexperience", re.I)
+
+
+def years_from_text(body: str) -> int | None:
+    """The first "N years ... experience" the posting asks for."""
+    for m in YEARS.finditer(body or ""):
+        n = int(m[1]) if m[1].isdigit() else NUM_WORD[m[1].lower()]
+        if 0 <= n <= 20:
+            return n
+    return None
+
+
+DAYS = re.compile(r"\b(one|two|three|four|five|[1-5])\s*(?:\(\d\)\s*)?(?:days?|x)\s*(?:a|per|each|every|/)?\s*(?:work\s*)?week", re.I)
+OFFICE = re.compile(r"office|on-?site|in[- ]person|hybrid|campus|onsite", re.I)
+
+
+def office_days(body: str) -> int | None:
+    """Days a week in the office, when a sentence about the office says so."""
+    for line in re.split(r"\n|(?<=[.!?])\s+", body or ""):
+        m = DAYS.search(line)
+        if m and OFFICE.search(line):
+            return NUM_WORD.get(m[1].lower()) or int(m[1])
+    return None
+
+
+def snippet(body: str, pattern: re.Pattern, n: int = 900) -> str:
+    """The posting's sentences that match, in order, up to n characters."""
+    keep, size = [], 0
+    for line in re.split(r"\n|(?<=[.!?])\s+", body or ""):
+        if pattern.search(line) and line not in keep:
+            keep.append(line[:400])
+            size += len(keep[-1])
+            if size >= n:
+                break
+    return "\n".join(keep)[:n]
+
+
+CLR_WORDS = re.compile(r"clearance|\bts/sci\b|top secret|\bsecret\b|polygraph|public trust|suitability|"
+                       r"security investigation|\bcleared\b|\bsci\b", re.I)
+MODE_WORDS = re.compile(r"remote|hybrid|on-?site|in-office|in the office|in person|work from home|telework|"
+                        r"days? (?:a|per) week|office", re.I)
+LIMIT_WORDS = re.compile(r"\breside|located in|live in|based in|states?\b|time ?zone|\b[ECMP][SD]?T\b|eastern|central|"
+                         r"mountain|pacific|business hours|cannot (?:hire|employ)|eligible to work", re.I)
+EDU_WORDS = re.compile(r"degree|bachelor|master'?s|ph\.?d|diploma|\bGED\b|\bB\.?S\.?\b|\bB\.?A\.?\b|education|"
+                       r"equivalent (?:work )?experience", re.I)
+
+SUB_LABEL = {"secops": "SecOps", "appsec": "AppSec", "cloudsec": "Cloud & infra security", "iam": "IAM",
+             "grc": "GRC", "offensive": "Offensive", "support": "Help desk & support", "systems": "Systems",
+             "network": "Network", "cloud": "Cloud & DevOps", "datacenter": "Data center",
+             "project": "Project & program", "product": "Product"}
+READ_Q = {
+    "clearance": {"type": "choice", "instructions": "This is from a US job posting. What US government security "
+                  "clearance must the person hired hold?", "criteria": {
+        "none": "No government security clearance is required. Protecting data, 'security' as the job's subject, "
+                "drug tests or background checks are not a clearance.",
+        "obtain": "The person must be able to obtain a clearance, be eligible for one, or a clearance is preferred, "
+                  "but an active clearance is not needed to start.",
+        "public_trust": "A Public Trust position, suitability determination or other federal background "
+                        "investigation that is not a Secret or Top Secret clearance.",
+        "secret": "An active Secret clearance is required (not Top Secret).",
+        "top_secret": "An active Top Secret clearance is required, with or without SCI access or a polygraph."}},
+    "mode": {"type": "choice", "instructions": "This is from a job posting. Where does the person hired work?",
+             "criteria": {
+        "remote": "Fully remote, from home; no regular days in an office.",
+        "hybrid": "Some days each week or month in an office or on site, the rest remote.",
+        "onsite": "In an office, on site, in a data center, lab or field location on every workday.",
+        "not_stated": "The text does not say where the work is done."}},
+    "limit": {"type": "choice", "instructions": "This is from a remote US job posting. Where may the person hired "
+              "live and work from?", "criteria": {
+        "any_us": "Anywhere in the United States, or the text only asks for US work authorization.",
+        "some_states": "Only some named US states, cities or a region, or the text names states it cannot hire in.",
+        "time_zone": "Anywhere in the US, but working hours must match a named US time zone.",
+        "not_stated": "The text does not say."}},
+    "education": {"type": "choice", "instructions": "This is from a job posting. What education does it require?",
+                  "criteria": {
+        "none": "No degree is asked for, or a high school diploma or GED is enough.",
+        "or_exp": "A degree is asked for or preferred, but equivalent experience, training or certifications can "
+                  "stand in for it, or the degree is only preferred.",
+        "bachelor": "A bachelor's degree is required, with no alternative named.",
+        "advanced": "A master's degree or doctorate is required.",
+        "not_stated": "The text does not say what education is needed."}},
+}
+SUB_Q = {
+    "cyber": {"type": "choice", "instructions": "Which kind of security job is this?", "criteria": {
+        "secops": "Security operations: SOC analyst or engineer, detection and response, incident response, "
+                  "threat intelligence or hunting, security monitoring, vulnerability management.",
+        "appsec": "Application or product security: securing the software the company builds, secure code "
+                  "review, AppSec, product security, security in the development lifecycle.",
+        "cloudsec": "Cloud, network, endpoint or infrastructure security engineering or architecture: building "
+                    "and running defenses for cloud platforms, networks and corporate systems.",
+        "iam": "Identity and access management: IAM, identity engineering, privileged access, single sign-on, "
+               "directory services.",
+        "grc": "Governance, risk and compliance: GRC, security compliance, audit, risk, privacy, security "
+               "policy, third-party risk.",
+        "offensive": "Offensive security: penetration testing, red team, adversary emulation, security "
+                     "research, exploit development.",
+        "other": "Security work that fits none of these, or spans several equally."}},
+    "eng": {"type": "choice", "instructions": "Which kind of infrastructure or IT job is this?", "criteria": {
+        "support": "IT or technical support: help desk, service desk, desktop or end-user support, IT support "
+                   "specialist, technical support engineer who troubleshoots for users or customers.",
+        "systems": "Systems administration or engineering: Windows or Linux servers, endpoints and device "
+                   "management, Microsoft 365, Active Directory, virtualization, storage, backup.",
+        "network": "Network engineering or operations: routing, switching, firewalls, wireless, NOC, telecom.",
+        "cloud": "Cloud, platform, DevOps or site reliability engineering: cloud infrastructure, Kubernetes, "
+                 "infrastructure as code, CI/CD, running production services.",
+        "datacenter": "Data center operations: data center technicians, server hardware, racking and cabling.",
+        "other": "Infrastructure or IT work that fits none of these."}},
+}
+MANAGER_Q = {"type": "noul", "instructions": "Does the person hired for this job manage other employees "
+             "(have direct reports)?"}
+
+
+def jev_ask(state: dict, questions: dict, key: str) -> dict | None:
+    with _JEV_SLOTS:
+        try:
+            d = http_json("https://api.typesafe.ai/v1/systemone", {"state": state, "model": "jev-latest",
+                          "questions": questions}, headers={"Authorization": f"Bearer {key}"}, tries=3, timeout=60)
+        except RuntimeError:
+            return None
+    return {"answers": d.get("answers") or {}, "tokens": (d.get("usage") or {}).get("input_tokens", 0)}
+
+
+def read_facts(p: dict, key: str, keep_body: bool = False) -> dict:
+    """Everything worth knowing beyond the title, from the posting's own text.
+    Never raises: a fact it cannot get is left out, and "error" says why."""
+    out: dict = {}
+    try:
+        return _read_facts(p, key, keep_body, out)
+    except Exception as e:  # noqa: BLE001 - a parsing surprise in one posting never fails the run
+        return {"read": False, "error": f"reader: {str(e)[:100]}", "tokens": out.get("tokens", 0)}
+
+
+def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
+    body, got = p.get("body") or "", {}
+    if len(body) < READ_MIN:
+        try:
+            got = fetch_posting(p) or {}
+        except Exception as e:  # noqa: BLE001 - one posting never fails the run
+            out["error"] = str(e)[:120]
+        body = (got.get("body") or "") if len(got.get("body") or "") > len(body) else body
+    read = len(body) >= READ_MIN
+    out["read"] = read
+    pay = got.get("pay") or (pay_from_text(body) if read else None)
+    if pay:
+        out["pay"] = pay
+    yrs = p.get("yrs") if p.get("yrs") is not None else years_from_text(body)
+    if yrs is not None:
+        out["yrs"] = yrs
+    if days := office_days(body):
+        out["days"] = days
+    mode = p.get("mode") or got.get("mode")
+    tokens = 0
+    head = {"title": p["title"], "company": p["company"]}
+
+    def choice(name: str, words: re.Pattern, q: dict, n: int = 900):
+        nonlocal tokens
+        s = snippet(body, words, n)
+        if not s:
+            return "none" if name == "clearance" and read else None
+        if not key:
+            return None
+        r = jev_ask({**head, "text": s}, {name: q}, key)
+        if not r:
+            out["error"] = out.get("error") or "jev"
+            return None
+        tokens += r["tokens"]
+        return (r["answers"].get(name) or {}).get("choice")
+
+    if body:
+        clr = choice("clearance", CLR_WORDS, READ_Q["clearance"])
+        if clr in READ_Q["clearance"]["criteria"]:
+            out["clr"] = clr
+        if not mode:
+            mode = choice("mode", MODE_WORDS, READ_Q["mode"])
+        if p.get("where") == "remote" or p.get("also_remote"):
+            lim = choice("limit", LIMIT_WORDS, READ_Q["limit"])
+            if lim in ("some_states", "time_zone", "any_us"):
+                out["limit"] = lim
+        edu = choice("education", EDU_WORDS, READ_Q["education"])
+        if edu in ("none", "or_exp", "bachelor", "advanced"):
+            out["edu"] = edu
+    if mode in ("remote", "hybrid", "onsite"):
+        out["mode"] = mode
+
+    # Kind of work and people management: the title and the posting's opening.
+    track = p.get("track")
+    if track == "pm":
+        out["sub"] = "product" if PRODUCT.search(p["title"]) else "project"
+    if key:
+        qs = {"manager": MANAGER_Q} | ({"sub": SUB_Q[track]} if track in SUB_Q else {})
+        r = jev_ask({**head, "text": body[:700] or p.get("desc", "")[:700]}, qs, key)
+        if r:
+            tokens += r["tokens"]
+            sub = (r["answers"].get("sub") or {}).get("choice")
+            if sub in SUB_LABEL:
+                out["sub"] = sub
+            mgr = (r["answers"].get("manager") or {}).get("noul")
+            if isinstance(mgr, (int, float)) and mgr >= 0.6:
+                out["mgr"] = True
+        else:
+            out["error"] = out.get("error") or "jev"
+    out["tokens"] = tokens
+    if keep_body:
+        out["_body"] = body
+    return out
+
+
+def read_key(k: str) -> str:
+    return hashlib.sha1(f"{READ_VERSION}|{k}".encode()).hexdigest()[:16]
+
+
+def apply_read(j: dict, f: dict) -> None:
+    """A posting's read facts onto its page row. Where the text was read, its own
+    words replace the guesses made from the title and the company's name."""
+    if f.get("pay") and not j.get("salary"):
+        j["salary"] = f["pay"]
+    for k in ("sub", "mode", "days", "limit", "edu", "yrs"):
+        if f.get(k) is not None:
+            j[k] = f[k]
+    if f.get("mgr"):
+        j["mgr"] = True
+    clr = f.get("clr")
+    if clr and clr != "none":
+        j["clr"] = clr
+    if f.get("read"):
+        j["read"] = True
+        if clr:
+            j["clearance"] = clr in ("secret", "top_secret")
+            j.pop("clearance_check", None)
+
+
 # ── The run ──────────────────────────────────────────────────────────────────
 
 def norm(s: str) -> str:
@@ -1202,6 +1736,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-jev", action="store_true")
+    ap.add_argument("--no-read", action="store_true", help="skip reading postings (pay, clearance, office days...)")
+    ap.add_argument("--dump-bodies", help="testing: write each read posting's text and facts to this path")
     ap.add_argument("--dump", help="also write the page JSON to this path (testing; works with --dry-run)")
     ap.add_argument("--only", help="comma list of source ids or families (greenhouse, workday, foorilla, ...)")
     args = ap.parse_args()
@@ -1294,9 +1830,38 @@ def main() -> int:
             del cands[k]
             jev_stats["dropped" if ans else "pm_unconfirmed"] += 1
 
+    # Read each posting once: pay, clearance, office days, degree, years, sub-track.
+    reads: dict = prev.get("read", {})
+    read_stats = {"asked": 0, "read": 0, "unread": 0, "failed": 0, "cached": 0, "tokens": 0, "error": None}
+    if args.no_jev or args.no_read or not key:
+        read_stats["error"] = "skipped" if key else "no TYPESAFE_API_KEY"
+    else:
+        todo = [(k, p) for k, p in cands.items() if read_key(k) not in reads][:READ_MAX_PER_RUN]
+        read_stats["cached"] = len(cands) - len(todo)
+        bodies: dict = {}
+        with ThreadPoolExecutor(16) as ex:
+            for (k, p), facts in zip(todo, ex.map(lambda kp: read_facts(kp[1], key, bool(args.dump_bodies)), todo)):
+                read_stats["asked"] += 1
+                read_stats["tokens"] += facts.pop("tokens", 0)
+                if "_body" in facts:
+                    bodies[hashlib.sha1(k.encode()).hexdigest()[:12]] = {
+                        "title": p["title"], "company": p["company"], "url": p["url"], "where": p["where"],
+                        "track": p["track"], "body": facts.pop("_body"), "facts": dict(facts)}
+                read_stats["read" if facts["read"] else "unread"] += 1
+                if facts.get("error"):
+                    read_stats["failed"] += 1
+                    read_stats["error"] = read_stats["error"] or facts["error"]
+                    if facts["error"] == "jev" or not facts["read"]:
+                        continue  # tried again tomorrow, not cached half-answered
+                facts.pop("error", None)
+                reads[read_key(k)] = {**facts, "seen": TODAY}
+        if args.dump_bodies:
+            Path(args.dump_bodies).write_text(json.dumps(bodies, ensure_ascii=False), encoding="utf-8")
+
     # Assemble: today's postings, plus a failed source's postings within grace.
     jobs: dict[str, dict] = {}
     keep_jev: set[str] = set()
+    keep_read: set[str] = set()
     for k, p in cands.items():
         jid = hashlib.sha1(k.encode()).hexdigest()[:12]
         old = prev_jobs.get(jid, {})
@@ -1311,6 +1876,10 @@ def main() -> int:
         for flag in ("clearance_check", "also_remote"):
             if p.get(flag):
                 jobs[jid][flag] = True
+        f = reads.get(read_key(k))
+        if f:
+            apply_read(jobs[jid], f)
+            keep_read.add(read_key(k))
         keep_jev.add(jev_key(p))
         stats[p["source"]]["kept"] += 1
     carried = 0
@@ -1346,12 +1915,15 @@ def main() -> int:
                    # "pnw" stays all three states so old counts and links mean what they did.
                    "pnw": sum(1 for j in rows if j["where"] in ("oregon", "pnw")),
                    "oregon": sum(1 for j in rows if j["where"] == "oregon"),
-                   "remote": sum(1 for j in rows if j["where"] == "remote" or j.get("also_remote"))},
+                   "remote": sum(1 for j in rows if j["where"] == "remote" or j.get("also_remote")),
+                   "read": sum(1 for j in rows if j.get("read")),
+                   "pay": sum(1 for j in rows if j.get("salary"))},
         "sources": [{"id": sid, **{k: v for k, v in s.items() if k != "secs"}} for sid, s in sorted(stats.items())],
         "jev": jev_stats,
+        "reader": read_stats,
         "jobs": rows,
     }
-    print(json.dumps({k: page[k] for k in ("counts", "jev")}, indent=1), file=sys.stderr)
+    print(json.dumps({k: page[k] for k in ("counts", "jev", "reader")}, indent=1), file=sys.stderr)
     if args.dump:
         Path(args.dump).write_text(json.dumps(page, ensure_ascii=False, indent=1), encoding="utf-8")
     if args.dry_run or only:
@@ -1361,8 +1933,9 @@ def main() -> int:
     # Prune the Jev cache to what is still useful, then write both atomically.
     # Answers for dropped postings are kept a week, so a "neither" is not re-asked daily.
     jev_cache = {k: v for k, v in jev_cache.items() if k in keep_jev or (age_days(v.get("seen")) or 0) <= 7}
+    reads = {k: v for k, v in reads.items() if k in keep_read or (age_days(v.get("seen")) or 0) <= 7}
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    for path, obj in ((STATE, {"jobs": jobs, "jev": jev_cache}), (OUT, page)):
+    for path, obj in ((STATE, {"jobs": jobs, "jev": jev_cache, "read": reads}), (OUT, page)):
         tmp = path.with_suffix(".tmp")
         tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         os.replace(tmp, path)
