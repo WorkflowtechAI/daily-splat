@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily public-records check for the Daily Splat's employers
+
+[Timer]
+# After the splat (05:30 plus up to 20 minutes of jitter, 45 minutes at most),
+# so it runs the code the splat just pulled.
+OnCalendar=*-*-* 07:00:00 America/Los_Angeles
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

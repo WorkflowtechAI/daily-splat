@@ -83,6 +83,15 @@
   .tag.new{background:var(--moss);color:var(--paper);border-color:transparent;font-weight:600}
   .tag.pay{color:var(--ink);white-space:normal;overflow-wrap:anywhere}  /* a long pay line wraps instead of widening a phone */
   .tag.warn{color:var(--copper-ink);border-color:var(--copper)}
+  /* Company check: public records about the employer, opened from a card. */
+  .cc-btn{grid-column:1/-1;justify-self:start;font-size:12.5px;margin-top:2px}
+  .cc{grid-column:1/-1;border-top:1px dashed var(--line);margin-top:4px;padding-top:10px;font-size:.88rem;color:var(--ink-soft)}
+  .cc h4{font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:12px 0 3px}
+  .cc h4:first-child{margin-top:0}
+  .cc p{margin:0 0 4px;max-width:80ch}
+  .cc ul{margin:2px 0 4px;padding-left:18px;max-width:80ch}
+  .cc b{color:var(--ink);font-weight:600}
+  .cc .fine{font-size:.8rem;color:var(--ink-faint)}
   .more{margin:10px 0 0;font:500 13px var(--sans);padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:3px;cursor:pointer}
   .empty{padding:24px 0;color:var(--ink-faint)}
   .loading{padding:40px 0;color:var(--ink-faint);font-family:var(--mono);font-size:12px}
@@ -331,6 +340,7 @@
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse and Workable.</p>
     <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
     <p>Each new posting is also read once, the day it first appears, from the employer's own system where it can be: its pay range, any clearance it requires, days in the office, where a remote hire may live, the degree and years it asks for, the kind of work, and whether the job manages people. Pay, years and office days are taken from the text as written; the rest is the classifier's reading of the few sentences that say it, so check the posting before you rely on a tag. <span id="read-line"></span> A federal or defense contractor whose posting could not be read gets "Check clearance", since many of their roles need one the title never mentions.</p>
+    <p>"Company check" under each card shows public records about the employer: its federal contracts by fiscal year from USAspending, with how much the Defense Department and Homeland Security (ICE and CBP among it) paid for; unfair-labor-practice charges filed against it at the National Labor Relations Board and how they closed; federal employment discrimination cases naming it, from CourtListener; what its PAC gave federal candidates, by party, from the FEC (a corporate PAC is funded by employees who choose to give; the company itself cannot give to candidates); and its page on Good Jobs First's Violation Tracker. Records are matched on legal names a person has reviewed, for the employers that post the most here; any other employer gets search links instead of numbers, because a loose name match would pin someone else's record on it. A charge or a lawsuit is an allegation, not a finding. The records refresh weekly.</p>
     <p>If your last visit on this device was before yesterday, "New" counts from that visit ("New since Thu") instead of from this morning. The visit date is kept only in this browser and never leaves it.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
@@ -375,6 +385,7 @@
   const EDU = { none: "No degree asked", or_exp: "Degree or experience", bachelor: "Bachelor's required", advanced: "Master's+ required" };
   const LIMIT = { some_states: "Remote: some states only", time_zone: "Remote: set time zone" };
   const SAVED = "splat-view", VISIT = "splat-visit";
+  const CHAT = "https://discord.gg/D9pHEghG9C";  // the group's Discord, as in the form below
   // What a filter means, in plain words: the button's tooltip, and the line
   // under the filters while it is on (phones have no tooltips).
   const HINT = {
@@ -557,10 +568,152 @@
     if (j.carried) tags.append(el("span", { class: "tag warn", text: "Source down today" }));
     tags.append(el("span", { class: "tag", text: j.via === "company" ? "Employer's own board" : `Listed on ${j.source}` }));
     const posted = daysAgo(j.posted);
+    const check = el("button", { class: "linkbtn cc-btn", type: "button", "aria-expanded": "false", text: "Company check" });
+    check.addEventListener("click", () => companyCheck(check, j.company));
     return el("li", { class: "job" },
       el("div", {}, el("h3", {}, title), el("div", { class: "who" }, el("b", { text: j.company }), document.createTextNode(` · ${j.location}`))),
       el("div", { class: "when", text: posted != null ? `posted ${ago(posted)}` : `seen ${ago(daysAgo(j.first_seen))}` }),
-      tags);
+      tags, check);
+  }
+
+  // Company check: public records about an employer, from companies.json
+  // (company_check.py), loaded on the first click. Numbers show only for
+  // employers in the reviewed name table; any other employer gets search links,
+  // since a loose name match would pin someone else's lawsuit or contract on it.
+  let CC = null;
+  const loadCC = () => CC || (CC = fetch("companies.json", { cache: "no-cache" })
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .catch((e) => { CC = null; throw e; }));
+  // The same key company_check.py's page_key() builds.
+  const pageKey = (s) => (s || "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim();
+  const money = (n) => !(n > 0) ? "$0" : n >= 1e9 ? `$${(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M`
+    : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : `$${Math.round(n)}`;
+  // "Nov 2021": the five-year window starts on a date, not on January 1.
+  const monthYear = (d) => { const [y, m, dd] = (d || "").split("-").map(Number); return y ? new Date(y, m - 1, dd || 1).toLocaleDateString([], { month: "short", year: "numeric" }) : ""; };
+  // DoD contract records reach USAspending about 90 days late, so a fiscal year
+  // (October to September) is missing Defense money until about December 31.
+  const dodLag = (fy) => Date.now() < new Date(fy, 11, 31).getTime();
+  // How an NLRB charge closed, in plain words. "Adjusted" is the Board's word for
+  // closed with a settlement between the parties; anything else shows as filed.
+  const CLOSED = { "Withdrawal Non-adjusted": "withdrawn", "Withdrawal Adjusted": "withdrawn with a settlement",
+    "Dismissal Non-adjusted": "dismissed", "Dismissal Adjusted": "dismissed with a settlement", "Informal Settlement": "settled",
+    "Formal Settlement": "settled", "Compliance w/BO": "closed on compliance with a Board order",
+    "Non-Compliance w/BO": "closed without compliance with a Board order" };
+  const closedAs = (r) => CLOSED[r] || (r || "closed").toLowerCase();
+  const out = (href, text) => { const u = safeUrl(href); return u ? el("a", { href: u, target: "_blank", rel: "noopener noreferrer nofollow", text }) : document.createTextNode(text); };
+  const para = (cls, ...kids) => el("p", cls ? { class: cls } : {}, ...kids.map((k) => typeof k === "string" ? document.createTextNode(k) : k));
+  const bullets = (items) => el("ul", {}, ...items.map((kids) => el("li", {}, ...kids.map((k) => typeof k === "string" ? document.createTextNode(k) : k))));
+
+  function companyCheck(btn, company) {
+    let panel = btn.nextElementSibling;
+    if (btn.getAttribute("aria-expanded") === "true") { btn.setAttribute("aria-expanded", "false"); if (panel) panel.hidden = true; return; }
+    btn.setAttribute("aria-expanded", "true");
+    if (panel && panel.dataset.done) { panel.hidden = false; return; }
+    if (!panel) { panel = el("div", { class: "cc", role: "region", "aria-label": `Public records: ${company}` }); btn.after(panel); }
+    panel.hidden = false;
+    panel.replaceChildren(para("fine", "Loading public records…"));
+    loadCC().then((d) => {
+      const id = d.aliases && d.aliases[pageKey(company)];
+      const c = id && d.companies && d.companies[id];
+      panel.replaceChildren(...(c ? ccFacts(c, d.as_of || {}) : ccSearch(company, "This employer is not on the reviewed list yet, so there are no numbers here.")));
+      panel.dataset.done = "1";
+    }).catch(() => panel.replaceChildren(...ccSearch(company, "The reviewed records did not load.")));
+  }
+
+  // Name searches on each source, for an employer the table does not cover.
+  function ccSearch(name, why) {
+    const n = name.replace(/["]/g, "");
+    return [para("", `${why} You can search the public records by name; results can include other employers with similar names:`),
+      bullets([
+        [out(`https://www.usaspending.gov/keyword_search/${encodeURIComponent(n)}`, "Federal contracts"), " on USAspending"],
+        [out(`https://www.nlrb.gov/search/case/${encodeURIComponent(n)}`, "Unfair-labor-practice charges"), " at the NLRB"],
+        [out(`https://www.courtlistener.com/?type=r&q=${encodeURIComponent(`party:("${n}") AND suitNature:(442 OR 445)`)}`, "Employment discrimination cases"), " in federal court, on CourtListener"],
+        [out(`https://www.fec.gov/data/committees/?q=${encodeURIComponent(n)}`, "PACs"), " at the FEC"],
+        [out(`https://violationtracker.goodjobsfirst.org/?company_op=starts&company=${encodeURIComponent(n.replace(/[,.]/g, ""))}`, "Penalties and settlements"), " on Violation Tracker"],
+      ])];
+  }
+
+  function ccFacts(c, asOf) {
+    const box = [], head = (t) => box.push(el("h4", { text: t }));
+    const unchecked = () => box.push(para("fine", "Not checked yet; it will be within the week."));
+    const n = c.search_name || (c.names || [])[0] || "";
+    const ambiguous = (href, what) => box.push(para("", "Its legal name matches another employer's once the Inc. or LLC is dropped, so these records cannot be told apart by name. ",
+      out(href, what), " (results can include the other employer)."));
+
+    head("Federal contracts");
+    const k = c.contracts;
+    if (!c.checked || !c.checked.contracts) unchecked();
+    else if (!k) box.push(para("", "No federal contractor ID found for it on USAspending."));
+    else {
+      const years = k.fy || [];
+      if (!years.some((y) => y.total > 0)) box.push(para("", `No prime federal contracts in fiscal ${years.map((y) => y.fy).sort().join("–").replace(/–\d+–/, "–")}.`));
+      else box.push(bullets(years.map((y, i) => {
+        const of = [];
+        if (y.dod > 0) of.push(`Defense ${money(y.dod)}`);
+        const parts = [["ICE", y.ice], ["CBP", y.cbp]].filter(([, v]) => v > 0).map(([a, v]) => `${a} ${money(v)}`);
+        if (y.dhs > 0) of.push(`Homeland Security ${money(y.dhs)}` + (parts.length ? ` (${parts.join(", ")})` : ""));
+        return [el("b", { text: `FY${y.fy}${i === 0 ? " so far" : ""}${dodLag(y.fy) ? "*" : ""}: ${money(y.total)}` }), of.length ? `, of which ${of.join(", ")}` : ""];
+      })));
+      const less = years.reduce((a, y) => a + (y.less > 0 ? y.less : 0), 0);
+      if (years.some((y) => dodLag(y.fy))) box.push(para("fine", "* Defense Department contracts reach USAspending about 90 days late, so a starred year is still missing its latest Defense months."));
+      box.push(para("fine", "Prime contract obligations to the employer and the units it owns, by federal fiscal year (October to September); "
+        + "the Defense and Homeland Security parts are by the agency that paid. "
+        + `Joint ventures, units it has sold and units of other employers on this list are left out${less > 0 ? ` (${money(less)} over these years)` : ""}. `,
+        k.link ? out(k.link, "USAspending record") : "", asOf.contracts ? ` · data as of ${asOf.contracts.slice(0, 10)}` : ""));
+    }
+
+    head("Labor board");
+    const l = c.labor;
+    if (!l) unchecked();
+    else if (l.ambiguous) ambiguous(`https://www.nlrb.gov/search/case/${encodeURIComponent(n)}`, "Search the NLRB");
+    else if (!l.charges) box.push(para("", `No unfair-labor-practice charges against it at the NLRB since ${monthYear(l.since)}, under the names below.`));
+    else {
+      const merged = {};
+      for (const [r, k] of Object.entries(l.closed || {})) merged[closedAs(r)] = (merged[closedAs(r)] || 0) + k;
+      const closed = Object.entries(merged).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([r, k]) => `${fmt(k)} ${r}`).join(", ");
+      box.push(para("", el("b", { text: `${fmt(l.charges)} unfair-labor-practice charge${l.charges === 1 ? "" : "s"}` }),
+        ` filed at the NLRB since ${monthYear(l.since)}; ${fmt(l.open)} open.` + (closed ? ` Closed: ${closed}.` : "")));
+      box.push(bullets((l.recent || []).slice(0, 3).map((r) => [out(r.link, r.case), ` · filed ${r.filed || "?"} · ${r.reason ? closedAs(r.reason) : (r.status || "").toLowerCase()}`])));
+      box.push(para("fine", "A charge is an allegation, not a finding. Counts charges that name the employer by one of the legal names below; ones filed under another spelling or a joint-employer name are not counted. NLRB case data via the labordata project", asOf.labor ? `, as of ${asOf.labor}.` : "."));
+    }
+
+    head("Employment discrimination cases");
+    const ct = c.courts;
+    if (!ct) unchecked();
+    else if (ct.ambiguous) ambiguous(`https://www.courtlistener.com/?type=r&q=${encodeURIComponent(`party:("${n.replace(/["]/g, "")}") AND suitNature:(442 OR 445)`)}`, "Search CourtListener");
+    else if (!ct.cases) box.push(para("", `No federal employment civil-rights cases naming it since ${monthYear(ct.since)} on CourtListener, under the names below.`));
+    else {
+      const unclosed = ct.unclosed ?? ct.open ?? 0;
+      box.push(para("", el("b", { text: `${fmt(ct.cases)}${ct.more ? "+" : ""} federal case${ct.cases === 1 ? "" : "s"}` }),
+        ` since ${monthYear(ct.since)}` + (unclosed ? `; ${fmt(unclosed)} with no closing date on record.` : ".")));
+      box.push(bullets((ct.recent || []).slice(0, 3).map((r) => [out(r.link, r.name || "Docket"), ` · ${r.court || ""} · filed ${r.filed || "?"}${r.closed ? `, closed ${r.closed}` : ""}`])));
+      box.push(para("fine", "Federal dockets for employment civil rights (discrimination, harassment, retaliation) and disability in employment, with the employer named as a party. A filed case is an allegation; many settle or are dismissed."));
+    }
+
+    head("PAC giving");
+    const p = c.pac;
+    if (!p) unchecked();
+    else if (p.ambiguous) ambiguous(`https://www.fec.gov/data/committees/?q=${encodeURIComponent(n)}`, "Search the FEC");
+    else if (!(p.committees || []).length) box.push(para("", "No corporate PAC connected to it in FEC filings."));
+    else {
+      box.push(bullets((p.cycles || []).map((y) => [el("b", { text: `${y.cycle - 1}–${String(y.cycle).slice(2)}: ` }),
+        y.unpublished ? "the FEC has not published this cycle's files yet"
+          : y.gifts ? `${money(y.dem)} to Democrats, ${money(y.rep)} to Republicans${y.other > 0 ? `, ${money(y.other)} other` : ""}` : "no gifts to candidates"])));
+      box.push(para("fine", "Employee-funded PAC; the company itself cannot give to federal candidates. Direct gifts to federal candidates, from FEC filings: ",
+        ...p.committees.slice(0, 3).flatMap((m, i) => [i ? ", " : "", out(m.link, m.name)])));
+    }
+
+    head("Penalties and settlements");
+    if (c.violations) box.push(para("", out(c.violations.link, c.violations.kind === "parent" ? "Its page on Violation Tracker" : "Search Violation Tracker"),
+      " (Good Jobs First): fines and settlements from federal and state agencies."));
+    else unchecked();
+
+    // Every legal name the labor, court and PAC counts use, so a count can be checked.
+    const names = c.matched || c.legal || [];
+    box.push(para("fine", names.length ? `Records matched on legal names a person reviewed: ${names.join("; ").replace(/\.$/, "")}. `
+      : "Its legal names are shared with other employers, so only its federal contractor IDs are matched. ",
+      out(CHAT, "Spot a wrong match? Say so on Discord.")));
+    return box;
   }
 
   function group(title, rows) {

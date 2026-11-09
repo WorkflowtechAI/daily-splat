@@ -142,6 +142,41 @@ first sample run shipped. Run it after touching a regex:
 python3 infra/test_splat.py
 ```
 
+## Company check
+
+"Company check" on each card opens public records about the employer, from
+`companies.json`, which `company_check.py` writes beside `jobs.json` once a day
+(`infra/company-check.service`, 07:00 Pacific, after the splat):
+
+| Source | What it shows | How it matches |
+|---|---|---|
+| [USAspending](https://api.usaspending.gov) | Prime contract obligations per federal fiscal year, and how much DoD, DHS, ICE and CBP paid for (funding agency; DoD data runs about 90 days late) | The employer's reviewed UEIs; whatever joint ventures, sold units (`exclude_ueis`) and other listed employers' UEIs received inside that search comes off |
+| NLRB, via [labordata/nlrb-data](https://github.com/labordata/nlrb-data) | Unfair-labor-practice charges against it since five years ago, and how they closed | Respondent name equals a reviewed legal name |
+| [CourtListener](https://www.courtlistener.com/help/api/) | Federal employment civil-rights cases (nature of suit 442 and 445) | A docket party equals a reviewed legal name |
+| [FEC bulk files](https://www.fec.gov/data/browse-data/?tab=bulk-data) | What the employer's connected PAC gave federal candidates, by party | The PAC's connected organization equals a reviewed legal name |
+| [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search |
+
+Numbers show only for employers in `company_names.json`, a table a person
+reviewed that maps job-board names to legal names and UEIs, with an `avoid`
+list of look-alikes. Names are compared whole, after dropping case, punctuation
+and the corporate suffix; never as a substring. Any employer not in the table
+gets search links instead, because a loose match pins someone else's lawsuit or
+contract on an innocent employer. A charge or a lawsuit is an allegation, and
+the page says so.
+
+To add an employer, add an entry to `company_names.json` (its job-board name
+exactly as the card shows it, legal names, UEIs from USAspending's recipient
+search) and run `python3 infra/test_company_check.py`.
+
+On the server it needs `COURTLISTENER_TOKEN` in `/etc/daily-splat.env` (a free
+CourtListener account); without it the court source is skipped. Each source
+refreshes weekly per employer, CourtListener within about 100 searches a day,
+and a source that fails keeps its last facts.
+
+- By hand: `sudo systemctl start company-check.service`
+- Last run: `journalctl -u company-check.service -n 40`
+- Test without writing: `sudo systemd-run --pipe --wait -p User=foundry -p EnvironmentFile=/etc/daily-splat.env -p StateDirectory=daily-splat /usr/bin/python3 /home/foundry/daily-splat/company_check.py --dry-run --dump /tmp/c.json`
+
 ## It fails closed
 
 If fewer than half the sources answer, the script assumes the box lost network,
@@ -155,8 +190,9 @@ last two days are carried and marked "Source down today" on the page.
 git clone https://github.com/WorkflowtechAI/daily-splat.git /home/foundry/daily-splat
 sudo cp /home/foundry/daily-splat/infra/daily-splat.service /etc/systemd/system/
 sudo cp /home/foundry/daily-splat/infra/daily-splat.timer   /etc/systemd/system/
+sudo cp /home/foundry/daily-splat/infra/company-check.service /home/foundry/daily-splat/infra/company-check.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now daily-splat.timer
+sudo systemctl enable --now daily-splat.timer company-check.timer
 sudo systemctl start daily-splat.service      # first run now, so the page has data
 ```
 

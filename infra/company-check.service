@@ -1,0 +1,23 @@
+[Unit]
+Description=Public records for the Daily Splat's employers (companies.json)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=foundry
+# COURTLISTENER_TOKEN, from the splat's key file (root:root 0600, never in the
+# repo). Without it the court source is skipped and named in the run stats.
+EnvironmentFile=/etc/daily-splat.env
+# The facts cache (company-check.json) and the downloaded NLRB database and FEC
+# files (company-data/, about 1.3 GB) live beside the splat's state.
+StateDirectory=daily-splat
+Environment=COMPANY_OUT=/var/www/iambraun.com/cv/job-sources/daily-splat/companies.json
+# Runs the checkout daily-splat.service pulled at 05:30. It never pulls itself,
+# so the two units never race on the git tree.
+ExecStart=/usr/bin/python3 /home/foundry/daily-splat/company_check.py
+# A failed source keeps its cached facts, and the run still writes the file.
+# Each source per employer refreshes weekly, so most days are short; the first
+# run downloads everything and asks USAspending a few times per employer.
+TimeoutStartSec=60min
+Nice=10
