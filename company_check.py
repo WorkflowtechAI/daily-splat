@@ -2,7 +2,7 @@
 """Company check: public records about the employers on the Daily Splat.
 
 Runs once a day after the splat (infra/company-check.service). For each
-employer in company_names.json, a table reviewed by a person that maps the
+employer in company_names.json, a reviewed table (researched and checked against live USAspending data) that maps the
 names job boards use to the employer's legal names and federal contractor IDs,
 it gathers:
 
