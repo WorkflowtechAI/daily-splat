@@ -279,6 +279,13 @@ cc.fetch_json = lambda *a, **k: asked.append(a) or fake_usa(*a, **k)
 sys.argv = ["company_check.py", "--only", "contracts"]
 cc.main()
 check("run: facts checked today are not fetched again", asked, [])
+table_now = json.loads(cc.TABLE.read_text(encoding="utf-8"))
+table_now["employers"][0]["exclude_ueis"] = ["JVJVJVJVJVJV", "CCCCCCCCCCCC"]
+cc.TABLE.write_text(json.dumps(table_now), encoding="utf-8")
+cc.main()
+check("run: an edited table entry is checked again the next run",
+      sorted({tuple(d["filters"]["recipient_search_text"]) for _, d in asked if d and "filters" in d}),
+      [("AAAAAAAAAAAA", "BBBBBBBBBBBB"), ("JVJVJVJVJVJV", "CCCCCCCCCCCC")])
 
 # ── The reviewed table ───────────────────────────────────────────────────────
 

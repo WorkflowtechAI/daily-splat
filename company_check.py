@@ -34,6 +34,7 @@ that fails keeps its last facts. Writes companies.json beside jobs.json.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -428,9 +429,17 @@ def violations(e: dict, parents: dict[str, str]) -> dict:
 SOURCES = ("contracts", "labor", "courts", "pac", "violations")
 
 
-def due(cache: dict, eid: str, src: str) -> bool:
-    at = ((cache.get(eid) or {}).get(src) or {}).get("at")
-    return not at or (TODAY - date.fromisoformat(at)).days >= REFRESH_DAYS
+def entry_key(e: dict) -> str:
+    """A fingerprint of an employer's table entry. Facts cached under an older
+    entry are due again, so a reviewed fix (an added avoid name, a joint
+    venture excluded) shows on the next run instead of a week later."""
+    return hashlib.sha256(json.dumps(e, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def due(cache: dict, e: dict, src: str) -> bool:
+    got = (cache.get(e["id"]) or {}).get(src) or {}
+    return (not got.get("at") or got.get("key") != entry_key(e)
+            or (TODAY - date.fromisoformat(got["at"])).days >= REFRESH_DAYS)
 
 
 def main() -> int:
@@ -453,8 +462,8 @@ def main() -> int:
     stats = {s: {"updated": 0, "kept": 0, "failed": 0, "error": None} for s in SOURCES}
     as_of: dict = dict((cache.get("_as_of") or {}))
 
-    def put(eid: str, src: str, facts):
-        cache.setdefault(eid, {})[src] = {"at": TODAY.isoformat(), "facts": facts}
+    def put(e: dict, src: str, facts):
+        cache.setdefault(e["id"], {})[src] = {"at": TODAY.isoformat(), "key": entry_key(e), "facts": facts}
         stats[src]["updated"] += 1
 
     def fail(src: str, err: Exception):
@@ -466,7 +475,7 @@ def main() -> int:
         for today and keeps its cached facts."""
         if src not in only:
             return
-        todo = [e for e in employers if args.refresh or due(cache, e["id"], src)]
+        todo = [e for e in employers if args.refresh or due(cache, e, src)]
         stats[src]["kept"] = len(employers) - len(todo)
         if not todo:
             return
@@ -479,7 +488,7 @@ def main() -> int:
             return
         for e in todo:
             try:
-                put(e["id"], src, run(e, ctx))
+                put(e, src, run(e, ctx))
             except Exception as err:  # noqa: BLE001 - one employer never fails the source
                 if str(err) == "budget":
                     stats[src]["kept"] += 1

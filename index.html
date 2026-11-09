@@ -639,7 +639,8 @@
       else box.push(bullets(years.map((y, i) => {
         const of = [];
         if (y.dod > 0) of.push(`Defense ${money(y.dod)}`);
-        if (y.dhs > 0) of.push(`Homeland Security ${money(y.dhs)}` + (y.ice > 0 || y.cbp > 0 ? ` (ICE ${money(y.ice)}, CBP ${money(y.cbp)})` : ""));
+        const parts = [["ICE", y.ice], ["CBP", y.cbp]].filter(([, v]) => v > 0).map(([a, v]) => `${a} ${money(v)}`);
+        if (y.dhs > 0) of.push(`Homeland Security ${money(y.dhs)}` + (parts.length ? ` (${parts.join(", ")})` : ""));
         return [el("b", { text: `FY${y.fy}${i === 0 ? " so far" : ""}: ${money(y.total)}` }), of.length ? `, of which ${of.join(", ")}` : ""];
       })));
       box.push(para("fine", "Prime contract obligations to the employer and the units it owns, by federal fiscal year (October to September); joint ventures are left out. ",
