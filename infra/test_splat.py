@@ -8,6 +8,7 @@ Every case below is a real location or title string a source returned on
 
 import importlib.util
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -487,8 +488,248 @@ def check_neogov() -> int:
     return 0
 
 
+# The posting reader (2026-11-09): what code takes from a posting's own text.
+PAY_TEXT = [
+    ("The base pay range for this position is $120,000 - $150,000 per year.", "$120K–$150K/yr"),
+    ("Salary range: $85K–$110K", "$85K–$110K/yr"),
+    ("Pay: $25.00 - $32.50 per hour", "$25–$32/hr"),
+    ("$43.36 - $58.10 Hourly", "$43–$58/hr"),
+    ("Zone A: $150,000 to $200,000. Zone B: $135,000 to $180,000.", "$135K–$200K/yr"),  # pay zones: widest span
+    ("between $90,000 and $110,000 annually", "$90K–$110K/yr"),
+    ("$120,000.00 - $150,000.00 USD", "$120K–$150K/yr"),
+    ("A $5,000 - $10,000 sign-on bonus and a 401(k) match.", None),  # a bonus is not pay
+    ("Revenue grew from $5M to $50M last year.", None),
+    ("No pay stated here.", None),
+    # From the reader audit, 2026-11-09.
+    ("USA, WA, Seattle - 115,600.00 - 160,000.00 USD annually", "$116K–$160K/yr"),  # Amazon: no $
+    ("USA, CA, Sunnyvale - 122,600.00 - 185,000.00 USD annually\nUSA, WA, Redmond - 99,100.00 - 160,000.00 USD annually",
+     "$99K–$185K/yr"),
+    ("40 hours / week, Salary Range $121,000/year to $163,700/year.", "$121K–$164K/yr"),
+    ("United States of America: Annual Salary USD 123,500 - 285,000 in Tennessee", "$124K–$285K/yr"),
+    ("Salary: $122,000", "$122K/yr"),
+    ("The salary range for this role is USD $ 195K. This range reflects the base salary only", "$195K/yr"),
+    ("The base salary range for this position is $96,000 - $184,000. The estimated on-target earnings, or OTE, "
+     "is $120,000 - $230,000.", "$96K–$184K/yr"),  # base beats OTE
+]
+YEARS_TEXT = [
+    ("5+ years of experience in security operations", 5),
+    ("Minimum of three (3) years of relevant experience", 3),
+    ("2-4 years experience with Linux", 2),
+    ("Bachelor's degree and 7 years of professional experience", 7),
+    ("We have been in business for 25 years.", None),
+    # From the reader audit, 2026-11-09: the first requirement, a bullet that opens with it, never a preferred one.
+    ("- 5+ years of technical product or program management experience\n- 7+ years of working directly with "
+     "engineering teams experience\n- 3+ years of software development experience", 5),
+    ("Bachelor's Degree AND 2+ years technical experience\nOR Master's Degree AND 1+ year(s) technical experience\n"
+     "OR 5+ years technical experience", 2),
+    ("2 years of experience with software development or 1 year of experience with an advanced degree", 2),
+    ("- 3+ years of one of the following related domains: SRE, systems engineering", 3),
+    ("5+ years of experience in networking\nPreferred Qualifications\n10+ years of experience at scale", 5),
+]
+DAYS_TEXT = [
+    ("This is a hybrid role, in the office three days a week.", 3),
+    ("Work from our Seattle office 4 days per week", 4),
+    ("Our team ships 5 days a week.", None),  # no office in the sentence
+    ("This role is hybrid, requiring 2-3 days per week on-site at one of the posted locations.", 2),
+    ("This role is hybrid, requiring 2x days per week on-site at one of the posted locations.", 2),
+]
+READER_URLS = [
+    (splat.GH_URL, "https://job-boards.greenhouse.io/anthropic/jobs/4567", ("anthropic", "4567")),
+    (splat.LEVER_URL, "https://jobs.lever.co/palantir/0a1b2c3d-0000-1111-2222-333344445555/apply",
+     (None, "palantir", "0a1b2c3d-0000-1111-2222-333344445555")),
+    (splat.WD_URL, "https://gdit.wd5.myworkdayjobs.com/en-US/External_Career_Site/job/Any-Location--Remote/Lead-Cloud-Architect_RQ231565-1",
+     ("gdit", "wd5", "External_Career_Site", "job/Any-Location--Remote/Lead-Cloud-Architect_RQ231565-1")),
+    (splat.EF_URL, "https://apply.careers.microsoft.com/careers/apply?pid=/careers/job/1970393557053979",
+     ("apply.careers.microsoft.com", None, "1970393557053979")),
+    (splat.EF_URL, "https://jobs.autodesk.com/careers/job/1443152973589", ("jobs.autodesk.com", "1443152973589", None)),
+    (splat.ORACLE_URL, "https://eeho.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/jobsearch/job/349868",
+     ("https://eeho.fa.us2.oraclecloud.com", "jobsearch", "349868")),
+    (splat.WORKABLE_URL, "https://apply.workable.com/j/6D2ED2A2FC/apply", ("6D2ED2A2FC",)),
+    (splat.SMARTR_URL, "https://jobs.smartrecruiters.com/Lakeshore/744000160292019-senior-it-security", ("Lakeshore", "744000160292019")),
+]
+JSONLD_PAGE = ('<html><script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting",'
+               '"description":"&lt;p&gt;Run the SOC.&lt;/p&gt;","jobLocationType":"TELECOMMUTE","baseSalary":'
+               '{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","minValue":100000,'
+               '"maxValue":130000,"unitText":"YEAR"}}}</script></html>')
+
+
+def check_reader() -> tuple[int, int]:
+    bad = total = 0
+
+    def eq(label, got, want):
+        nonlocal bad, total
+        total += 1
+        if got != want:
+            bad += 1
+            print(f"{label} = {got!r}, want {want!r}")
+
+    for s, want in PAY_TEXT:
+        eq(f"pay_from_text({s!r})", splat.pay_from_text(s), want)
+    for s, want in YEARS_TEXT:
+        eq(f"years_from_text({s!r})", splat.years_from_text(s), want)
+    for s, want in DAYS_TEXT:
+        eq(f"office_days({s!r})", splat.office_days(s), want)
+    for rx, url, want in READER_URLS:
+        m = rx.search(url)
+        eq(f"{rx.pattern[:24]}… on {url}", m.groups() if m else None, want)
+    eq("body_text(double-escaped)", splat.body_text("&lt;p&gt;Line one&lt;/p&gt;&lt;ul&gt;&lt;li&gt;A &amp;amp; B&lt;/li&gt;&lt;/ul&gt;"),
+       "Line one\nA & B")
+    eq("jsonld_posting", splat.jsonld_posting(JSONLD_PAGE), {"body": "Run the SOC.", "pay": "$100K–$130K/yr", "mode": "remote"})
+    eq("snippet(clearance)", splat.snippet("About us.\nMust hold an active TS/SCI clearance.\nGreat perks.", splat.CLR_WORDS),
+       "Must hold an active TS/SCI clearance.")
+    # The posting's own words replace the company-name clearance guess, but only once it was read.
+    j = {"clearance": False, "clearance_check": True}
+    splat.apply_read(j, {"read": True, "clr": "none", "pay": "$90K–$110K/yr", "sub": "secops"})
+    eq("apply_read(read, no clearance)", j, {"clearance": False, "salary": "$90K–$110K/yr", "sub": "secops", "read": True})
+    j = {"clearance": False, "clearance_check": True, "salary": "$1–$2/hr"}
+    splat.apply_read(j, {"read": False, "pay": "$90K–$110K/yr", "sub": "grc"})
+    eq("apply_read(unread)", j, {"clearance": False, "clearance_check": True, "salary": "$1–$2/hr", "sub": "grc"})
+    j = {"clearance": False}
+    splat.apply_read(j, {"read": True, "clr": "top_secret"})
+    eq("apply_read(top secret)", j, {"clearance": True, "clr": "top_secret", "read": True})
+    # Listings supply the URLs the reader fetches: never this box, its network, or metadata.
+    for host in ("127.0.0.1", "10.1.2.3", "192.168.1.5", "169.254.169.254", "::1", "localhost"):
+        eq(f"public_host({host!r})", splat.public_host(host), False)
+    for url in ("http://example.com/job", "https://127.0.0.1:8791/api/splat-intake", "file:///etc/passwd",
+                "https://example.com:8791/job"):
+        try:
+            splat.host_get(url)
+            got = "fetched"
+        except RuntimeError:
+            got = "refused"
+        eq(f"host_get({url!r})", got, "refused")
+
+    # From the branch review, 2026-11-09.
+    for s, want in REVIEW_PAY:
+        eq(f"pay_from_text({s!r})", splat.pay_from_text(s), want)
+    for args, want in STRUCTURED_PAY:
+        eq(f"structured_pay{args!r}", splat.structured_pay(*args), want)
+    for s, want in REVIEW_YEARS:
+        eq(f"years_from_text({s!r})", splat.years_from_text(s), want)
+    for s, want in REVIEW_DAYS:
+        eq(f"office_days({s!r})", splat.office_days(s), want)
+    eq("NEOGOV_URL on another host", bool(splat.NEOGOV_URL.search("https://evil.example/governmentjobs.com/careers/a/jobs/1")),
+       False)
+    j = {"clearance": False}
+    splat.apply_read(j, {"read": False, "clr": "top_secret"})
+    eq("apply_read(unread, top secret)", j, {"clearance": True, "clr": "top_secret"})
+    j = {"title": "Systems Administrator - TS/SCI w/ Poly", "clearance": True}
+    splat.apply_read(j, {"read": True, "clr": "none"})
+    eq("apply_read(title names a clearance)", j["clearance"], True)
+    j = {"track": "eng"}
+    splat.apply_read(j, {"read": True, "track": "cyber", "sub": "secops"})
+    eq("apply_read(Kind from another track)", "sub" in j, False)
+    # Hostile pages stay linear: 300 KB of unclosed "<script " and of "<" parse in well under a second each.
+    for page in ("<script " * 37_500, "<" * 300_000):
+        t0 = time.monotonic()
+        splat.jsonld_posting(page)
+        splat.body_text(page)
+        eq(f"hostile page {page[:9]!r}… parsed fast", time.monotonic() - t0 < 2, True)
+    # Jev down: two tries per question, and after JEV_BREAK failed questions no more calls.
+    calls = []
+
+    def down(*a, **k):
+        calls.append(1)
+        raise RuntimeError("HTTPError: HTTP Error 503")
+
+    real, real_sleep = splat.http_json, splat.time.sleep
+    splat.http_json, splat.time.sleep = down, (lambda s: None)
+    try:
+        for _ in range(splat.JEV_BREAK + 5):
+            splat.jev_ask({"title": "x"}, {"manager": splat.MANAGER_Q}, "key")
+        eq("jev breaker: calls made while Jev is down", len(calls), 2 * splat.JEV_BREAK)
+        eq("jev breaker: open", splat.jev_open(), True)
+    finally:
+        splat.http_json, splat.time.sleep = real, real_sleep
+        splat._JEV_FAILS[0] = 0
+    # A server that drips its headers a byte at a time is cut off at the fetch deadline.
+    eq("fetch deadline on dripped headers", fetch_against_drip(), "TimeoutError")
+    return bad, total
+
+
+def fetch_against_drip() -> str:
+    """http_text with a 2 s deadline against a local server that sends one header
+    byte every 0.5 s forever (each read stays under the socket timeout)."""
+    import socket
+    import threading
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    stop = threading.Event()
+
+    def serve():
+        conn, _ = srv.accept()
+        conn.recv(4096)
+        try:
+            conn.sendall(b"HTTP/1.1 200 OK\r\n")
+            while not stop.is_set():
+                conn.sendall(b"X")
+                time.sleep(0.5)
+        except OSError:
+            pass
+        finally:
+            conn.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    t0 = time.monotonic()
+    try:
+        splat.http_text(f"http://127.0.0.1:{srv.getsockname()[1]}/", tries=1, timeout=5, limit=1000,
+                        opener=splat.PUBLIC, deadline=2)
+        got = "answered"
+    except RuntimeError as e:
+        got = str(e).split(":")[0] if time.monotonic() - t0 < 4 else "too slow"
+    finally:
+        stop.set()
+        srv.close()
+    return got
+
+
+REVIEW_PAY = [
+    ("Sign-on bonus: $20,000 - $30,000.\nBase salary: $120,000 - $150,000", "$120K–$150K/yr"),
+    ("This role includes a $30,000 - $50,000 sign-on bonus.", None),
+    ("Base pay (not including bonus or equity): $100,000 - $130,000", "$100K–$130K/yr"),
+    ("In addition to base salary, this role includes a $30,000 sign-on bonus.", None),
+    ("Salary: up to $95,000 DOE", None),
+    # The recheck, 2026-11-09: a set-aside range never turns into "$120/hr", and real base ranges stay.
+    ("Sign-on bonus: $20,000 - $30,000", None),
+    ("Salary Range: $120,000 - $150,000 plus bonus and equity", "$120K–$150K/yr"),
+    ("Base salary, plus bonus and equity: $150,000 - $200,000", "$150K–$200K/yr"),
+    ("Base salary $120,000 - $150,000\nBonus: 10% target", "$120K–$150K/yr"),
+    ("Our designing team pays $120,000 - $150,000", "$120K–$150K/yr"),
+    ("Sign-on bonus\n$30,000 - $50,000\nBase salary\n$120,000 - $150,000", "$120K–$150K/yr"),  # labels as headings
+    ("The base salary range is $96,000 - $184,000 (not including commission).", "$96K–$184K/yr"),
+]
+STRUCTURED_PAY = [
+    ((5000, 7000, "MONTH"), None),  # monthly is not shown as a year
+    ((100000, 130000, "YEAR"), "$100K–$130K/yr"),
+    ((45, 60, "per-hour-wage"), "$45–$60/hr"),
+    ((45, 60, "per-year-salary"), None),  # the size disagrees with the label
+    ((90000, 110000, None), "$90K–$110K/yr"),
+]
+REVIEW_YEARS = [
+    ("With over 10 years of experience in the industry, Acme is a leader.\nRequirements\n- 3+ years of experience "
+     "in IT support", 3),
+    ("Founded 12 years ago, we bring experience to every client.\n- 2+ years in a help desk role", 2),
+    ("A 2 year degree and 3 years of experience in networking", 3),
+    ("We are looking for someone with 5+ years of experience in cloud security", 5),
+    ("Requirements\n- 5+ years of experience supporting users across the US", 5),  # "US" is not "us"
+    ("We require 4+ years of experience with Windows Server", 4),
+    ("Qualifications\n- 5+ years program management in a technology organization\n- PMP preferred", 5),
+]
+REVIEW_DAYS = [
+    ("This position is hybrid with the flexibility to work remotely up to 2 days per week.", None),
+    ("Hybrid: work from home 2 days a week.", None),
+    ("Hybrid schedule: in the office 3 days a week.", 3),
+    ("Hybrid (3 days/week in office, 2 days remote)", 3),
+    ("This is a hybrid role: in the office 3 days a week and remote 2 days a week.", 3),
+    ("This role is not remote; on-site 5 days a week in Hillsboro.", 5),
+    ("Hybrid: on-site 3 days a week supporting VMware virtualization and storage", 3),
+]
+
+
 def main() -> int:
-    bad = check_neogov() + check_eightfold() + check_fold_remote_twins()
+    reader_bad, reader_total = check_reader()
+    bad = check_neogov() + check_eightfold() + check_fold_remote_twins() + reader_bad
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -548,7 +789,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 
