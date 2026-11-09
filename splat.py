@@ -1283,7 +1283,8 @@ def _lever_read(m) -> dict:
 
 @lru_cache(maxsize=128)
 def _ashby_board(org: str) -> dict:
-    d = host_get(f"https://api.ashbyhq.com/posting-api/job-board/{org}?includeCompensation=true")
+    # A board name may hold a space ("PAR Technology", 2026-11-09).
+    d = host_get(f"https://api.ashbyhq.com/posting-api/job-board/{urllib.parse.quote(org)}?includeCompensation=true")
     return {j.get("id"): j for j in d.get("jobs") or []}
 
 
