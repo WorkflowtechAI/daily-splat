@@ -87,6 +87,15 @@ MONEY = [
     ((None, None, "/yr"), None),
 ]
 
+ASHBY_PAY = [
+    ("$207K – $244K • Offers Equity • This role is also eligible for medical benefits, 401(k) plan, and other company perk programs.",
+     "$207K – $244K"),
+    ("$175K – $325K • Offers Equity • Multiple Ranges", "$175K – $325K"),
+    ("$120K – $150K", "$120K – $150K"),
+    ("Offers Equity", None),
+    (None, None),
+]
+
 AGENCY = [
     ("TEK Systems", True), ("TEKsystems", True), ("Bright Vision Technologies", True),
     ("Robert Half", True), ("Insight Global", True),
@@ -484,6 +493,10 @@ def main() -> int:
         if splat.money(*args) != want:
             bad += 1
             print(f"money{args!r} = {splat.money(*args)!r}, want {want!r}")
+    for summary, want in ASHBY_PAY:
+        if splat.ashby_pay(summary) != want:
+            bad += 1
+            print(f"ashby_pay({summary!r}) = {splat.ashby_pay(summary)!r}, want {want!r}")
     for name, pattern, cases in (("AGENCY", splat.AGENCY, AGENCY), ("FEDERAL", splat.FEDERAL, FEDERAL)):
         for company, want in cases:
             if bool(pattern.search(company)) != want:
@@ -535,7 +548,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(AGENCY) + len(FEDERAL) + 3)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3)
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

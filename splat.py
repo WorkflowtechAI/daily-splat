@@ -592,6 +592,14 @@ def money(lo, hi, unit: str = "") -> str | None:
     return (f"{k(lo)}–{k(hi)}" if lo and hi and lo != hi else k(lo or hi)) + unit
 
 
+def ashby_pay(summary: str | None) -> str | None:
+    """Ashby's tier summary is the range and then the perks: "$207K – $244K • Offers
+    Equity • This role is also eligible for medical benefits..." (Vanta, 2026-11-08,
+    126 characters on one card). The card shows the range only."""
+    head = (summary or "").split("•")[0].strip()
+    return head if re.search(r"\d", head) else None
+
+
 def posting(**kw) -> dict:
     p = {"title": "", "company": "", "url": "", "location": "", "remote": False, "posted": None,
          "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False}
@@ -664,7 +672,7 @@ def src_ashby(token: str, name: str) -> list[dict]:
         if j.get("isListed") is False:
             continue
         locs = [j.get("location") or ""] + [s.get("location", "") for s in j.get("secondaryLocations") or []]
-        comp = (j.get("compensation") or {}).get("compensationTierSummary")
+        comp = ashby_pay((j.get("compensation") or {}).get("compensationTierSummary"))
         out.append(posting(title=j.get("title"), company=name, url=j.get("jobUrl"),
                            location="; ".join(x for x in locs if x),
                            # isRemote is set on hybrid roles too; workplaceType is the real answer.

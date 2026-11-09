@@ -17,6 +17,10 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   like `#track=cyber&where=oregon,remote` can be pasted into the group chat, and
   the last view is remembered on each device (localStorage). Where takes more
   than one place; an old `where=pnw` link still means Oregon plus WA/ID.
+  Only takes `new`, `week` (posted in the last 7 days), `pay` and `noclr`.
+  "New" is new since this morning, or since the device's last visit when that
+  was before yesterday ("New since Thu"); the visit date stays in the browser
+  (localStorage `splat-visit`). Cards posted over 21 days ago say "Open 3+ weeks".
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
   yesterday's postings, for "new today" and the failed-source grace, and the
   Jev answer cache, so each day only pays for its new postings.
