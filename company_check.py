@@ -152,19 +152,38 @@ def fiscal_years(today: date = TODAY) -> list[int]:
     return [fy - i for i in range(FY_COUNT)]
 
 
-def subagency_totals(ueis: list[str], fy: int) -> dict[str, float]:
-    """Contract obligations in fiscal year fy on transactions whose recipient, or whose
-    recipient's parent, is one of ueis. One search over the whole list counts
-    each transaction once, however the employer's IDs nest (tested 2026-11-09:
-    Palantir's two UEIs and its parent family both give $584.7M for FY2024)."""
-    d = fetch_json(f"{USA}/search/spending_by_category/awarding_subagency/", {
-        "filters": {"recipient_search_text": ueis, "award_type_codes": CONTRACT_TYPES,
-                    "time_period": [{"start_date": f"{fy - 1}-10-01", "end_date": f"{fy}-09-30"}]},
-        "category": "awarding_subagency", "limit": 100})
+# The agencies the panel breaks out, as USAspending's agencies filter names them.
+BUCKETS = (
+    ("dod", {"type": "awarding", "tier": "toptier", "name": "Department of Defense"}),
+    ("dhs", {"type": "awarding", "tier": "toptier", "name": "Department of Homeland Security"}),
+    ("ice", {"type": "awarding", "tier": "subtier", "name": "U.S. Immigration and Customs Enforcement",
+             "toptier_name": "Department of Homeland Security"}),
+    ("cbp", {"type": "awarding", "tier": "subtier", "name": "U.S. Customs and Border Protection",
+             "toptier_name": "Department of Homeland Security"}),
+)
+
+
+def usa_search(category: str, ueis: list[str], fy: int, agency: dict | None = None, page: int = 1) -> dict:
+    """One spending_by_category search: contract obligations in fiscal year fy
+    on transactions whose recipient, or whose recipient's parent, is one of
+    ueis. One search over the whole list counts each transaction once, however
+    the employer's IDs nest (tested 2026-11-09: Palantir's two UEIs and its
+    parent family both give $584.7M for FY2024)."""
+    filters = {"recipient_search_text": ueis, "award_type_codes": CONTRACT_TYPES,
+               "time_period": [{"start_date": f"{fy - 1}-10-01", "end_date": f"{fy}-09-30"}]}
+    if agency:
+        filters["agencies"] = [agency]
+    d = fetch_json(f"{USA}/search/spending_by_category/{category}/",
+                   {"filters": filters, "category": category, "limit": 100, "page": page})
     if any("recipient" in str(m).lower() and "not" in str(m).lower() for m in d.get("messages") or []):
         raise RuntimeError("USAspending ignored the recipient filter")  # never report someone else's money
+    return d
+
+
+def subagency_totals(ueis: list[str], fy: int) -> dict[str, float]:
+    """The year's total and the DoD, DHS, ICE and CBP parts of it."""
     tot = {"total": 0.0, "dod": 0.0, "dhs": 0.0, "ice": 0.0, "cbp": 0.0}
-    for row in d.get("results") or []:
+    for row in usa_search("awarding_subagency", ueis, fy).get("results") or []:
         amt = float(row.get("amount") or 0)
         ab, code = (row.get("agency_abbreviation") or "").upper(), (row.get("code") or "").upper()
         tot["total"] += amt
@@ -175,26 +194,51 @@ def subagency_totals(ueis: list[str], fy: int) -> dict[str, float]:
     return tot
 
 
-def contracts(e: dict) -> dict | None:
-    """Prime obligations per fiscal year for the employer's reviewed UEIs, less
-    its joint ventures (exclude_ueis: a JV whose parent record is the employer
-    still counts under it, and half of it is someone else's)."""
+def recipient_totals(ueis: list[str], fy: int, agency: dict | None = None) -> dict[str, float]:
+    """The same search, by the UEI that received the money."""
+    out: dict[str, float] = {}
+    for page in range(1, 21):
+        d = usa_search("recipient", ueis, fy, agency, page)
+        for row in d.get("results") or []:
+            if row.get("uei"):
+                out[row["uei"]] = out.get(row["uei"], 0.0) + float(row.get("amount") or 0)
+        if not (d.get("page_metadata") or {}).get("hasNext"):
+            break
+    return out
+
+
+def contracts(e: dict, others: frozenset[str] = frozenset()) -> dict | None:
+    """Prime contract obligations per fiscal year for the employer's reviewed
+    UEIs, less what UEIs that are not the employer added to that search: its
+    exclude_ueis (joint ventures, units it sold) and others, the UEIs the table
+    gives other employers (HPE's federal arm sits under HP Inc.'s parent record).
+
+    Only the part the search counted comes off, split by agency the same way.
+    Subtracting an excluded UEI's own total would also take off money it got
+    under no parent of the employer (a joint venture's self-parented years;
+    found 2026-11-09 for Boeing Sikorsky Aircraft Support, $446M alone and
+    $350M under Boeing)."""
     ueis = [u["uei"] for u in e.get("ueis") or []]
     if not ueis:
         return None
-    exclude = list(e.get("exclude_ueis") or [])
+    exclude = (set(e.get("exclude_ueis") or []) | set(others)) - set(ueis)
     main = (e.get("ueis") or [{}])[0]
     rows = fetch_json(f"{USA}/recipient/", {"keyword": main["uei"], "award_type": "all", "limit": 10}).get("results") or []
     hit = next((r for r in rows if r.get("uei") == main["uei"] and r.get("recipient_level") == main.get("level")), None) \
         or next((r for r in rows if r.get("uei") == main["uei"]), None)
-    years = []
+    years, taken = [], set()
     for fy in fiscal_years():
         tot = subagency_totals(ueis, fy)
-        if exclude:
-            minus = subagency_totals(exclude, fy)
-            tot = {k: max(0.0, tot[k] - minus[k]) for k in tot}
-        years.append({"fy": fy, **{k: round(v) for k, v in tot.items()}})
-    return {"fy": years, "ueis": ueis, "excluded": exclude,
+        out = {u: a for u, a in recipient_totals(ueis, fy).items() if u in exclude and a}
+        less = sum(out.values())
+        if out:
+            taken |= set(out)
+            tot["total"] -= less
+            for key, agency in BUCKETS:
+                part = recipient_totals(ueis, fy, agency)
+                tot[key] -= sum(part.get(u, 0.0) for u in out)
+        years.append({"fy": fy, **{k: round(max(0.0, v)) for k, v in tot.items()}, "less": round(less)})
+    return {"fy": years, "ueis": ueis, "excluded": sorted(taken),
             "link": f"https://www.usaspending.gov/recipient/{hit['id']}/latest" if hit else None,
             "name": hit.get("name") if hit else main.get("name")}
 
@@ -472,12 +516,18 @@ def main() -> int:
         stats[src]["failed"] += 1
         stats[src]["error"] = stats[src]["error"] or str(err)[:160]
 
+    # Every UEI in the table and its employer. A UEI given to one employer is
+    # taken out of every other employer's contract totals.
+    owner = {u["uei"]: e["id"] for e in employers for u in e.get("ueis") or []}
+    others = {e["id"]: frozenset(u for u, o in owner.items() if o != e["id"]) for e in employers}
+    keyed = {"contracts": lambda e: {**e, "_others": sorted(others[e["id"]])}}
+
     def stage(src: str, setup, run):
         """One source over every due employer. A setup failure skips the source
         for today and keeps its cached facts."""
         if src not in only:
             return
-        todo = [e for e in employers if args.refresh or due(cache, e, src)]
+        todo = [e for e in employers if args.refresh or due(cache, keyed.get(src, dict)(e), src)]
         stats[src]["kept"] = len(employers) - len(todo)
         if not todo:
             return
@@ -490,7 +540,7 @@ def main() -> int:
             return
         for e in todo:
             try:
-                put(e, src, run(e, ctx))
+                put(keyed.get(src, dict)(e), src, run(e, ctx))
             except Exception as err:  # noqa: BLE001 - one employer never fails the source
                 if str(err) == "budget":
                     stats[src]["kept"] += 1
@@ -499,7 +549,7 @@ def main() -> int:
         print(f"{src}: {stats[src]}", file=sys.stderr)
 
     stage("contracts", lambda: as_of.__setitem__("contracts", usaspending_as_of()),
-          lambda e, _: contracts(e))
+          lambda e, _: contracts(e, others[e["id"]]))
     stage("labor", lambda: labor_index(nlrb_db(args.refresh)), labor)
     if "labor" in only and stats["labor"]["updated"]:
         as_of["labor"] = datetime.fromtimestamp((DATA / "nlrb.db").stat().st_mtime, timezone.utc).date().isoformat()

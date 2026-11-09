@@ -85,36 +85,66 @@ check("cycles in an odd year", cc.cycles(date(2025, 3, 1)), [2026, 2024])
 
 # ── Contracts ────────────────────────────────────────────────────────────────
 
+# A small USAspending: transactions (recipient UEI, its parent UEI, agency, subtier
+# code, amount). A search counts a transaction when its recipient or its
+# recipient's parent is in the list, as recipient_search_text with UEIs does.
+WORLD = [
+    ("AAAAAAAAAAAA", "AAAAAAAAAAAA", "DOD", "ARMY", 100),
+    ("AAAAAAAAAAAA", "AAAAAAAAAAAA", "DHS", "ICE", 20),
+    ("AAAAAAAAAAAA", "AAAAAAAAAAAA", "DHS", "CBP", 5),
+    ("AAAAAAAAAAAA", "AAAAAAAAAAAA", "GSA", "FAS", 7),
+    ("JVJVJVJVJVJV", "AAAAAAAAAAAA", "DOD", "ARMY", 30),   # the joint venture, under the employer
+    ("JVJVJVJVJVJV", "JVJVJVJVJVJV", "DOD", "ARMY", 50),   # the joint venture on its own: never counted here
+    ("OOOOOOOOOOOO", "AAAAAAAAAAAA", "DHS", "ICE", 10),    # a unit the table gives another employer
+]
+TOP = {"Department of Defense": "DOD", "Department of Homeland Security": "DHS"}
+SUBTIER = {"U.S. Immigration and Customs Enforcement": "ICE", "U.S. Customs and Border Protection": "CBP"}
 calls = []
 
 
 def fake_usa(url, data=None, headers=None, timeout=60):
     calls.append((url, data))
-    if url.endswith("/recipient/"):
+    if url.endswith("/api/v2/recipient/"):
         return {"results": [{"id": "abc-C", "uei": "AAAAAAAAAAAA", "recipient_level": "C", "name": "ACME CORP (child)"},
                             {"id": "abc-P", "uei": "AAAAAAAAAAAA", "recipient_level": "P", "name": "ACME CORP"}]}
-    ueis = data["filters"]["recipient_search_text"]
-    if ueis == ["JVJVJVJVJVJV"]:
-        return {"results": [{"amount": 30, "agency_abbreviation": "DOD", "code": "ARMY"}]}
-    return {"results": [{"amount": 100, "agency_abbreviation": "DOD", "code": "ARMY"},
-                        {"amount": 20, "agency_abbreviation": "DHS", "code": "ICE"},
-                        {"amount": 5, "agency_abbreviation": "DHS", "code": "CBP"},
-                        {"amount": 7, "agency_abbreviation": "GSA", "code": "FAS"}]}
+    f = data["filters"]
+    rows = [t for t in WORLD if t[0] in f["recipient_search_text"] or t[1] in f["recipient_search_text"]]
+    for ag in f.get("agencies") or []:
+        rows = [t for t in rows if (t[2] == TOP.get(ag["name"]) if ag["tier"] == "toptier" else t[3] == SUBTIER.get(ag["name"]))]
+    if data["category"] == "awarding_subagency":
+        by = {}
+        for t in rows:
+            by[(t[2], t[3])] = by.get((t[2], t[3]), 0) + t[4]
+        return {"results": [{"amount": a, "agency_abbreviation": ab, "code": code} for (ab, code), a in by.items()]}
+    by = {}
+    for t in rows:
+        by[t[0]] = by.get(t[0], 0) + t[4]
+    res = [{"amount": a, "uei": u, "name": u} for u, a in sorted(by.items())]
+    page = data["page"]
+    return {"results": res[(page - 1) * 2:page * 2], "page_metadata": {"hasNext": len(res) > page * 2}}  # two to a page
 
 
 cc.fetch_json = fake_usa
-got = cc.contracts(E)
-check("contracts: totals less the joint venture", {k: got["fy"][0][k] for k in ("total", "dod", "dhs", "ice", "cbp")},
-      {"total": 102, "dod": 70, "dhs": 25, "ice": 20, "cbp": 5})
-check("contracts: one search per fiscal year over every UEI at once",
-      [d["filters"]["recipient_search_text"] for u, d in calls if "spending_by_category" in u][:2],
-      [["AAAAAAAAAAAA", "BBBBBBBBBBBB"], ["JVJVJVJVJVJV"]])
+got = cc.contracts(E, frozenset({"OOOOOOOOOOOO", "AAAAAAAAAAAA"}))
+check("contracts: less only what the joint venture and the other employer's unit added, by agency",
+      {k: got["fy"][0][k] for k in ("total", "dod", "dhs", "ice", "cbp", "less")},
+      {"total": 132, "dod": 100, "dhs": 25, "ice": 20, "cbp": 5, "less": 40})
+check("contracts: names what came off", got["excluded"], ["JVJVJVJVJVJV", "OOOOOOOOOOOO"])
+check("contracts: one search over every UEI at once, never one of the excluded",
+      {tuple(d["filters"]["recipient_search_text"]) for u, d in calls if "spending_by_category" in u},
+      {("AAAAAAAAAAAA", "BBBBBBBBBBBB")})
 check("contracts: contracts only, no grants or loans",
       {tuple(d["filters"]["award_type_codes"]) for u, d in calls if "spending_by_category" in u}, {("A", "B", "C", "D")})
+check("contracts: reads every page of recipients",
+      max(d["page"] for u, d in calls if d and d.get("category") == "recipient"), 2)
 check("contracts: links the record at the table's level", got["link"], "https://www.usaspending.gov/recipient/abc-P/latest")
+calls.clear()
+got = cc.contracts({**E, "exclude_ueis": []})
+check("contracts: nothing to take off, no agency searches", (got["fy"][0]["total"], got["fy"][0]["less"],
+      any(d.get("filters", {}).get("agencies") for u, d in calls if d)), (172, 0, False))
 check("contracts: no UEIs, no facts", cc.contracts({**E, "ueis": []}), None)
 cc.fetch_json = lambda url, data=None, headers=None, timeout=60: (
-    {"results": []} if url.endswith("/recipient/") else
+    {"results": []} if url.endswith("/api/v2/recipient/") else
     {"results": [{"amount": 1e9}], "messages": ["The recipient_search_text filter is not supported here"]})
 try:
     cc.contracts(E)
@@ -250,8 +280,9 @@ check("violations: otherwise a name search", cc.violations({**E, "names": ["Zed"
 
 state = tmp / "state"
 cc.TABLE = tmp / "company_names.json"
-cc.TABLE.write_text(json.dumps({"employers": [E, {"id": "zed", "names": ["Zed & Co"], "legal": ["Zed Holdings, Inc."]}]}),
-                    encoding="utf-8")
+ZED = {"id": "zed", "names": ["Zed & Co"], "legal": ["Zed Holdings, Inc."],
+       "ueis": [{"uei": "OOOOOOOOOOOO", "name": "ZED UNIT", "level": "C"}]}
+cc.TABLE.write_text(json.dumps({"employers": [E, ZED]}), encoding="utf-8")
 cc.STATE_DIR, cc.DATA, cc.CACHE, cc.OUT = state, state / "company-data", state / "companies.json", tmp / "out" / "companies.json"
 cc.OUT.parent.mkdir()
 cc.DATA.mkdir(parents=True)
@@ -266,7 +297,8 @@ out = json.loads(cc.OUT.read_text(encoding="utf-8"))
 check("run: the page looks a card's company up by its key", out["aliases"], {"acme": "acme", "zed and co": "zed"})
 check("run: every source it ran is in the record", sorted(k for k in out["companies"]["acme"] if k in cc.SOURCES),
       ["contracts", "labor", "pac", "violations"])
-check("run: an employer with no UEIs has no contract facts", out["companies"]["zed"]["contracts"], None)
+check("run: a UEI the table gives another employer counts only there",
+      (out["companies"]["acme"]["contracts"]["fy"][0]["total"], out["companies"]["zed"]["contracts"]["fy"][0]["total"]), (132, 10))
 check("run: as_of for the sources that ran", sorted(out["as_of"]), ["contracts", "labor", "pac"])
 
 # A source that fails the next day keeps its facts; a fresh one is not asked again.
@@ -287,12 +319,19 @@ cc.TABLE.write_text(json.dumps(table_now), encoding="utf-8")
 cc.main()
 check("run: an edited table entry is checked again the next run",
       sorted({tuple(d["filters"]["recipient_search_text"]) for _, d in asked if d and "filters" in d}),
-      [("AAAAAAAAAAAA", "BBBBBBBBBBBB"), ("JVJVJVJVJVJV", "CCCCCCCCCCCC")])
+      [("AAAAAAAAAAAA", "BBBBBBBBBBBB")])
+asked.clear()
+table_now["employers"][1]["ueis"].append({"uei": "PPPPPPPPPPPP", "name": "ZED TWO", "level": "C"})
+cc.TABLE.write_text(json.dumps(table_now), encoding="utf-8")
+cc.main()
+check("run: another employer's new UEI re-checks every employer's contracts",
+      sorted({tuple(d["filters"]["recipient_search_text"]) for _, d in asked if d and "filters" in d}),
+      [("AAAAAAAAAAAA", "BBBBBBBBBBBB"), ("OOOOOOOOOOOO", "PPPPPPPPPPPP")])
 
 # ── The reviewed table ───────────────────────────────────────────────────────
 
 table = json.loads((ROOT / "company_names.json").read_text(encoding="utf-8"))
-ids, keys = set(), {}
+ids, keys, uei_owner = set(), {}, {}
 UEI = re.compile(r"^[A-Z0-9]{12}$")
 for e in table["employers"]:
     eid = e.get("id")
@@ -301,6 +340,7 @@ for e in table["employers"]:
     check(f"table: {eid} has names and legal names", bool(e.get("names")) and bool(e.get("legal")), True)
     for u in e.get("ueis") or []:
         check(f"table: {eid} UEI {u.get('uei')} is well formed", bool(UEI.match(u.get("uei") or "")), True)
+        check(f"table: UEI {u.get('uei')} belongs to one employer", uei_owner.setdefault(u.get("uei"), eid), eid)
     for x in e.get("exclude_ueis") or []:
         check(f"table: {eid} excludes {x}, a well-formed UEI not also counted", bool(UEI.match(x)) and
               x not in {u["uei"] for u in e.get("ueis") or []}, True)

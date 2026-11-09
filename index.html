@@ -650,7 +650,9 @@
         if (y.dhs > 0) of.push(`Homeland Security ${money(y.dhs)}` + (parts.length ? ` (${parts.join(", ")})` : ""));
         return [el("b", { text: `FY${y.fy}${i === 0 ? " so far" : ""}: ${money(y.total)}` }), of.length ? `, of which ${of.join(", ")}` : ""];
       })));
-      box.push(para("fine", "Prime contract obligations to the employer and the units it owns, by federal fiscal year (October to September); joint ventures are left out. ",
+      const less = years.reduce((a, y) => a + (y.less > 0 ? y.less : 0), 0);
+      box.push(para("fine", "Prime contract obligations to the employer and the units it owns, by federal fiscal year (October to September). "
+        + `Joint ventures, units it has sold and units of other employers on this list are left out${less > 0 ? ` (${money(less)} over these years)` : ""}. `,
         k.link ? out(k.link, "USAspending record") : "", asOf.contracts ? ` · data as of ${asOf.contracts.slice(0, 10)}` : ""));
     }
 

@@ -1806,7 +1806,8 @@
     "Perspecta",
     "DXC Technology Company",
     "Micro Focus Government Solutions LLC",
-    "Hewlett-Packard Federal, LLC"
+    "Hewlett-Packard Federal, LLC",
+    "Hewlett-Packard Company legacy pre-2015 records (e.g. Z8F4LC2ZA2A6, under the HP Inc. parent SMLNZ8X9SHE7)"
    ],
    "ueis": [
     {
@@ -1830,7 +1831,9 @@
      "level": "C"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "ME5HM459PVE5"
+   ],
    "vt": null,
    "confidence": "high",
    "notes": "Juniper Networks, Inc. (acquired July 2025) and Aruba are wholly owned and now sit under HPE Networking. I left them out of legal_names because I could not confirm they hire under the HPE brand; add them if postings show they do."
@@ -2028,18 +2031,65 @@
    ],
    "avoid": [
     "Boeing Employees' Credit Union (BECU)",
-    "Raytheon/Lockheed Martin Javelin JV"
+    "Raytheon/Lockheed Martin Javelin JV",
+    "Bell Boeing Joint Project Office (UEI JHFZTG8ZC9V2, Bell/Boeing V-22 JV, $3.6B FY24-26)",
+    "Boeing Sikorsky Aircraft Support, LLC (JV)",
+    "HRL Laboratories, LLC (Boeing/GM joint ownership)",
+    "Jeppesen ForeFlight, Inc. / ForeFlight LLC (Thoma Bravo since Nov 2025)",
+    "Insituform Technologies USA, LLC (pipe-rehab firm, not Insitu)"
    ],
    "ueis": [
     {
      "uei": "NU2UC8MX6NK1",
      "name": "THE BOEING COMPANY (929 Long Bridge Dr, Arlington, VA HQ)",
      "level": "P"
+    },
+    {
+     "uei": "ZE95AC36GJ76",
+     "name": "THE BOEING COMPANY (parent record, no address)",
+     "level": "P"
+    },
+    {
+     "uei": "LAJJQWA1PF31",
+     "name": "THE BOEING COMPANY (5000 E McDowell Rd, Mesa AZ)",
+     "level": "P"
+    },
+    {
+     "uei": "M6BRZ1FHEZQ1",
+     "name": "THE BOEING COMPANY (900 N Pacific Coast Hwy, El Segundo CA)",
+     "level": "P"
+    },
+    {
+     "uei": "H1C4ZVECADM6",
+     "name": "THE BOEING COMPANY (465 Marshall Way, Layton UT)",
+     "level": "P"
+    },
+    {
+     "uei": "MB5HGTD3NDF7",
+     "name": "VEROCEL, INC (Westford MA)",
+     "level": "P"
+    },
+    {
+     "uei": "X3K6MA9ZLTW6",
+     "name": "BOEING DISTRIBUTION SERVICES X, INC. (Hialeah FL)",
+     "level": "P"
+    },
+    {
+     "uei": "NJVNVWQJMPA4",
+     "name": "THE BOEING COMPANY (Mesa AZ)",
+     "level": "P"
+    },
+    {
+     "uei": "N64BN2M8M5G8",
+     "name": "BOEING DISTRIBUTION SERVICES DEFENSE LLC (O'Fallon MO)",
+     "level": "P"
     }
    ],
    "exclude_ueis": [
     "CCBKQV2MBMV6",
-    "H91LD1GY6JN5"
+    "F5VJXR8LLZP5",
+    "H91LD1GY6JN5",
+    "MUERAJ43CK41"
    ],
    "vt": null,
    "confidence": "high",
@@ -2062,16 +2112,50 @@
     "United Health Services (Binghamton, NY hospital system)",
     "Universal Health Services, Inc.",
     "United Healthcare Workers West (SEIU-UHW)",
-    "United Health Centers of the San Joaquin Valley"
+    "United Health Centers of the San Joaquin Valley",
+    "North American United Healthcare Services JV LLC (Rockville MD, UEI TZJJK15REAR5; unrelated)",
+    "Picis Clinical Solutions, Inc. (Harris/Constellation since 2015)"
    ],
    "ueis": [
     {
      "uei": "GVW2YMAK1AC1",
      "name": "UNITEDHEALTH GROUP INCORPORATED (1 Health Dr, Eden Prairie, MN)",
      "level": "P"
+    },
+    {
+     "uei": "XMUZGJN98231",
+     "name": "OPTUM PUBLIC SECTOR SOLUTIONS, INC. (3237 Airport Rd, La Crosse WI)",
+     "level": "P"
+    },
+    {
+     "uei": "C7DYEBLK3PE1",
+     "name": "CHANGE HEALTHCARE OPERATIONS, LLC (1 Optum Cir, Eden Prairie MN)",
+     "level": "P"
+    },
+    {
+     "uei": "VMNYK645E9A1",
+     "name": "CHANGE HEALTHCARE HOLDINGS, INC. (1 Optum Cir, Eden Prairie MN)",
+     "level": "P"
+    },
+    {
+     "uei": "ET41P9LFRN64",
+     "name": "CHANGE HEALTHCARE TECHNOLOGIES LLC (1 Optum Cir, Eden Prairie MN)",
+     "level": "P"
+    },
+    {
+     "uei": "ZBYAMU8W9UJ1",
+     "name": "UNITED HEALTHCARE SERVICES, INC. (1 Health Dr, Eden Prairie MN)",
+     "level": "C"
+    },
+    {
+     "uei": "T2SDN8AHFSY6",
+     "name": "OPTUMSERVE TECHNOLOGY SERVICES, INC. (La Crosse WI)",
+     "level": "C"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "U7MKM7NS3HW7"
+   ],
    "vt": null,
    "confidence": "high",
    "notes": "UHG's careers site posts Optum and UnitedHealthcare roles under the UHG name. Most employees are employed by United HealthCare Services, Inc. or Optum Services, Inc."
@@ -2200,7 +2284,10 @@
     "Leidos, Inc.",
     "Leidos Management Systems Designers, Inc.",
     "Raytheon/Lockheed Martin Javelin Joint Venture",
-    "Lockheed Federal Credit Union"
+    "Lockheed Federal Credit Union",
+    "Longbow LLC (LM/Northrop JV)",
+    "Boeing Sikorsky Aircraft Support, LLC (Boeing/Sikorsky JV)",
+    "The Longbow Group, LLC"
    ],
    "ueis": [
     {
@@ -2216,6 +2303,91 @@
     {
      "uei": "NGBVY5X32XZ5",
      "name": "LOCKHEED MARTIN CORPORATION (Huntsville, AL)",
+     "level": "P"
+    },
+    {
+     "uei": "JSQTW5L2SSM1",
+     "name": "LOCKHEED MARTIN CORPORATION (parent record, no address)",
+     "level": "P"
+    },
+    {
+     "uei": "WXTSNW5E97R6",
+     "name": "SIKORSKY SUPPORT SERVICES INC (parent record)",
+     "level": "P"
+    },
+    {
+     "uei": "XFJMYSYFJEK4",
+     "name": "LOCKHEED MARTIN CORPORATION (Grand Prairie TX)",
+     "level": "P"
+    },
+    {
+     "uei": "KMEVRAKJVBD3",
+     "name": "LOCKHEED MARTIN CORPORATION (Titusville FL)",
+     "level": "P"
+    },
+    {
+     "uei": "H11HD5VHGHN3",
+     "name": "LOCKHEED MARTIN CORPORATION (Liverpool NY)",
+     "level": "P"
+    },
+    {
+     "uei": "HJP4JZG1FUL9",
+     "name": "LOCKHEED MARTIN CORPORATION (Owego NY)",
+     "level": "P"
+    },
+    {
+     "uei": "JKVWEPKJRR65",
+     "name": "LOCKHEED MARTIN CORPORATION (Lexington KY)",
+     "level": "P"
+    },
+    {
+     "uei": "NMHFLDYJJ4C5",
+     "name": "LOCKHEED MARTIN CORPORATION (Manassas VA)",
+     "level": "P"
+    },
+    {
+     "uei": "KDT2YLB34NT6",
+     "name": "LOCKHEED MARTIN CORPORATION (Orlando FL)",
+     "level": "P"
+    },
+    {
+     "uei": "MJENSFHZJP11",
+     "name": "LOCKHEED MARTIN CORPORATION (2323 Eastern Blvd, Middle River MD)",
+     "level": "P"
+    },
+    {
+     "uei": "KFN4YJH98D51",
+     "name": "LOCKHEED MARTIN CORP (King of Prussia PA)",
+     "level": "P"
+    },
+    {
+     "uei": "HDHVQ4EF8A89",
+     "name": "LOCKHEED MARTIN CORPORATION (Palo Alto CA)",
+     "level": "P"
+    },
+    {
+     "uei": "Z9B5HQ9HSTM5",
+     "name": "LOCKHEED MARTIN CORPORATION (Uniondale NY)",
+     "level": "P"
+    },
+    {
+     "uei": "PAMVUBYPXF48",
+     "name": "LOCKHEED MARTIN CORPORATION (Littleton CO)",
+     "level": "P"
+    },
+    {
+     "uei": "JM5LPWYMNC33",
+     "name": "LOCKHEED MARTIN GLOBAL, INC (Orlando FL)",
+     "level": "P"
+    },
+    {
+     "uei": "NE3YWSUB81N5",
+     "name": "DERCO AEROSPACE, INC. (Milwaukee WI; Sikorsky/LM unit)",
+     "level": "P"
+    },
+    {
+     "uei": "WYAVK6MSRJ15",
+     "name": "LOCKHEED MARTIN ACULIGHT CORPORATION (Bothell WA)",
      "level": "P"
     }
    ],
@@ -2255,7 +2427,8 @@
   {
    "id": "uber",
    "names": [
-    "Uber"
+    "Uber",
+    "Uber Technologies Inc."
    ],
    "kind": "public company",
    "legal": [
@@ -2270,11 +2443,6 @@
     {
      "uei": "Y36WZYNKKBK6",
      "name": "UBER TECHNOLOGIES, INC. (1725 3rd St, San Francisco, CA)",
-     "level": "P"
-    },
-    {
-     "uei": "XRY7YR3JKEJ5",
-     "name": "UBER TECHNOLOGIES INC.",
      "level": "P"
     }
    ],
@@ -2330,6 +2498,11 @@
      "uei": "GPWZD8J3MK26",
      "name": "DELOITTE & TOUCHE LLP (10805 Parkridge Blvd, Reston VA; tiny)",
      "level": "P"
+    },
+    {
+     "uei": "CNHNWF1XE3W6",
+     "name": "DELOITTE FINANCIAL ADVISORY SERVICES LLP (555 12th St NW Ste 500, Washington DC)",
+     "level": "C"
     }
    ],
    "exclude_ueis": [],
@@ -2451,7 +2624,11 @@
    ],
    "avoid": [
     "Acacia Center for Justice",
-    "Cacique, Inc."
+    "Cacique, Inc.",
+    "ACACIA7",
+    "Acacia Heritage Consulting LLC",
+    "Acacia Health Insurance",
+    "Spanish-language firms with 'CACI' inside COMUNICACIONES/EDIFICACIONES (e.g. Comunicacion Celular S.A. Comcel; Estudios Edificaciones e Interventorias en Ingenieria)"
    ],
    "ueis": [
     {
@@ -2488,6 +2665,71 @@
      "uei": "EPPXR2P9KYU6",
      "name": "CACI-ISS, LLC (Chantilly VA)",
      "level": "P"
+    },
+    {
+     "uei": "ZWJ2TPLX7MS2",
+     "name": "SYSTEMWARE, INC. (parent record, no address; alternate names are all CACI entities)",
+     "level": "P"
+    },
+    {
+     "uei": "HLEJZK5FZR54",
+     "name": "CACI ENTERPRISE SOLUTIONS, LLC (Chantilly VA)",
+     "level": "C"
+    },
+    {
+     "uei": "L2TTR2QRV8H9",
+     "name": "CACI NSS, LLC (Colorado Springs CO)",
+     "level": "P"
+    },
+    {
+     "uei": "X9T5HHV5F5G2",
+     "name": "CACI PREMIER TECHNOLOGY, LLC (Chantilly VA)",
+     "level": "P"
+    },
+    {
+     "uei": "ZKJREJ8CK539",
+     "name": "CACI, LLC - COMMERCIAL (Chantilly VA)",
+     "level": "P"
+    },
+    {
+     "uei": "QV49K2FKMTE3",
+     "name": "CACI-WGI, LLC (Tampa FL)",
+     "level": "P"
+    },
+    {
+     "uei": "LS86CKXMLPD5",
+     "name": "APPLIED INSIGHT, LLC (Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "P1LMDHFJSYH7",
+     "name": "CACI AZURE SUMMIT TECHNOLOGY, LLC (Fairfax VA)",
+     "level": "C"
+    },
+    {
+     "uei": "CRJJZA4KFZ42",
+     "name": "LGS INNOVATIONS LLC (High Point NC)",
+     "level": "P"
+    },
+    {
+     "uei": "W479FKUUKM96",
+     "name": "CACI LGS INNOVATIONS LLC (Florham Park NJ)",
+     "level": "P"
+    },
+    {
+     "uei": "GLZVHC4WSRB7",
+     "name": "SIX3 ADVANCED SYSTEMS INC (Sterling VA)",
+     "level": "P"
+    },
+    {
+     "uei": "U3VEYMBJ35L8",
+     "name": "CACI-ISS, LLC (Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "K5TBNBLVG1F8",
+     "name": "CACI IDT, LLC (Ashburn VA; f/k/a ID Technologies)",
+     "level": "P"
     }
    ],
    "exclude_ueis": [],
@@ -2507,7 +2749,9 @@
    "avoid": [
     "Engineering Consulting Services, Ltd. (ECS Limited, geotechnical engineering firm)",
     "ECS Tuning",
-    "On Assignment, Inc. / ASGN Incorporated (parent; its other staffing brands are not ECS)"
+    "On Assignment, Inc. / ASGN Incorporated (parent; its other staffing brands are not ECS)",
+    "Shoreline Electronic Consulting Services, LLC",
+    "OLR Electronic Consulting Services"
    ],
    "ueis": [
     {
@@ -2616,10 +2860,14 @@
     "Precision Micron Technology, Inc.",
     "Micron Solutions, Inc. (Fitchburg MA)",
     "Micron Products, Inc.",
+    "Micron Semiconductor Ltd (Lancing, West Sussex, UK silicon-detector maker; UEIs KB4RTKUX4785, HFDXLNQJ2E46, R1NCZYVSEGT7)",
     "Micron Biomedical Inc",
     "Micronet Associates Inc.",
     "Micron Solutions, Inc.",
-    "Scienta Omicron, Inc."
+    "Scienta Omicron, Inc.",
+    "IntraMicron, Inc.",
+    "Micron Air & Mechanical Solutions Inc",
+    "Hosokawa Micron International Inc."
    ],
    "ueis": [
     {
@@ -2762,9 +3010,16 @@
      "uei": "MPJMU3DHSVN5",
      "name": "PROVIDENCE HEALTH & SERVICES - MONTANA (St. Patrick Hospital, Missoula MT)",
      "level": "P"
+    },
+    {
+     "uei": "M5KMR3DZJQR6",
+     "name": "PROVIDENCE ST JOSEPH HEALTH (1801 Lind Ave SW, Renton WA)",
+     "level": "P"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "QETALFRUB282"
+   ],
    "vt": null,
    "confidence": "high",
    "notes": "The Everett and Renton WA locations identify the Renton-based Providence system. Affiliates such as Swedish, Kadlec, Covenant and Pacific Medical Centers hire under their own brands, so they are excluded."
@@ -2892,6 +3147,21 @@
      "uei": "MKV8NLBR4191",
      "name": "ANDURIL INDUSTRIES, INC (P record, no address; its awards resolve to Costa Mesa KC3CH2MSK7Q3)",
      "level": "P"
+    },
+    {
+     "uei": "T7XMQQPLGTJ1",
+     "name": "ANDURIL INDUSTRIES, INC. (1435 Hills Pl NW, Atlanta GA)",
+     "level": "P"
+    },
+    {
+     "uei": "QRCBC4P1JAB5",
+     "name": "AREA-I, LLC (1435 Hills Pl NW, Atlanta GA)",
+     "level": "P"
+    },
+    {
+     "uei": "M6XZN7ZPGD17",
+     "name": "BLUE FORCE TECHNOLOGIES, LLC (204 Capcom Ave, Wake Forest NC)",
+     "level": "P"
     }
    ],
    "exclude_ueis": [],
@@ -2938,7 +3208,10 @@
    "legal": [
     "Zaden Technologies, Inc."
    ],
-   "avoid": [],
+   "avoid": [
+    "Seiler, Zaden & Rimes, LLC",
+    "Zaden Trucking Inc"
+   ],
    "ueis": [
     {
      "uei": "NZURD3WJR541",
@@ -3026,7 +3299,8 @@
     "Celerity IT, LLC (commercial Celerity)",
     "Doxcelerate Corporation",
     "Xcelerate LLC",
-    "Echelon Xcelerate JV, LLC"
+    "Echelon Xcelerate JV, LLC",
+    "Xcelerated IT Strategies, LLC"
    ],
    "ueis": [
     {
@@ -3101,7 +3375,9 @@
      "level": "P"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "RBZNNB53KMJ3"
+   ],
    "vt": null,
    "confidence": "high",
    "notes": "NYSE: UIS, headquartered in Blue Bell PA. Its US federal business was sold to SAIC in 2020, so older federal awards under these UEIs include work that is now SAIC's."
@@ -3484,7 +3760,9 @@
     "Ally Financial Inc.",
     "Allison Transmission Holdings, Inc.",
     "Southwest General Motors LLC",
-    "General Motors Minority Dealers Association"
+    "General Motors Minority Dealers Association",
+    "Performance Equity Management, LLC (independent PE firm, former GM investment-arm spin-out)",
+    "United States Advanced Battery Consortium LLC (USCAR consortium of GM, Ford, Stellantis)"
    ],
    "ueis": [
     {
@@ -3501,9 +3779,18 @@
      "uei": "U7TPTYVLNWK8",
      "name": "GM DEFENSE LLC",
      "level": "P"
+    },
+    {
+     "uei": "ENL2YGW8BCW1",
+     "name": "GENERAL MOTORS LLC",
+     "level": "C"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "D8BFAR1NMPB6",
+    "GCA5KZMAHBX8",
+    "SGE8AKA7TDL9"
+   ],
    "vt": null,
    "confidence": "high",
    "notes": "The postings are GM software and security roles (Seattle Innovation Center, remote). Independent dealerships that carry GM brand names are separate employers and must not be matched. Old GM (General Motors Corporation, before 2009) is a legally distinct predecessor."
@@ -3671,7 +3958,8 @@
     "City of Portland, North Dakota",
     "Port of Portland",
     "Portland Public Schools",
-    "Multnomah County"
+    "Multnomah County",
+    "City of Portland Police Department (Portland, Maine; UEI EJSBN16HRDC5, 109 Middle St)"
    ],
    "ueis": [
     {
@@ -3737,7 +4025,9 @@
    "legal": [
     "Lucayan Technology Solutions, LLC"
    ],
-   "avoid": [],
+   "avoid": [
+    "Lucayan Realty Co. LLC (dba Seton Hotel)"
+   ],
    "ueis": [
     {
      "uei": "N8BZNAQJAP43",
@@ -3818,7 +4108,10 @@
     "World Wide Technology Holding Co., Inc.",
     "World Wide Technology, Inc."
    ],
-   "avoid": [],
+   "avoid": [
+    "NE Worldwide Technologies Inc. (RKGTYEZJTJR3)",
+    "Prestige Worldwide Technologies LLC (J9UAP62YYCK2)"
+   ],
    "ueis": [
     {
      "uei": "XLLLFFAR2YT7",
@@ -4131,7 +4424,8 @@
     "RobotSalesforce",
     "SalesforceNextGen LLC",
     "TGA Salesforce",
-    "Small Business Salesforce"
+    "Small Business Salesforce",
+    "Salesforce Staffing, LLC"
    ],
    "ueis": [
     {
@@ -4146,7 +4440,7 @@
     }
    ],
    "exclude_ueis": [],
-   "vt": null,
+   "vt": "salesforcecom",
    "confidence": "high",
    "notes": "Renamed from salesforce.com, inc. in 2022. Slack Technologies, LLC, Tableau Software, LLC and MuleSoft, LLC are subsidiaries that hire partly under their own brands, so they are not listed."
   },
@@ -4265,6 +4559,11 @@
      "uei": "U5KEFDV4N965",
      "name": "T-MOBILE US, INC.",
      "level": "P"
+    },
+    {
+     "uei": "YMD8LT7DBML5",
+     "name": "T-MOBILE PUERTO RICO LLC (B-7 Tabonuco St, Guaynabo PR)",
+     "level": "C"
     }
    ],
    "exclude_ueis": [],
@@ -4291,7 +4590,9 @@
     "DecisionPoint Marketing and Research",
     "Cortek, Inc. (sold to EM Key Solutions)",
     "DecisionPoint LLC (Alpharetta GA)",
-    "DecisionPoint (Mesa AZ)"
+    "DecisionPoint (Mesa AZ)",
+    "DecisionPoint-Agile Defense Joint Venture LLC (QYYFHNMYCF68)",
+    "DecisionPoint-GAP Solutions JV LLC (Z6NML3UKE4G9)"
    ],
    "ueis": [
     {
@@ -4325,7 +4626,9 @@
     "H.P. Hood LLC",
     "RHP Inc.",
     "JHP, Inc.",
-    "Hewlett-Packard Financial Services Company (HPE's since the 2015 split)"
+    "Hewlett-Packard Financial Services Company (HPE's since the 2015 split)",
+    "TimberHP, Inc.",
+    "USComputers Inc (reseller recorded under HP's parent record)"
    ],
    "ueis": [
     {
@@ -4339,7 +4642,12 @@
      "level": "C"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "FYLAKMN93AK5",
+    "PJZMNHM7CH63",
+    "TLBZLFRNKAM3",
+    "Z8F4LC2ZA2A6"
+   ],
    "vt": null,
    "confidence": "high",
    "notes": "Hewlett-Packard Company renamed itself HP Inc. in November 2015 when it split off HPE, so HP Inc. is the same legal entity. Pre-2015 cases may involve staff now at HPE. HPE is a separate entry in the input. Corvallis OR and Vancouver WA are HP Inc. sites."
@@ -4389,7 +4697,9 @@
     "Hewlett Packard Enterprise Company",
     "DXC Technology Company",
     "QinetiQ Inc.",
-    "Kroll LLC"
+    "Kroll LLC",
+    "Global Thermostat Operations, LLC (name contains 'peraton' via the misspelling 'OPERATONS')",
+    "Foster-Miller, Inc. (QinetiQ Inc. unit that sits under a legacy Peraton parent record)"
    ],
    "ueis": [
     {
@@ -4431,6 +4741,21 @@
      "uei": "KJLHKFLNQL59",
      "name": "PERATON SERVICES & SOLUTIONS INC.",
      "level": "P"
+    },
+    {
+     "uei": "CJ38H41QMGA1",
+     "name": "PERATON TECHNOLOGY SERVICES INC. (15050 Conference Center Dr, Chantilly VA)",
+     "level": "P"
+    },
+    {
+     "uei": "P6VQV3T5ZTH4",
+     "name": "PERATON AEROSPACE & DEFENSE INC. (8100 Rideout Rd, Huntsville AL)",
+     "level": "C"
+    },
+    {
+     "uei": "YBBWTDBEU6D9",
+     "name": "PERATON INC. (950 N Glebe Rd, Arlington VA)",
+     "level": "P"
     }
    ],
    "exclude_ueis": [],
@@ -4455,7 +4780,9 @@
     "General Dynamics Land Systems Inc.",
     "Electric Boat Corporation",
     "Computer Sciences Corporation / DXC Technology Company",
-    "Sterling Parent Inc."
+    "Sterling Parent Inc.",
+    "CSRA Economic Opportunity Authority, Inc. (Augusta GA; 'CSRA' = Central Savannah River Area)",
+    "United Way of the CSRA"
    ],
    "ueis": [
     {
@@ -4522,6 +4849,66 @@
      "uei": "GCGFC4BXG713",
      "name": "CSRA LLC",
      "level": "P"
+    },
+    {
+     "uei": "VSFCW25ZAE49",
+     "name": "CSRA LLC (3170 Fairview Park Dr, Falls Church VA)",
+     "level": "P"
+    },
+    {
+     "uei": "UKGTFMBM8EN5",
+     "name": "CSRA STATE AND LOCAL SOLUTIONS LLC (310 The Bridge St, Huntsville AL)",
+     "level": "P"
+    },
+    {
+     "uei": "L3AVSXCECXA5",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC (Windsor Mill MD)",
+     "level": "P"
+    },
+    {
+     "uei": "YLWNUW64U1N1",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (Pawcatuck CT)",
+     "level": "C"
+    },
+    {
+     "uei": "ZSFKCCEB18G4",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (Westwood MA)",
+     "level": "C"
+    },
+    {
+     "uei": "NYM8TAUFLXP3",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (15036 Conference Center Dr, Chantilly VA)",
+     "level": "P"
+    },
+    {
+     "uei": "SNWDAB32JQY4",
+     "name": "CSRA STATE & LOCAL SOLUTIONS LLC (Rensselaer NY)",
+     "level": "C"
+    },
+    {
+     "uei": "J4NSWZYV6EE4",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (Warrenton VA)",
+     "level": "C"
+    },
+    {
+     "uei": "V3DSKJT5QTP5",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (Alexandria VA)",
+     "level": "C"
+    },
+    {
+     "uei": "CRBHYXTBZUL1",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (Chantilly VA)",
+     "level": "C"
+    },
+    {
+     "uei": "CMC1GMGFLDN5",
+     "name": "CSRA LLC (Lanham MD)",
+     "level": "C"
+    },
+    {
+     "uei": "CJNLX7TBJ651",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC. (Washington DC)",
+     "level": "C"
     }
    ],
    "exclude_ueis": [
@@ -4606,7 +4993,10 @@
     "North Wind-Leidos JV, LLC",
     "Cardno GS - AECOM Pacific JV",
     "Stantec GS - WSP JV",
-    "Cardno - AMEC Foster Wheeler Joint Venture"
+    "Cardno - AMEC Foster Wheeler Joint Venture",
+    "Kahu, a Leidos and Pueo JV, LLC",
+    "Kaleidoscope Youth Development Services, Inc. (name contains 'leidos')",
+    "Kleidosty Pacific LLC"
    ],
    "ueis": [
     {
@@ -4638,9 +5028,30 @@
      "uei": "XGNZDXFUESH2",
      "name": "LEIDOS, INC.",
      "level": "P"
+    },
+    {
+     "uei": "FH7ML8E9EWJ7",
+     "name": "DYNETICS, INC. (1002 Explorer Blvd, Huntsville AL)",
+     "level": "P"
+    },
+    {
+     "uei": "FG7CGCHSNML9",
+     "name": "LEIDOS SECURITY DETECTION & AUTOMATION, INC. (1 Radcliff Rd, Tewksbury MA)",
+     "level": "P"
+    },
+    {
+     "uei": "E9BSACNAJ7G1",
+     "name": "LEIDOS, INC. (1750 Presidents St Fl 6, Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "R8DWHMDFAFF1",
+     "name": "LEIDOS DIGITAL SOLUTIONS INC (Alexandria VA)",
+     "level": "P"
     }
    ],
    "exclude_ueis": [
+    "E5K2YART8NT3",
     "GLMMBP7GKM63",
     "KK28MBCGKCT6",
     "L9WNGQLE8339",
