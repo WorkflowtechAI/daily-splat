@@ -487,7 +487,8 @@
   // skip: leave one filter out, to count what each of its buttons would show.
   function matches(j, skip) {
     if (skip !== "track" && st.track !== "all" && j.track !== st.track) return false;
-    if (skip !== "sub" && st.subs.size && !st.subs.has(j.sub)) return false;
+    // A Kind belongs to the chosen track, so counting the other tracks leaves it out.
+    if (skip !== "sub" && skip !== "track" && st.subs.size && !st.subs.has(j.sub)) return false;
     if (skip !== "where" && st.where.size && ![...st.where].some((z) => inZone(j, z))) return false;
     if (skip !== "level" && st.levels.size && !st.levels.has(j.level)) return false;
     if (skip !== "flags" && [...st.flags].some((f) => !hasFlag(j, f))) return false;
@@ -502,7 +503,10 @@
     const base = (skip) => DATA.jobs.filter((j) => matches(j, skip));
     const put = (b, n) => { $(".n", b).textContent = " " + fmt(n); };  // the space: screen readers say "Cyber 570"
     const t = base("track");
-    $$("[data-key=track] button").forEach((b) => put(b, b.dataset.v === "all" ? t.length : t.filter((j) => j.track === b.dataset.v).length));
+    // The chosen track's button counts what is shown, its Kind included; the others what choosing them would show.
+    const shown = DATA.jobs.filter((j) => matches(j)).length;
+    $$("[data-key=track] button").forEach((b) => put(b, b.dataset.v === st.track && st.subs.size ? shown
+      : b.dataset.v === "all" ? t.length : t.filter((j) => j.track === b.dataset.v).length));
     const s = base("sub");
     $$("[data-sub]").forEach((b) => put(b, s.filter((j) => j.sub === b.dataset.sub).length));
     const w = base("where");

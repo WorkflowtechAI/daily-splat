@@ -8,6 +8,7 @@ Every case below is a real location or title string a source returned on
 
 import importlib.util
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -589,14 +590,85 @@ def check_reader() -> tuple[int, int]:
     # Listings supply the URLs the reader fetches: never this box, its network, or metadata.
     for host in ("127.0.0.1", "10.1.2.3", "192.168.1.5", "169.254.169.254", "::1", "localhost"):
         eq(f"public_host({host!r})", splat.public_host(host), False)
-    for url in ("http://example.com/job", "https://127.0.0.1:8791/api/splat-intake", "file:///etc/passwd"):
+    for url in ("http://example.com/job", "https://127.0.0.1:8791/api/splat-intake", "file:///etc/passwd",
+                "https://example.com:8791/job"):
         try:
             splat.host_get(url)
             got = "fetched"
         except RuntimeError:
             got = "refused"
         eq(f"host_get({url!r})", got, "refused")
+
+    # From the branch review, 2026-11-09.
+    for s, want in REVIEW_PAY:
+        eq(f"pay_from_text({s!r})", splat.pay_from_text(s), want)
+    for args, want in STRUCTURED_PAY:
+        eq(f"structured_pay{args!r}", splat.structured_pay(*args), want)
+    for s, want in REVIEW_YEARS:
+        eq(f"years_from_text({s!r})", splat.years_from_text(s), want)
+    for s, want in REVIEW_DAYS:
+        eq(f"office_days({s!r})", splat.office_days(s), want)
+    eq("NEOGOV_URL on another host", bool(splat.NEOGOV_URL.search("https://evil.example/governmentjobs.com/careers/a/jobs/1")),
+       False)
+    j = {"clearance": False}
+    splat.apply_read(j, {"read": False, "clr": "top_secret"})
+    eq("apply_read(unread, top secret)", j, {"clearance": True, "clr": "top_secret"})
+    j = {"title": "Systems Administrator - TS/SCI w/ Poly", "clearance": True}
+    splat.apply_read(j, {"read": True, "clr": "none"})
+    eq("apply_read(title names a clearance)", j["clearance"], True)
+    j = {"track": "eng"}
+    splat.apply_read(j, {"read": True, "track": "cyber", "sub": "secops"})
+    eq("apply_read(Kind from another track)", "sub" in j, False)
+    # Hostile pages stay linear: 300 KB of unclosed "<script " and of "<" parse in well under a second each.
+    for page in ("<script " * 37_500, "<" * 300_000):
+        t0 = time.monotonic()
+        splat.jsonld_posting(page)
+        splat.body_text(page)
+        eq(f"hostile page {page[:9]!r}… parsed fast", time.monotonic() - t0 < 2, True)
+    # Jev down: after JEV_BREAK failures in a row, no more calls are made.
+    calls = []
+
+    def down(*a, **k):
+        calls.append(1)
+        raise RuntimeError("HTTPError: HTTP Error 503")
+
+    real, splat.http_json = splat.http_json, down
+    try:
+        for _ in range(splat.JEV_BREAK + 5):
+            splat.jev_ask({"title": "x"}, {"manager": splat.MANAGER_Q}, "key")
+        eq("jev breaker: calls made while Jev is down", len(calls), splat.JEV_BREAK)
+    finally:
+        splat.http_json = real
+        splat._JEV_FAILS[0] = 0
     return bad, total
+
+
+REVIEW_PAY = [
+    ("Sign-on bonus: $20,000 - $30,000.\nBase salary: $120,000 - $150,000", "$120K–$150K/yr"),
+    ("This role includes a $30,000 - $50,000 sign-on bonus.", None),
+    ("Base pay (not including bonus or equity): $100,000 - $130,000", "$100K–$130K/yr"),
+    ("In addition to base salary, this role includes a $30,000 sign-on bonus.", None),
+    ("Salary: up to $95,000 DOE", None),
+]
+STRUCTURED_PAY = [
+    ((5000, 7000, "MONTH"), None),  # monthly is not shown as a year
+    ((100000, 130000, "YEAR"), "$100K–$130K/yr"),
+    ((45, 60, "per-hour-wage"), "$45–$60/hr"),
+    ((45, 60, "per-year-salary"), None),  # the size disagrees with the label
+    ((90000, 110000, None), "$90K–$110K/yr"),
+]
+REVIEW_YEARS = [
+    ("With over 10 years of experience in the industry, Acme is a leader.\nRequirements\n- 3+ years of experience "
+     "in IT support", 3),
+    ("Founded 12 years ago, we bring experience to every client.\n- 2+ years in a help desk role", 2),
+    ("A 2 year degree and 3 years of experience in networking", 3),
+    ("We are looking for someone with 5+ years of experience in cloud security", 5),
+]
+REVIEW_DAYS = [
+    ("This position is hybrid with the flexibility to work remotely up to 2 days per week.", None),
+    ("Hybrid: work from home 2 days a week.", None),
+    ("Hybrid schedule: in the office 3 days a week.", 3),
+]
 
 
 def main() -> int:
