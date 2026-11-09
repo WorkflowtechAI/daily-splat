@@ -15,6 +15,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # labeled/unlabeled too: adding the no-notes label re-runs the check.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 permissions:
@@ -63,6 +65,24 @@ jobs:
           Path("page.js").write_text("\n".join(scripts), encoding="utf-8")
           EOF
           node --check page.js
+
+      # A change people will notice ships with patch notes (README, "Patch
+      # notes"). A fix nobody would notice carries the no-notes label.
+      - name: Patch notes for user-facing changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          NO_NOTES: ${{ contains(github.event.pull_request.labels.*.name, 'no-notes') }}
+        run: |
+          git fetch --quiet --depth=1 origin "$BASE"
+          changed=$(git diff --name-only "$BASE" HEAD)
+          echo "$changed"
+          if echo "$changed" | grep -qxE 'index\.html|splat\.py|company_check\.py|infra/intake\.py' \
+             && ! echo "$changed" | grep -qx 'changes\.html' && [ "$NO_NOTES" != "true" ]; then
+            echo "::error::This PR changes what people see (index.html, splat.py, company_check.py or the intake form) but not changes.html. Add a patch notes entry and bump the masthead version, or label the PR no-notes if nobody would notice the change."
+            exit 1
+          fi
+          echo "patch notes: ok"
 
       # The masthead's version link names the newest entry in changes.html.
       - name: Patch notes match the page version
