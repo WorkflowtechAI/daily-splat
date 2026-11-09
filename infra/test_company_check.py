@@ -455,6 +455,19 @@ sys.argv = ["company_check.py", "--only", "courts"]
 cc.main()
 check("run: one run spends at most COURT_RUN searches (the hourly limit)", len(cl_calls), 2)
 cc.COURT_RUN = 45
+# Oldest first: an employer never checked goes before one checked last week,
+# whatever their order in the table.
+cache_now = json.loads(cc.CACHE.read_text(encoding="utf-8"))
+week_ago = (date.today() - timedelta(days=8)).isoformat()
+cache_now["a"] = {"courts": {"at": week_ago, "key": "", "facts": None}}
+cache_now.pop("b", None)
+cache_now.pop("_court_used", None)
+cc.CACHE.write_text(json.dumps(cache_now), encoding="utf-8")
+cc.COURT_RUN = 2
+cl_calls.clear()
+cc.main()
+check("run: the employer never checked goes first", sorted({"Bolt" in u for u in cl_calls}), [True])
+cc.COURT_RUN = 45
 sys.argv = ["company_check.py", "--dry-run"]
 cc.CACHE.unlink()
 cl_calls.clear()
