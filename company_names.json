@@ -1,0 +1,4679 @@
+{
+ "version": 1,
+ "reviewed": "2026-11-09",
+ "how": "Job-board names -> legal names and USAspending UEIs, researched by agents against live USAspending data and spot-checked. Numbers show only for employers listed here; a legal name matches a record only when equal after normalizing case, punctuation and the corporate suffix. exclude_ueis are joint ventures or units that are not the employer, subtracted from contract totals.",
+ "employers": [
+  {
+   "id": "mongodb",
+   "names": [
+    "MongoDB"
+   ],
+   "kind": "public company",
+   "legal": [
+    "MongoDB, Inc.",
+    "10gen, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "WLEGNSKC3L73",
+     "name": "MONGODB, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Database software company headquartered in New York. Its former name, 10gen, Inc., can appear in older records."
+  },
+  {
+   "id": "liftoff",
+   "names": [
+    "Liftoff"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Liftoff Mobile, Inc.",
+    "Vungle, Inc."
+   ],
+   "avoid": [
+    "Liftoff Technology, Inc.",
+    "Liftoff Digital, LLC",
+    "Liftoff Entertainment, LLC",
+    "LiftoffAgent",
+    "Liftoff Athletics L.L.C.",
+    "Liftoff Pediatric Therapy Services, LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Most likely Liftoff Mobile, the Blackstone-backed mobile ad company in Redwood City CA that merged with Vungle in 2021. The security-engineering roles fit, but 'Liftoff' is a common name, so the employer is not certain."
+  },
+  {
+   "id": "beshenich-muir-associates",
+   "names": [
+    "Beshenich Muir & Associates"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Beshenich Muir & Associates, LLC"
+   ],
+   "avoid": [
+    "Muir & Associates"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "BMA (bmahq.com): an employee-owned (ESOP) federal and defense IT, cyber and training contractor founded in 2008. Its job titles carry requisition numbers. The name is distinctive, but its US prime contracting UEI was not found."
+  },
+  {
+   "id": "packetlabs",
+   "names": [
+    "Packetlabs"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Packetlabs Ltd."
+   ],
+   "avoid": [
+    "Errant Packet Labs"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Penetration-testing firm headquartered in Toronto, Canada. It hires remote testers in Texas and Florida. No US subsidiary entity was confirmed, so US court or agency records may use a name not listed here."
+  },
+  {
+   "id": "ensemble-health-partners",
+   "names": [
+    "Ensemble Health Partners"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Ensemble RCM, LLC",
+    "Ensemble Health Partners, Inc."
+   ],
+   "avoid": [
+    "R1 RCM Inc.",
+    "Ensemble Therapeutics"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Revenue-cycle management company in Cincinnati OH, backed by private equity. 'Ensemble RCM LLC' appears as the employer on job postings. Ensemble Health Partners, Inc. was the 2021 IPO filer; that IPO was postponed."
+  },
+  {
+   "id": "extrahop",
+   "names": [
+    "ExtraHop"
+   ],
+   "kind": "private company",
+   "legal": [
+    "ExtraHop Networks, Inc."
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Network detection and response vendor in Seattle, owned by Bain Capital and Crosspoint since 2021."
+  },
+  {
+   "id": "twilio",
+   "names": [
+    "Twilio"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Twilio Inc.",
+    "SendGrid, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "LR6HEB6T5C69",
+     "name": "TWILIO INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Communications API company in San Francisco. SendGrid is a wholly owned subsidiary."
+  },
+  {
+   "id": "cdw",
+   "names": [
+    "CDW"
+   ],
+   "kind": "public company",
+   "legal": [
+    "CDW LLC",
+    "CDW Corporation",
+    "CDW Government LLC",
+    "CDW Direct, LLC",
+    "Sirius Computer Solutions, LLC",
+    "Sirius Federal, LLC"
+   ],
+   "avoid": [
+    "BCDW LLC",
+    "MCDW LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "DNDLL934GK55",
+     "name": "CDW CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "MSPLY8RPFLK7",
+     "name": "CDW CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "PHZDZ8SJ5CM1",
+     "name": "CDW GOVERNMENT LLC",
+     "level": "P"
+    },
+    {
+     "uei": "MAXVYG4KCS94",
+     "name": "CDW GOVERNMENT LLC",
+     "level": "P"
+    },
+    {
+     "uei": "KPJKU1L19DT6",
+     "name": "CDW LLC",
+     "level": "R"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "IT solutions provider in Vernon Hills IL. Most US staff are employed by CDW LLC. Federal sales run through CDW Government LLC. Sirius was acquired in 2021."
+  },
+  {
+   "id": "red-hat",
+   "names": [
+    "Red Hat"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Red Hat, Inc.",
+    "Red Hat, LLC"
+   ],
+   "avoid": [
+    "The Red Hat Society, Inc.",
+    "Red Hat Transportation",
+    "Red Hat Distributors, Inc",
+    "Red Hat Publishing Company Inc",
+    "Red Hat Construction, Inc.",
+    "Red Hat Coffee, Inc.",
+    "Red Hat Ventures, LLC",
+    "Red Hat Neighborhood Dentist, LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "CWGDUMKVDUC4",
+     "name": "RED HAT, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Wholly owned IBM subsidiary since 2019; the parent, IBM, is the public company. SAM now shows the entity as Red Hat, LLC, but older court captions use Red Hat, Inc. The sample roles are cleared federal positions."
+  },
+  {
+   "id": "altamira-technologies-corporation",
+   "names": [
+    "Altamira Technologies Corporation"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Altamira Technologies Corporation"
+   ],
+   "avoid": [
+    "Altamira Ltd",
+    "Altamira, LLC",
+    "Altamira Material Solutions, LP",
+    "Altamira Instruments, Inc.",
+    "Altamira Properties Corporation",
+    "Altamirano Consulting Inc"
+   ],
+   "ueis": [
+    {
+     "uei": "GFAHTQUD1AM7",
+     "name": "ALTAMIRA TECHNOLOGIES CORP",
+     "level": "P"
+    },
+    {
+     "uei": "CAS6LL2969P4",
+     "name": "ALTAMIRA TECHNOLOGIES CORP",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "National-security data and engineering contractor headquartered in McLean VA. Parsons Corporation (public) acquired it in January 2026, so it is now a Parsons subsidiary. The 'kind' value reflects that public parent."
+  },
+  {
+   "id": "at-t",
+   "names": [
+    "AT&T"
+   ],
+   "kind": "public company",
+   "legal": [
+    "AT&T Inc.",
+    "AT&T Services, Inc.",
+    "AT&T Mobility LLC",
+    "AT&T Corp.",
+    "AT&T Enterprises, LLC",
+    "AT&T Technical Services Company, Inc.",
+    "AT&T Government Solutions, Inc.",
+    "New Cingular Wireless Services, Inc.",
+    "Southwestern Bell Telephone Company",
+    "Pacific Bell Telephone Company",
+    "BellSouth Telecommunications, LLC",
+    "Illinois Bell Telephone Company",
+    "Michigan Bell Telephone Company",
+    "The Ohio Bell Telephone Company"
+   ],
+   "avoid": [
+    "MAT&T Incorporated",
+    "DIRECTV, LLC",
+    "Warner Bros. Discovery, Inc.",
+    "Tyto Athene, LLC",
+    "Nokia of America Corporation (formerly Lucent Technologies)"
+   ],
+   "ueis": [
+    {
+     "uei": "FYZWKUHGU8W4",
+     "name": "AT&T INC.",
+     "level": "P"
+    },
+    {
+     "uei": "NT9TC1ZVV5N9",
+     "name": "AT&T INC",
+     "level": "P"
+    },
+    {
+     "uei": "ZZRPFWN91KD1",
+     "name": "AT&T TECHNICAL SERVICES COMPANY, INC",
+     "level": "P"
+    },
+    {
+     "uei": "N6WZWNZG5EJ5",
+     "name": "AT&T ENTERPRISES, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Telecom company headquartered in Dallas. In EEOC and court cases the employer is usually AT&T Services, Inc., AT&T Mobility LLC, AT&T Corp. or a regional Bell operating company. DIRECTV and WarnerMedia are no longer part of AT&T."
+  },
+  {
+   "id": "therapynotes-com",
+   "names": [
+    "TherapyNotes.com"
+   ],
+   "kind": "private company",
+   "legal": [
+    "TherapyNotes, LLC"
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Behavioral-health EHR and practice-management software company at 630 Dresher Rd, Horsham PA (Philadelphia area), founded in 2010."
+  },
+  {
+   "id": "temporal-technologies",
+   "names": [
+    "Temporal Technologies"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Temporal Technologies Inc."
+   ],
+   "avoid": [
+    "Temporal Defense Systems, LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Maker of the Temporal.io durable-execution platform, based in the Seattle and Bellevue area. Temporal Defense Systems is a different Seattle-area company."
+  },
+  {
+   "id": "pantheon-data",
+   "names": [
+    "Pantheon Data"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Pantheon Data LLC"
+   ],
+   "avoid": [
+    "Pantheon Systems, Inc.",
+    "Pantheon Ventures"
+   ],
+   "ueis": [
+    {
+     "uei": "UKLHZJG2KUN4",
+     "name": "PANTHEON DATA LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Small federal IT and cloud contractor in Northern Virginia and a Kenific Holding company. Pantheon Systems (Pantheon.io, a San Francisco web host) is a different company."
+  },
+  {
+   "id": "valiant-solutions",
+   "names": [
+    "Valiant Solutions"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Valiant Solutions, LLC"
+   ],
+   "avoid": [
+    "Valiant Integrated Services LLC",
+    "Valiant Solutions Group LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "GKF8ERUXED41",
+     "name": "VALIANT SOLUTIONS, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "SBVYZKKASM53",
+     "name": "VALIANT SOLUTIONS LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Federal cybersecurity contractor in McLean VA, with a Bluestone Investment Partners investment from Dec 2024. HigherGov shows a dba of 'Valiant Solutions and Services, LLC'. It acquired Abile Group (Feb 2026) and BreakPoint Labs (Jun 2026); those keep their own names and are not listed. Valiant Inte"
+  },
+  {
+   "id": "veeva-systems",
+   "names": [
+    "Veeva Systems"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Veeva Systems Inc."
+   ],
+   "avoid": [
+    "Veeva LLC",
+    "Veevaa Corp",
+    "Aveeva Hospice",
+    "AVEVA Software, LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Life-sciences cloud software company in Pleasanton CA (NYSE: VEEV)."
+  },
+  {
+   "id": "supabase",
+   "names": [
+    "Supabase"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Supabase, Inc."
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Open-source Postgres backend platform with a remote, global workforce. The legal name 'Supabase, Inc.' is taken from the company's terms; no US court or agency record was checked."
+  },
+  {
+   "id": "atlassian",
+   "names": [
+    "Atlassian"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Atlassian Corporation",
+    "Atlassian US, Inc.",
+    "Atlassian, Inc.",
+    "Atlassian Pty Ltd",
+    "Atlassian Corporation Plc"
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "GUF7H1L6K9Y8",
+     "name": "ATLASSIAN CORPORATION PTY. LTD.",
+     "level": "P"
+    },
+    {
+     "uei": "YAJ8XGJ286C4",
+     "name": "ATLASSIAN, INC.",
+     "level": "R"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Since 2022 the parent is Atlassian Corporation, a Delaware company (before that, Atlassian Corporation Plc in the UK). A 2026 NLRB charge names Atlassian Corporation. Atlassian US, Inc. appears as a party in federal litigation."
+  },
+  {
+   "id": "fluidstack",
+   "names": [
+    "Fluidstack"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Fluidstack Ltd",
+    "Fluidstack Management Inc."
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "AI GPU cloud and data-center operator. The parent is Fluidstack Ltd in London. 'Fluidstack Management Inc.' shows up in Iowa's register as a foreign corporation; it is probably the US entity, but that is unverified. The US employing entity was not confirmed."
+  },
+  {
+   "id": "virtasant",
+   "names": [
+    "Virtasant"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Virtasant Inc."
+   ],
+   "avoid": [
+    "Virtusa Corporation",
+    "Virtana Corp."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Cloud operations / cloud cost services company, Austin TX, fully remote. Legal entity 'Virtasant Inc.' is from business-directory listings, not a state filing. It acquired Gigster in 2024, which still hires under its own brand, so Gigster is not included."
+  },
+  {
+   "id": "cape",
+   "names": [
+    "Cape"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Private Tech, Inc."
+   ],
+   "avoid": [
+    "Cape Fox Corporation",
+    "CAPE Analytics, Inc.",
+    "Cape Environmental Management Inc.",
+    "Signalscape, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "U42VNM49XD15",
+     "name": "PRIVATE TECH INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Cape is the privacy-focused secure mobile carrier in Arlington VA (cape.co). The sample titles (product security, infrastructure) fit it. Its legal and contracting entity appears to be Private Tech, Inc. 'Cape' is a generic word, so match on the legal name, not the brand."
+  },
+  {
+   "id": "rtx",
+   "names": [
+    "RTX"
+   ],
+   "kind": "public company",
+   "legal": [
+    "RTX Corporation",
+    "Raytheon Company",
+    "Rockwell Collins, Inc.",
+    "Hamilton Sundstrand Corporation",
+    "Goodrich Corporation",
+    "RTX BBN Technologies, Inc.",
+    "Raytheon Technologies Corporation",
+    "United Technologies Corporation"
+   ],
+   "avoid": [
+    "Carrier Global Corporation",
+    "Otis Worldwide Corporation",
+    "Rockwell Automation, Inc.",
+    "RTX A/S",
+    "Collins Industries, Inc.",
+    "Pratt Industries, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "PPLZG8J3N9D4",
+     "name": "RTX CORPORATION (Arlington VA, main parent)",
+     "level": "P"
+    },
+    {
+     "uei": "QN1BCFY7JDJ5",
+     "name": "RTX CORPORATION (East Hartford CT, Pratt & Whitney)",
+     "level": "P"
+    },
+    {
+     "uei": "KQG9ZKVSELH6",
+     "name": "RTX CORPORATION (East Hartford CT)",
+     "level": "P"
+    },
+    {
+     "uei": "NHXNJALUN738",
+     "name": "RTX CORPORATION (Jupiter FL)",
+     "level": "P"
+    },
+    {
+     "uei": "QMKVZ6EH2SB9",
+     "name": "RTX CORPORATION (Middletown CT)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "RTX Corporation was named Raytheon Technologies Corporation until 2023 and, before that, was the legal entity United Technologies Corporation. Its businesses are Raytheon, Collins Aerospace and Pratt & Whitney (a division, not a separate company). Court records for United Technologies Corporation fr"
+  },
+  {
+   "id": "absolute-business-solutions-corp",
+   "names": [
+    "Absolute Business Solutions Corp."
+   ],
+   "kind": "private company",
+   "legal": [
+    "Absolute Business Solutions, Inc.",
+    "Absolute Business Solutions Corp"
+   ],
+   "avoid": [
+    "Absolute Business Solutions LLC",
+    "Absolute Software Corporation"
+   ],
+   "ueis": [
+    {
+     "uei": "X4DHVKEF7L16",
+     "name": "ABSOLUTE BUSINESS SOLUTIONS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "ABSC (absc-us.com) is a federal IT and intelligence contractor founded in 2001, headquartered in Northern Virginia (sources list both Herndon and McLean). The Bethesda MD location in the postings is a client site. Its SAM legal name is 'Absolute Business Solutions, Inc.' and it uses 'Corp' in brandi"
+  },
+  {
+   "id": "oracle",
+   "names": [
+    "Oracle"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Oracle Corporation",
+    "Oracle America, Inc.",
+    "Cerner Corporation",
+    "Oracle Health Government Services, Inc.",
+    "Oracle USA, Inc."
+   ],
+   "avoid": [
+    "Oracle Elevator",
+    "Oracle Lighting"
+   ],
+   "ueis": [
+    {
+     "uei": "J3TKCN6S76D6",
+     "name": "ORACLE CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "ZFKQZW16QPU3",
+     "name": "ORACLE CORP",
+     "level": "P"
+    },
+    {
+     "uei": "HE98WLUBNW88",
+     "name": "ORACLE AMERICA, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "DMHXTXRARC74",
+     "name": "CERNER CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "DT2KS3HH5FP5",
+     "name": "ORACLE HEALTH GOVERNMENT SERVICES, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Both sample postings are Oracle Health roles. Oracle Health is the former Cerner, acquired in 2022. Cerner Corporation and Oracle Health Government Services, Inc. (formerly Cerner Government Services, Inc., Kansas City MO, the VA/DoD EHR contracts) are included for that reason."
+  },
+  {
+   "id": "servicetitan",
+   "names": [
+    "ServiceTitan"
+   ],
+   "kind": "public company",
+   "legal": [
+    "ServiceTitan, Inc."
+   ],
+   "avoid": [
+    "Global Service Titan LLC",
+    "Multistack Service Titan, LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Field-service management software company, Glendale CA, listed on NASDAQ (TTAN) since December 2024. Acquired subsidiaries such as FieldRoutes and Aspire hire under their own brands and are not included."
+  },
+  {
+   "id": "cohere",
+   "names": [
+    "Cohere"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Cohere Inc."
+   ],
+   "avoid": [
+    "Cohere Technologies, Inc.",
+    "Cohere Health, Inc.",
+    "Coherent Corp.",
+    "Cohere Solutions LLC",
+    "iCohere Inc."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Enterprise LLM company headquartered in Toronto, with US offices in New York, San Francisco and Seattle. 'Cohere Inc.' is the defendant name in US litigation (Advance Local Media et al. v. Cohere Inc., SDNY). The name of any US operating subsidiary is unconfirmed. Do not match Cohere Technologies (a"
+  },
+  {
+   "id": "red-cell-partners",
+   "names": [
+    "Red Cell Partners"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Red Cell Partners, LLC"
+   ],
+   "avoid": [
+    "Trase Systems"
+   ],
+   "ueis": [
+    {
+     "uei": "XHRWKAHGHKX7",
+     "name": "RED CELL PARTNERS, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "McLean VA venture studio and incubator. Its sample cards are identical to Trase Systems' (same titles and locations). Red Cell posts portfolio-company jobs on its own Greenhouse board, so these cards are probably Trase roles. Showing Red Cell's contracts on Trase jobs, or the reverse, could mislead."
+  },
+  {
+   "id": "mastercam",
+   "names": [
+    "Mastercam"
+   ],
+   "kind": "private company",
+   "legal": [
+    "CNC Software, LLC",
+    "CNC Software, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "E89MJN8WNAH4",
+     "name": "CNC SOFTWARE LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Mastercam is the CAD/CAM brand of CNC Software, LLC (formerly CNC Software, Inc.) in Tolland CT. Sandvik owns it and groups it under its Cambrio CAD/CAM business."
+  },
+  {
+   "id": "vcluster",
+   "names": [
+    "vCluster"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Loft Labs, Inc."
+   ],
+   "avoid": [
+    "Loft Orbital Solutions, Inc.",
+    "Loftware, Inc."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "vCluster Labs (formerly LoftLabs), San Francisco, maker of the vCluster virtual Kubernetes platform. A 2026 trademark record names the owner as 'Loft Labs, Inc. dba vCluster Labs', so the rename appears to be branding only. No formal name-change filing was found."
+  },
+  {
+   "id": "global-enterprise-services-llc-ges",
+   "names": [
+    "Global Enterprise Services, LLC (GES)"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Global Enterprise Services, LLC"
+   ],
+   "avoid": [
+    "Global Enterprise Services Corp",
+    "Global Enterprise Services of Florida Corp",
+    "Sambiri Global Enterprise Services, LLC",
+    "Global Enterprise Systems LLC",
+    "GES-SHR LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "YQUTBU6K3EM6",
+     "name": "GLOBAL ENTERPRISE SERVICES, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Small IT contractor supporting DISA programs (Defense Enclave Services, GSM-O II) at Fort Meade, MD. The match to the Belleville IL registration rests on an exact name match and matching 8(a)/service-disabled-veteran certifications. No first-party source confirms the address."
+  },
+  {
+   "id": "flexport",
+   "names": [
+    "Flexport"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Flexport, Inc.",
+    "Flexport International, LLC"
+   ],
+   "avoid": [
+    "Flex Ltd."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Freight forwarding and logistics technology company, San Francisco HQ with a Bellevue WA office. Flexport International, LLC is its customs-broker / NVOCC operating entity."
+  },
+  {
+   "id": "qualia",
+   "names": [
+    "Qualia"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Qualia Labs, Inc."
+   ],
+   "avoid": [
+    "Qualia Labs, Inc (Dallas TX medical-device vendor, UEI RYJDFVFJ8451)",
+    "Neurohacker Collective (Qualia supplements)"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Real-estate closing software company (qualia.com), San Francisco HQ with an Austin office. Warning: an unrelated Dallas medical-device firm uses the same legal name 'Qualia Labs, Inc', so court and agency matches need an address or industry check."
+  },
+  {
+   "id": "medical-university-of-south-carolina",
+   "names": [
+    "Medical University of South Carolina"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "Medical University of South Carolina",
+    "Medical University Hospital Authority",
+    "University Medical Associates of the Medical University of South Carolina"
+   ],
+   "avoid": [
+    "University of South Carolina",
+    "South Carolina State University"
+   ],
+   "ueis": [
+    {
+     "uei": "NHV3GTWSALA7",
+     "name": "THE MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+     "level": "P"
+    },
+    {
+     "uei": "E4DXDJHEN4J3",
+     "name": "MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+     "level": "P"
+    },
+    {
+     "uei": "WPG3G1K614K5",
+     "name": "MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+     "level": "P"
+    },
+    {
+     "uei": "ESLGZM4Q3UK5",
+     "name": "MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+     "level": "P"
+    },
+    {
+     "uei": "MCMKUVSTN4B3",
+     "name": "MEDICAL UNIVERSITY OF SOUTH CAROLINA THE",
+     "level": "P"
+    },
+    {
+     "uei": "KPVNBGYKFGF1",
+     "name": "MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+     "level": "C"
+    },
+    {
+     "uei": "FMTNAU3XC565",
+     "name": "MEDICAL UNIVERSITY HOSPITAL AUTHORITY",
+     "level": "P"
+    },
+    {
+     "uei": "SGD7RNNMP5B3",
+     "name": "UNIVERSITY MEDICAL ASSOCIATES OF THE MEDICAL UNIVERSITY OF SOUTH CAROLINA",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "State academic health university in Charleston. MUSC Health hospitals are operated by the Medical University Hospital Authority, and University Medical Associates (MUSC Physicians) is the affiliated nonprofit practice plan. Both hire under the MUSC brand. Information Solutions is MUSC's shared IT or"
+  },
+  {
+   "id": "centene-corporation",
+   "names": [
+    "Centene Corporation"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Centene Corporation",
+    "Centene Management Company, LLC",
+    "Health Net, LLC",
+    "Health Net Federal Services, LLC",
+    "WellCare Health Plans, Inc.",
+    "Magellan Health, Inc."
+   ],
+   "avoid": [
+    "HealthNet, Inc. (Indianapolis community health centers)",
+    "Centene Company of Texas LP is fine; avoid individual-name substring hits like 'Centenera'"
+   ],
+   "ueis": [
+    {
+     "uei": "NANFEH9AAH43",
+     "name": "CENTENE CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "F7NGF6NJFB96",
+     "name": "HEALTH NET FEDERAL SERVICES, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Managed-care company headquartered in St. Louis. Corporate employees are often employed through Centene Management Company, LLC. Major subsidiaries include Health Net, WellCare and Magellan Health, plus the Ambetter brand."
+  },
+  {
+   "id": "dynamo-technologies-llc",
+   "names": [
+    "Dynamo Technologies LLC"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Dynamo Technologies, LLC"
+   ],
+   "avoid": [
+    "Credence Dynamo Technologies LLC",
+    "Dynamo Software, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "P3DJNPYU6KY3",
+     "name": "DYNAMO TECHNOLOGIES, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Vienna VA federal IT contractor; it graduated from SBA 8(a) in December 2024. Its customers include USDA, State, DoD, CFPB and FBI fleet management."
+  },
+  {
+   "id": "new-york-life-insurance-co",
+   "names": [
+    "New York Life Insurance Co"
+   ],
+   "kind": "private company",
+   "legal": [
+    "New York Life Insurance Company",
+    "New York Life Insurance and Annuity Corporation",
+    "New York Life Investment Management LLC",
+    "NYL Investors LLC"
+   ],
+   "avoid": [
+    "MONY Life Insurance Company",
+    "Lincoln Life & Annuity Company of New York",
+    "individual agent DBAs naming New York Life (e.g. '... agent of New York Life Insurance Company')"
+   ],
+   "ueis": [
+    {
+     "uei": "JXM3P8WCJYW5",
+     "name": "NEW YORK LIFE INSURANCE COMP",
+     "level": "R"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Mutual life insurer (policyholder-owned), headquartered at 51 Madison Ave, NYC. Tech roles sit with New York Life Insurance Company."
+  },
+  {
+   "id": "ionq",
+   "names": [
+    "IonQ"
+   ],
+   "kind": "public company",
+   "legal": [
+    "IonQ, Inc."
+   ],
+   "avoid": [
+    "VisionQuest National Ltd",
+    "ION Geophysical Corporation",
+    "Ionis Pharmaceuticals, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "EH32NDF7YPM7",
+     "name": "IONQ, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Trapped-ion quantum computing company (NYSE: IONQ), HQ College Park MD, with a manufacturing and engineering site in Bothell WA, which matches the sample locations."
+  },
+  {
+   "id": "general-dynamics-mission-systems",
+   "names": [
+    "General Dynamics Mission Systems"
+   ],
+   "kind": "public company",
+   "legal": [
+    "General Dynamics Mission Systems, Inc."
+   ],
+   "avoid": [
+    "General Dynamics Corporation (parent; its records cover GDIT, Electric Boat, Gulfstream, Land Systems, etc.)",
+    "General Dynamics Information Technology, Inc.",
+    "General Dynamics Land Systems, Inc.",
+    "General Dynamics Ordnance and Tactical Systems, Inc.",
+    "Electric Boat Corporation",
+    "National Steel and Shipbuilding Company (GD NASSCO)",
+    "Gulfstream Aerospace Corporation"
+   ],
+   "ueis": [
+    {
+     "uei": "LDUJLC79HNK5",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Chantilly VA)",
+     "level": "P"
+    },
+    {
+     "uei": "MU3CM1145E44",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Manassas VA, ex-Progeny Systems)",
+     "level": "P"
+    },
+    {
+     "uei": "E422A91WKZ57",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Bloomington MN)",
+     "level": "P"
+    },
+    {
+     "uei": "M985ECB6UPW5",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Florham Park NJ)",
+     "level": "P"
+    },
+    {
+     "uei": "NH3LQKBA1SN3",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Marion VA)",
+     "level": "P"
+    },
+    {
+     "uei": "Q2PELL6LTKJ3",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS INC (El Segundo CA)",
+     "level": "P"
+    },
+    {
+     "uei": "MWDRZJ2ZVPV7",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Scottsdale AZ)",
+     "level": "C"
+    },
+    {
+     "uei": "LKMMNBMPUNH7",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Pittsfield MA)",
+     "level": "C"
+    },
+    {
+     "uei": "YZNQG917LBE4",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Orlando FL, ex-C4 Systems)",
+     "level": "C"
+    },
+    {
+     "uei": "S4ZAF64LJ1G3",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Dedham MA)",
+     "level": "C"
+    },
+    {
+     "uei": "D8CMPLV4GKR5",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Quincy MA, ex-Bluefin Robotics)",
+     "level": "C"
+    },
+    {
+     "uei": "JHY6AZA6H191",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Taunton MA)",
+     "level": "C"
+    },
+    {
+     "uei": "JNBSGM6C8487",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (San Jose CA)",
+     "level": "C"
+    },
+    {
+     "uei": "GTULK5DNAUB9",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Huntsville AL)",
+     "level": "C"
+    },
+    {
+     "uei": "MVVAKQUHTTQ6",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Charleroi PA)",
+     "level": "C"
+    },
+    {
+     "uei": "CT35URZPE643",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Middletown RI)",
+     "level": "C"
+    },
+    {
+     "uei": "RLG8MWW1EH97",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Chesapeake VA)",
+     "level": "C"
+    },
+    {
+     "uei": "KCKXKCL5FZU3",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Herndon VA)",
+     "level": "C"
+    },
+    {
+     "uei": "W51MN1V4FLD1",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Annapolis Junction MD)",
+     "level": "C"
+    },
+    {
+     "uei": "ZPGGSMVN8AT8",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Thousand Oaks CA)",
+     "level": "C"
+    },
+    {
+     "uei": "WLJXYLUAYAW7",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Virginia Beach VA)",
+     "level": "C"
+    },
+    {
+     "uei": "V57QBDU2CFX4",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Ypsilanti MI)",
+     "level": "C"
+    },
+    {
+     "uei": "JVRNMHNBA715",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Kaiserslautern DE office)",
+     "level": "C"
+    },
+    {
+     "uei": "CP5FRCF7E956",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (San Antonio TX, Hudnell Dr)",
+     "level": "C"
+    },
+    {
+     "uei": "MCQFBVMKGDJ8",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Pittsburgh PA)",
+     "level": "C"
+    },
+    {
+     "uei": "LQWNQVNDPZH3",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Herndon VA, Huntmar Park)",
+     "level": "C"
+    },
+    {
+     "uei": "DUL6NRCYCA85",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Las Cruces NM)",
+     "level": "C"
+    },
+    {
+     "uei": "ECP3DVGMJ178",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Cullman AL)",
+     "level": "C"
+    },
+    {
+     "uei": "KH7TCNJD71F5",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Colorado Springs CO)",
+     "level": "C"
+    },
+    {
+     "uei": "XLKRB3RSLVM1",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS INC. (Fort Wayne IN)",
+     "level": "C"
+    },
+    {
+     "uei": "KNPMJ9DSAKV8",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (Oakton VA)",
+     "level": "C"
+    },
+    {
+     "uei": "RQ4YHTZHE7U7",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC (Beavercreek OH)",
+     "level": "C"
+    },
+    {
+     "uei": "VE22NMZVNC99",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (McLeansville NC)",
+     "level": "C"
+    },
+    {
+     "uei": "D3RLWWNS55A5",
+     "name": "GENERAL DYNAMICS MISSION SYSTEMS, INC. (San Antonio TX, Ramsey Rd)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "GDMS is the GD Technologies segment unit (C4ISR, cyber, secure comms), formerly GD C4 Systems and GD Advanced Information Systems, merged in 2015. The Boise ID postings fit its distributed engineering footprint. Older court and agency records may use the names General Dynamics C4 Systems, Inc. or Ge"
+  },
+  {
+   "id": "x-energy",
+   "names": [
+    "X-energy"
+   ],
+   "kind": "private company",
+   "legal": [
+    "X Energy, LLC",
+    "X-Energy Reactor Company, LLC",
+    "TRISO-X, LLC"
+   ],
+   "avoid": [
+    "CX-Energy",
+    "IX Energy Holdings, Inc.",
+    "XEnergy Group Inc",
+    "Phoenix Energy LLC",
+    "Apex Energy & Environmental Products Inc"
+   ],
+   "ueis": [
+    {
+     "uei": "G9VTBQMKSTQ8",
+     "name": "X ENERGY, LLC (530 Gaither Rd, Rockville MD)",
+     "level": "R"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Advanced nuclear (Xe-100 HTGR) developer headquartered in Rockville MD. X-Energy Reactor Company, LLC (holding) and TRISO-X, LLC (fuel fabrication, Oak Ridge TN) come from memory of the 2022-23 SPAC filings and were not re-verified this run. X Energy, LLC is confirmed."
+  },
+  {
+   "id": "render",
+   "names": [
+    "Render"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Render Services, Inc."
+   ],
+   "avoid": [
+    "Render Security Engineering LLC",
+    "National Renderers Association, Inc.",
+    "Sacramento Rendering Co.",
+    "Render Network / OTOY Inc.",
+    "iRender",
+    "Colorado Services Rendered, Inc."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Cloud hosting platform (render.com), San Francisco, remote-first. render.com/terms names the contracting entity as Render Services, Inc. 'Render' alone is a very common word, so match only on the full legal name."
+  },
+  {
+   "id": "zayo-group",
+   "names": [
+    "Zayo Group"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Zayo Group, LLC",
+    "Zayo Group Holdings, Inc.",
+    "Zayo Professional Services, LLC"
+   ],
+   "avoid": [
+    "Zayon Consulting, Inc.",
+    "Zayos Trucking Corp",
+    "Cazayoux Ewing LLC",
+    "Zayo Canada Inc (Canadian affiliate, not US employer)"
+   ],
+   "ueis": [
+    {
+     "uei": "EACWBKJV6636",
+     "name": "ZAYO GROUP LLC (1401 Wynkoop St, Denver CO)",
+     "level": "P"
+    },
+    {
+     "uei": "E2H8NC2E3ZZ7",
+     "name": "ZAYO GROUP HOLDINGS, INC. (Louisville CO)",
+     "level": "P"
+    },
+    {
+     "uei": "DAPPVA5PKG43",
+     "name": "ZAYO PROFESSIONAL SERVICES, LLC (Herndon VA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Fiber and network infrastructure provider, HQ Boulder/Denver CO. Taken private by DigitalBridge and EQT in 2020. Electric Lightwave LLC appears as an alternate name under the Holdings record (acquired 2017)."
+  },
+  {
+   "id": "columbia-sportswear",
+   "names": [
+    "Columbia Sportswear"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Columbia Sportswear Company",
+    "Columbia Sportswear USA Corporation"
+   ],
+   "avoid": [
+    "Columbia University (The Trustees of Columbia University in the City of New York)",
+    "Columbia Gas",
+    "Columbia Pictures Industries",
+    "Columbia Sussex",
+    "Columbia Southern University"
+   ],
+   "ueis": [
+    {
+     "uei": "TEUJNQAHJTC3",
+     "name": "COLUMBIA SPORTSWEAR COMPANY (14375 NW Science Park Dr, Portland OR)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Portland OR outdoor apparel company (NASDAQ: COLM). Sister brands Sorel, Mountain Hardwear and prAna hire under their own names and are not included. Columbia Sportswear USA Corporation is the US operating subsidiary, named from memory."
+  },
+  {
+   "id": "the-standard",
+   "names": [
+    "The Standard"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Standard Insurance Company",
+    "StanCorp Financial Group, Inc.",
+    "The Standard Life Insurance Company of New York",
+    "Standard Retirement Services, Inc.",
+    "StanCorp Investment Advisers, Inc."
+   ],
+   "avoid": [
+    "U.S. Standard Insurance Company",
+    "Standard Fire Insurance Company (Travelers)",
+    "Standard Guaranty Insurance Company (Assurant)",
+    "Standard Security Life Insurance Company of New York",
+    "Standard Life and Accident Insurance Company",
+    "Standard Chartered",
+    "Standard Industries",
+    "Standard Life (UK)"
+   ],
+   "ueis": [
+    {
+     "uei": "V4RMVZBRLT88",
+     "name": "STANCORP FINANCIAL GROUP INC.",
+     "level": "P"
+    },
+    {
+     "uei": "KMKJK35ZZTJ5",
+     "name": "STANDARD INSURANCE COMPANY (1100 SW 6th Ave, Portland OR)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "'The Standard' is the brand of Standard Insurance Company, Portland OR, with parent StanCorp Financial Group. Owned by Meiji Yasuda since 2016, so kind is private, not public. 'Standard' is extremely generic: match only on full legal names."
+  },
+  {
+   "id": "usaa",
+   "names": [
+    "USAA"
+   ],
+   "kind": "private company",
+   "legal": [
+    "United Services Automobile Association",
+    "USAA Federal Savings Bank",
+    "USAA Casualty Insurance Company",
+    "USAA General Indemnity Company",
+    "Garrison Property and Casualty Insurance Company",
+    "USAA Life Insurance Company"
+   ],
+   "avoid": [
+    "Tusaar Corp",
+    "Advantage USAA",
+    "USAATO USA Inc.",
+    "Victory Capital (former USAA Asset Management Company / USAA Investments, sold 2019)",
+    "Charles Schwab (acquired USAA brokerage accounts 2020)"
+   ],
+   "ueis": [
+    {
+     "uei": "D59DDCDBJJN8",
+     "name": "UNITED SERVICES AUTOMOBILE ASSOCIATION (9800 Fredericksburg Rd, San Antonio TX)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Member-owned reciprocal inter-insurance exchange, so kind is private. San Antonio TX. Subsidiary names are from memory and were not individually verified."
+  },
+  {
+   "id": "stryker",
+   "names": [
+    "Stryker"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Stryker Corporation",
+    "Stryker Employment Company, LLC",
+    "Stryker Sales, LLC",
+    "Howmedica Osteonics Corp."
+   ],
+   "avoid": [
+    "Stryker and Company, Inc.",
+    "Stryker Housing Development Fund Co., Inc.",
+    "Western Michigan University Homer Stryker M.D. School of Medicine"
+   ],
+   "ueis": [
+    {
+     "uei": "LUKNHKAUQG65",
+     "name": "STRYKER CORPORATION (1941 Stryker Way, Portage MI)",
+     "level": "P"
+    },
+    {
+     "uei": "DY9WJ91TFJT5",
+     "name": "STRYKER CORP (parent of Stryker Sales, LLC UEIs UJPNLN1M18B3, JFHWFWDCVDV8, K1KNEPH782Y8)",
+     "level": "P"
+    },
+    {
+     "uei": "PJJ1HJS3LQD6",
+     "name": "STRYKER SALES, LLC (Portage MI)",
+     "level": "P"
+    },
+    {
+     "uei": "YKZMP1G2XQ13",
+     "name": "STRYKER CORPORATION (1901 Romence Road Pkwy, Portage MI)",
+     "level": "P"
+    },
+    {
+     "uei": "EPB4AJ2DCKZ6",
+     "name": "STRYKER CORPORATION (Hopkinton MA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Kalamazoo/Portage MI medical device maker (NYSE: SYK); the job cards show Kalamazoo and Redmond WA. Stryker Employment Company, LLC is commonly the US employer of record in employment cases, named from memory. Howmedica Osteonics Corp. is the orthopaedics operating subsidiary."
+  },
+  {
+   "id": "swingtech",
+   "names": [
+    "Swingtech"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Swingtech Consulting Inc."
+   ],
+   "avoid": [
+    "Swing Technologies, Inc.",
+    "Glasswing Tech LLC",
+    "Swingtech B&B Solutions LLC (separate DC entity, likely a JV)"
+   ],
+   "ueis": [
+    {
+     "uei": "C2FLLEGASDK3",
+     "name": "SWINGTECH CONSULTING INC. (7701 Greenbelt Rd, Greenbelt MD)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Small federal IT contractor (8(a), woman-owned) in Greenbelt MD, serving DoDEA, CMS and State. Its 'DC, MD, VA locals only' remote DevOps postings fit. Not a staffing agency."
+  },
+  {
+   "id": "american-college-of-education",
+   "names": [
+    "American College of Education"
+   ],
+   "kind": "private company",
+   "legal": [
+    "American College of Education, Inc."
+   ],
+   "avoid": [
+    "American Council on Education (also 'ACE')",
+    "American College of Healthcare Sciences, Inc.",
+    "The American College of Financial Services",
+    "American College of Radiology",
+    "American College of Surgeons"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "For-profit online college in Indianapolis IN and a Certified B Corp. CIC Partners sold it to Bain Capital (Double Impact) in late 2025. The legal name 'American College of Education, Inc.' comes from secondary sources. A university, but privately owned for-profit, hence 'private company'. Watch for "
+  },
+  {
+   "id": "esri",
+   "names": [
+    "Esri"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Environmental Systems Research Institute, Inc.",
+    "Esri Global, Inc."
+   ],
+   "avoid": [
+    "Esri Korea, Inc. (foreign distributor)",
+    "Esri Canada Limited (independent distributor)"
+   ],
+   "ueis": [
+    {
+     "uei": "WUK9A5UR33S7",
+     "name": "ENVIRONMENTAL SYSTEMS RESEARCH INSTITUTE, INC. (380 New York St, Redlands CA)",
+     "level": "P"
+    },
+    {
+     "uei": "RC77S86NK511",
+     "name": "ENVIRONMENTAL SYSTEMS RESEARCH INSTITUTE INC (Broomfield CO regional office)",
+     "level": "P"
+    },
+    {
+     "uei": "NL64KTDTMZK4",
+     "name": "ENVIRONMENTAL SYSTEMS RESEARCH INSTITUTE INC (Vienna VA regional office)",
+     "level": "P"
+    },
+    {
+     "uei": "DY8NAS83CZS5",
+     "name": "ESRI GLOBAL INC (380 New York St, Redlands CA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "GIS software maker, Redlands CA, privately held S-corp."
+  },
+  {
+   "id": "fleetio",
+   "names": [
+    "Fleetio"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Rarestep, Inc."
+   ],
+   "avoid": [
+    "Ricky Fleetion",
+    "William Fleetion"
+   ],
+   "ueis": [
+    {
+     "uei": "N2LKQNYUJJK1",
+     "name": "RARESTEP, INC. (1900 2nd Ave N, Birmingham AL)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Fleet-management SaaS, Birmingham AL, operating as Fleetio under the legal name Rarestep, Inc. Records may use 'Rarestep, Inc. d/b/a Fleetio'."
+  },
+  {
+   "id": "synopsys",
+   "names": [
+    "Synopsys"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Synopsys, Inc.",
+    "ANSYS, Inc."
+   ],
+   "avoid": [
+    "Alpha Synopsys Inc.",
+    "Black Duck Software, Inc. (Synopsys Software Integrity Group, divested 2024)",
+    "Synopsis (misspelling-based entities)"
+   ],
+   "ueis": [
+    {
+     "uei": "K8W2J2DS9FN1",
+     "name": "SYNOPSYS, INC. (675 Almanor Ave, Sunnyvale CA)",
+     "level": "P"
+    },
+    {
+     "uei": "TY4MJLKVJJ27",
+     "name": "ANSYS INC (2600 Ansys Dr, Canonsburg PA) - Synopsys subsidiary since July 2025",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "EDA and simulation software, Sunnyvale CA (NASDAQ: SNPS). The Hillsboro OR and Boulder CO roles fit. ANSYS, Inc. is listed as a major US operating subsidiary now hiring under the Synopsys brand. Drop it if only pre-merger Synopsys records are wanted."
+  },
+  {
+   "id": "college-board",
+   "names": [
+    "College Board"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "College Entrance Examination Board"
+   ],
+   "avoid": [
+    "Illinois Community College Board",
+    "Mississippi Community College Board",
+    "Wisconsin Technical College Board",
+    "Global College Board, LLC",
+    "Colorado College Board of Trustees",
+    "Ellsworth College Board of Trustees"
+   ],
+   "ueis": [
+    {
+     "uei": "CLZXHJ5A8G84",
+     "name": "COLLEGE ENTRANCE EXAMINATION BOARD (250 Vesey St, New York NY)",
+     "level": "P"
+    },
+    {
+     "uei": "KE6NDXAL4JK7",
+     "name": "COLLEGE ENTRANCE EXAMINATION BOARD (Reston VA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Nonprofit that runs the SAT and AP, legally named College Entrance Examination Board, HQ New York with a Reston VA office. Match only on the legal name or the exact 'The College Board'."
+  },
+  {
+   "id": "quantiphi",
+   "names": [
+    "Quantiphi"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Quantiphi, Inc."
+   ],
+   "avoid": [
+    "Quantifi, Inc.",
+    "Quantiphi Analytics Solutions Private Limited (Indian affiliate, not US employer)"
+   ],
+   "ueis": [
+    {
+     "uei": "SQNFCUW1NZY5",
+     "name": "QUANTIPHI, INC (33 Boston Post Rd W, Marlborough MA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "AI and cloud consulting firm (Google Cloud partner), US HQ Marlborough MA, with large engineering operations in India."
+  },
+  {
+   "id": "alteryx",
+   "names": [
+    "Alteryx"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Alteryx, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "LFDGDH5VZQ58",
+     "name": "ALTERYX, INC. (3347 Michelson Dr, Irvine CA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Analytics software company in Irvine CA. Taken private by Clearlake Capital and Insight Partners in March 2024, so kind is private (formerly NYSE: AYX)."
+  },
+  {
+   "id": "oscar",
+   "names": [
+    "Oscar"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Oscar Health, Inc.",
+    "Oscar Management Corporation",
+    "Oscar Insurance Corporation",
+    "Oscar Insurance Company"
+   ],
+   "avoid": [
+    "OSCAR HEALTH INC. (unrelated small business, 4505 Bergenline Ave, Union City NJ)",
+    "Oscar Mayer",
+    "Oscar de la Renta",
+    "Oscar W. Larson Co."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Health insurer and tech company (NYSE: OSCR), HQ 75 Varick St, New York; it was named Mulberry Health Inc. before 2021. Oscar's SEC employment-agreement exhibits name Oscar Management Corporation alongside Oscar Health, Inc., which suggests it is the employing entity. Oscar Insurance Corporation (NY"
+  },
+  {
+   "id": "intel",
+   "names": [
+    "Intel"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Intel Corporation",
+    "Intel Federal LLC"
+   ],
+   "avoid": [
+    "Cintel Corporation",
+    "Quintel Corporation",
+    "Talent Intel Corporation",
+    "ElegantIntel Corporation",
+    "Intel Legal Services",
+    "Intelsat",
+    "Wind River Systems, Inc.",
+    "McAfee, LLC",
+    "Altera Corporation",
+    "Mobileye"
+   ],
+   "ueis": [
+    {
+     "uei": "NKSNLH2RMHT3",
+     "name": "INTEL CORPORATION (Santa Clara, CA)",
+     "level": "C"
+    },
+    {
+     "uei": "LWX1KKEH2N45",
+     "name": "INTEL CORPORATION (Hillsboro, OR)",
+     "level": "C"
+    },
+    {
+     "uei": "LJMDMVF3JNF8",
+     "name": "INTEL CORPORATION (Santa Clara, CA)",
+     "level": "C"
+    },
+    {
+     "uei": "EW71GELDH6G1",
+     "name": "INTEL FEDERAL LLC (Santa Clara, CA; child of Intel)",
+     "level": "C"
+    },
+    {
+     "uei": "M3F3N7LEJZD5",
+     "name": "INTEL FEDERAL LLC (Fairfax, VA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The Hillsboro, OR samples match Intel's Oregon campus. Mobileye and Altera hire under their own brands."
+  },
+  {
+   "id": "cisco",
+   "names": [
+    "Cisco"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Cisco Systems, Inc."
+   ],
+   "avoid": [
+    "Sysco Corporation",
+    "Cisco-Eagle, Inc.",
+    "Cisco Brothers Corp."
+   ],
+   "ueis": [
+    {
+     "uei": "V3JJMWE4SRC6",
+     "name": "CISCO SYSTEMS INC (San Jose, CA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Sysco, the food distributor, is the main name trap. Splunk hires under its own brand and is left out."
+  },
+  {
+   "id": "hewlett-packard-enterprise",
+   "names": [
+    "Hewlett Packard Enterprise"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Hewlett Packard Enterprise Company",
+    "HPE Government, LLC",
+    "Cray Inc.",
+    "Hewlett-Packard Financial Services Company"
+   ],
+   "avoid": [
+    "HP Inc.",
+    "HPI Federal LLC",
+    "Peraton Enterprise Solutions LLC",
+    "Perspecta",
+    "DXC Technology Company",
+    "Micro Focus Government Solutions LLC",
+    "Hewlett-Packard Federal, LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "EFAJMASTF3J7",
+     "name": "HEWLETT PACKARD ENTERPRISE COMPANY (Reston, VA)",
+     "level": "P"
+    },
+    {
+     "uei": "FYLAKMN93AK5",
+     "name": "HEWLETT PACKARD ENTERPRISE CO (Spring, TX HQ)",
+     "level": "C"
+    },
+    {
+     "uei": "HCK7FYE34Z96",
+     "name": "HPE GOVERNMENT, LLC (MD)",
+     "level": "C"
+    },
+    {
+     "uei": "M9SXVJD4BEU8",
+     "name": "CRAY INC. (WA)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Juniper Networks, Inc. (acquired July 2025) and Aruba are wholly owned and now sit under HPE Networking. I left them out of legal_names because I could not confirm they hire under the HPE brand; add them if postings show they do."
+  },
+  {
+   "id": "bytedance",
+   "names": [
+    "ByteDance"
+   ],
+   "kind": "private company",
+   "legal": [
+    "ByteDance Inc.",
+    "ByteDance Ltd."
+   ],
+   "avoid": [
+    "TikTok Wok - AFC Franchise",
+    "TikTok Watchery Inc",
+    "TikTok Lounge Inc",
+    "TikTokInk, LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "The Seattle network and backbone roles are ByteDance infrastructure jobs (ByteDance Inc., the US entity; ByteDance Ltd. is the Cayman parent often named as co-defendant). TikTok Inc. is a separately branded ByteDance subsidiary. Since January 2026 the US TikTok app/data business sits in TikTok USDS "
+  },
+  {
+   "id": "snowflake",
+   "names": [
+    "Snowflake"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Snowflake Inc."
+   ],
+   "avoid": [
+    "Snowflake Unified School District #5",
+    "Town of Snowflake, Arizona",
+    "Arizona Motors Snowflake Inc",
+    "El Rancho Snowflake Inc.",
+    "Snowflake Bakery, Inc.",
+    "Snowflakes, LLC",
+    "Compass Medical Center Snowflake PLLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The data cloud company (formerly Snowflake Computing Inc.). The Menlo Park and Bellevue samples match."
+  },
+  {
+   "id": "state-of-oregon",
+   "names": [
+    "State of Oregon"
+   ],
+   "kind": "government",
+   "legal": [
+    "State of Oregon"
+   ],
+   "avoid": [
+    "Oregon State University",
+    "University of Oregon",
+    "Oregon Health & Science University",
+    "Oregon State Bar",
+    "Portland State University"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "The sample titles (Middleware Administrator, Information Systems Specialist 7; Help Desk Specialist) are state-agency IT jobs, possibly DAS Enterprise Information Services or Legislative Administration at the Capitol. Court captions usually name the specific agency (e.g. 'Oregon Department of Admini"
+  },
+  {
+   "id": "cambia-health-solutions",
+   "names": [
+    "Cambia Health Solutions"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "Cambia Health Solutions, Inc.",
+    "Regence BlueCross BlueShield of Oregon",
+    "Regence BlueShield",
+    "Regence BlueShield of Idaho, Inc.",
+    "Regence BlueCross BlueShield of Utah"
+   ],
+   "avoid": [
+    "Escambia County",
+    "Cambria Company LLC",
+    "Cambium Learning Group",
+    "Cambium Networks",
+    "Regence Health Network, Inc. (Plainview, TX)",
+    "Regency Centers"
+   ],
+   "ueis": [
+    {
+     "uei": "UMY7CPFDL9W5",
+     "name": "CAMBIA HEALTH SOLUTIONS, INC (200 SW Market St, Portland, OR)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "A nonprofit, tax-paying parent of the Regence health plans (also Asuris Northwest Health and BridgeSpan). I included the Regence plans because Cambia's careers site posts their roles. Remove them if only the Cambia parent is wanted."
+  },
+  {
+   "id": "computer-world-services-corp-cws",
+   "names": [
+    "Computer World Services Corp. (CWS)"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Computer World Services Corp."
+   ],
+   "avoid": [
+    "Computerworld (IDG Communications, Inc.)",
+    "Computer Sciences Corporation"
+   ],
+   "ueis": [
+    {
+     "uei": "SELVLQN46MM7",
+     "name": "COMPUTER WORLD SERVICES, CORP. (6402 Arlington Blvd, Falls Church, VA)",
+     "level": "P"
+    },
+    {
+     "uei": "RMWTT5WLW8F6",
+     "name": "COMPUTER WORLD SERVICES (same DUNS 621796044; parent record whose only child is SELVLQN46MM7)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "A minority-owned small federal IT contractor. The North Chicago, IL remote roles likely support federal health or Navy sites there."
+  },
+  {
+   "id": "anthropic",
+   "names": [
+    "Anthropic"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Anthropic, PBC"
+   ],
+   "avoid": [
+    "The Philanthropic Resource Group, Inc.",
+    "Community Philanthropic Ventures, LLC",
+    "Philanthropic Solutions",
+    "Redwood Philanthropic Advisors Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "SPQZL8XDKGK7",
+     "name": "ANTHROPIC, PBC (500 Howard St, San Francisco, CA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "A public benefit corporation, privately held."
+  },
+  {
+   "id": "autodesk",
+   "names": [
+    "Autodesk"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Autodesk, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "E5ARM36KBMX7",
+     "name": "AUTODESK, INC. (One Market, San Francisco, CA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": ""
+  },
+  {
+   "id": "boeing",
+   "names": [
+    "Boeing"
+   ],
+   "kind": "public company",
+   "legal": [
+    "The Boeing Company",
+    "Boeing Aerospace Operations, Inc.",
+    "Boeing Distribution Services, Inc."
+   ],
+   "avoid": [
+    "Boeing Employees' Credit Union (BECU)",
+    "Raytheon/Lockheed Martin Javelin JV"
+   ],
+   "ueis": [
+    {
+     "uei": "NU2UC8MX6NK1",
+     "name": "THE BOEING COMPANY (929 Long Bridge Dr, Arlington, VA HQ)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "CCBKQV2MBMV6",
+    "H91LD1GY6JN5"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The Everett and Seattle, WA samples match Boeing Commercial and Boeing IT. Insitu, Aurora and Wisk hire under their own brands."
+  },
+  {
+   "id": "unitedhealth-group",
+   "names": [
+    "UnitedHealth Group"
+   ],
+   "kind": "public company",
+   "legal": [
+    "UnitedHealth Group Incorporated",
+    "United HealthCare Services, Inc.",
+    "UnitedHealthcare Insurance Company",
+    "Optum, Inc.",
+    "Optum Services, Inc."
+   ],
+   "avoid": [
+    "United Health Services (Binghamton, NY hospital system)",
+    "Universal Health Services, Inc.",
+    "United Healthcare Workers West (SEIU-UHW)",
+    "United Health Centers of the San Joaquin Valley"
+   ],
+   "ueis": [
+    {
+     "uei": "GVW2YMAK1AC1",
+     "name": "UNITEDHEALTH GROUP INCORPORATED (1 Health Dr, Eden Prairie, MN)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "UHG's careers site posts Optum and UnitedHealthcare roles under the UHG name. Most employees are employed by United HealthCare Services, Inc. or Optum Services, Inc."
+  },
+  {
+   "id": "zillow",
+   "names": [
+    "Zillow"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Zillow Group, Inc.",
+    "Zillow, Inc.",
+    "Zillow Home Loans, LLC"
+   ],
+   "avoid": [
+    "Zillowed Home Sales LLC",
+    "Credit Zillow, Inc.",
+    "Schrozillow LLC",
+    "ZillowGA"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Trulia and StreetEasy are Zillow brands that hire under their own names."
+  },
+  {
+   "id": "aether-aerospace",
+   "names": [
+    "Aether Aerospace"
+   ],
+   "kind": "private company",
+   "legal": [
+    "John H. Northrop & Associates, Inc.",
+    "Coherent Technical Services, Inc.",
+    "EXPANSIA Group LLC"
+   ],
+   "avoid": [
+    "Aetherflux",
+    "Aether Industries",
+    "Northrop Grumman Corporation",
+    "Coherent Corp."
+   ],
+   "ueis": [
+    {
+     "uei": "K3W6V7GFVHQ4",
+     "name": "JOHN H. NORTHROP & ASSOCIATES, INC. (Clifton, VA)",
+     "level": "P"
+    },
+    {
+     "uei": "J521EPLPW6L7",
+     "name": "COHERENT TECHNICAL SERVICES, INC. (Hollywood, MD)",
+     "level": "P"
+    },
+    {
+     "uei": "NWSKGM6WLKR1",
+     "name": "EXPANSIA GROUP LLC (Nashua, NH)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "A defense technology platform backed by Falfurrias. JHNA, CTSi and EXPANSIA announced their merger in January 2026, and later profiles add 'TSA'. I could not confirm the legal name of the combined parent; postings still appear under expansia and talentwerx Lever boards. Not a staffing firm. Aetherfl"
+  },
+  {
+   "id": "axon",
+   "names": [
+    "Axon"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Axon Enterprise, Inc.",
+    "TASER International, Inc."
+   ],
+   "avoid": [
+    "Jaxon Enterprises, Inc.",
+    "Maxon Enterprises, Inc.",
+    "Saxon Enterprises, Inc.",
+    "Klaxon Enterprises Company",
+    "Maxon Motor",
+    "Axon Enterprises, Inc. (Nixa MO; unrelated, plural name)"
+   ],
+   "ueis": [
+    {
+     "uei": "TBW7MGPYURM7",
+     "name": "AXON ENTERPRISE, INC. (17800 N 85th St, Scottsdale, AZ)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "TASER International, Inc. renamed itself Axon Enterprise, Inc. in 2017, so older court captions use the TASER name."
+  },
+  {
+   "id": "1password",
+   "names": [
+    "1Password"
+   ],
+   "kind": "private company",
+   "legal": [
+    "AgileBits Inc."
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "The operating entity is AgileBits Inc. d/b/a 1Password, a Toronto-based Canadian company. I could not confirm a separate US employing subsidiary. Kolide, Inc. (acquired 2024) is a 1Password-owned brand."
+  },
+  {
+   "id": "lockheed-martin",
+   "names": [
+    "Lockheed Martin"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Lockheed Martin Corporation",
+    "Lockheed Martin Services, LLC",
+    "Lockheed Martin Integrated Systems, LLC",
+    "Lockheed Martin Global, Inc."
+   ],
+   "avoid": [
+    "Leidos, Inc.",
+    "Leidos Management Systems Designers, Inc.",
+    "Raytheon/Lockheed Martin Javelin Joint Venture",
+    "Lockheed Federal Credit Union"
+   ],
+   "ueis": [
+    {
+     "uei": "ZFN2JJXBLZT3",
+     "name": "LOCKHEED MARTIN CORP (6801 Rockledge Dr, Bethesda, MD)",
+     "level": "P"
+    },
+    {
+     "uei": "CWM4UN76ZQW8",
+     "name": "LOCKHEED MARTIN CORPORATION (Moorestown, NJ)",
+     "level": "P"
+    },
+    {
+     "uei": "NGBVY5X32XZ5",
+     "name": "LOCKHEED MARTIN CORPORATION (Huntsville, AL)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "LUJEPCRRT377",
+    "NKALELNK6F48"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Sikorsky Aircraft Corporation is wholly owned but hires as 'Sikorsky, a Lockheed Martin Company'. I left it out of legal_names."
+  },
+  {
+   "id": "zscaler",
+   "names": [
+    "Zscaler"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Zscaler, Inc.",
+    "Zscaler US Government Solutions, LLC"
+   ],
+   "avoid": [
+    "BizScalers, LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "HP7JQFY2LF58",
+     "name": "ZSCALER US GOVERNMENT SOLUTIONS, LLC (McLean, VA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "id": "uber",
+   "names": [
+    "Uber"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Uber Technologies, Inc."
+   ],
+   "avoid": [
+    "individual drivers registered as 'DBA UBER TECHNOLOGIES' (e.g. Mustafiz Rahman, Alpha Balde, Dominique Choute)",
+    "J.M. Huber Corporation",
+    "Uberti"
+   ],
+   "ueis": [
+    {
+     "uei": "Y36WZYNKKBK6",
+     "name": "UBER TECHNOLOGIES, INC. (1725 3rd St, San Francisco, CA)",
+     "level": "P"
+    },
+    {
+     "uei": "XRY7YR3JKEJ5",
+     "name": "UBER TECHNOLOGIES INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Rasier, LLC and Portier, LLC are Uber's driver and courier contracting entities and show up in driver-classification suits. They do not hire staff, so I left them out of legal_names."
+  },
+  {
+   "id": "deloitte",
+   "names": [
+    "Deloitte"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Deloitte LLP",
+    "Deloitte Consulting LLP",
+    "Deloitte & Touche LLP",
+    "Deloitte Tax LLP",
+    "Deloitte Financial Advisory Services LLP",
+    "Deloitte Services LP",
+    "Deloitte Transactions and Business Analytics LLP"
+   ],
+   "avoid": [
+    "Deloitte Consulting Limited (non-US, UEI DM31Z2U95YV4)",
+    "Deloitte Consulting Malawi",
+    "Deloitte & Touche Mozambique, Lda",
+    "Deloitte & Touche (Nairobi, Kenya, UEI JH7ANFUN6XW3)",
+    "Deloitte Touche Tohmatsu Limited (UK umbrella, not the US employer)"
+   ],
+   "ueis": [
+    {
+     "uei": "F588F1QGXCP3",
+     "name": "DELOITTE LLP (30 Rockefeller Plz, New York NY; current parent of Consulting and D&T)",
+     "level": "P"
+    },
+    {
+     "uei": "GT54N467W2C6",
+     "name": "DELOITTE LLP (legacy parent record, no address; alt names Deloitte & Touche LLP, Deloitte Consulting LLP, Deloitte Financial Advisory Services LLP)",
+     "level": "P"
+    },
+    {
+     "uei": "CKV2L9GZKJK3",
+     "name": "DELOITTE CONSULTING LLP (1919 N Lynn St, Arlington VA)",
+     "level": "C"
+    },
+    {
+     "uei": "F9KSDU7L9VP6",
+     "name": "DELOITTE & TOUCHE LLP (1919 N Lynn St, Arlington VA)",
+     "level": "C"
+    },
+    {
+     "uei": "GPWZD8J3MK26",
+     "name": "DELOITTE & TOUCHE LLP (10805 Parkridge Blvd, Reston VA; tiny)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The sample roles (DevOps, Cyber Cloud DevSecOps, multi-city US listings) fit the US Deloitte firms. Cyber roles usually sit in Deloitte & Touche LLP and GPS/federal work in Deloitte Consulting LLP."
+  },
+  {
+   "id": "the-home-depot",
+   "names": [
+    "The Home Depot"
+   ],
+   "kind": "public company",
+   "legal": [
+    "The Home Depot, Inc.",
+    "Home Depot U.S.A., Inc."
+   ],
+   "avoid": [
+    "Mobile Home Depot Inc.",
+    "Investment Home Depot LLC",
+    "SDI Home Depot, UT, LLC",
+    "6 Home Depot Dr LLC",
+    "4 Home Depot Dr LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "UMARBLUL4KJ3",
+     "name": "HOME DEPOT, INC., THE (2455 Paces Ferry Rd NW, Atlanta GA)",
+     "level": "P"
+    },
+    {
+     "uei": "QAH4XGEVD9E1",
+     "name": "HOME DEPOT U.S.A., INC. (2625 Veterans Blvd, Kenner LA; single 2008 VA floor-burnisher purchase)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Home Depot U.S.A., Inc. is the usual employer named in EEOC and labor cases. HD Supply and SRS Distribution are Home Depot-owned but hire under their own brands, so they are excluded."
+  },
+  {
+   "id": "nike",
+   "names": [
+    "Nike"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Nike, Inc.",
+    "Nike USA, Inc.",
+    "Nike Retail Services, Inc."
+   ],
+   "avoid": [
+    "Nike Securities L.P. (First Trust broker-dealer, unrelated)",
+    "Nikon Inc.",
+    "Nikken Inc.",
+    "Monike Inc",
+    "Alvin E Benike Inc"
+   ],
+   "ueis": [
+    {
+     "uei": "DTAZQZ11J5C5",
+     "name": "NIKE, INC. (1 Bowerman Dr, Beaverton OR)",
+     "level": "P"
+    },
+    {
+     "uei": "LM2NB9VQXWD3",
+     "name": "NIKE USA INC (1 Bowerman Dr, Beaverton OR; child of Nike, Inc.)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Beaverton OR HQ roles. Converse Inc. is Nike-owned but hires under the Converse brand, so it is excluded."
+  },
+  {
+   "id": "okta",
+   "names": [
+    "Okta"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Okta, Inc.",
+    "Auth0, Inc."
+   ],
+   "avoid": [
+    "Oktaha School District 8",
+    "Vural Oktay Inc",
+    "Orange County Transportation Authority (OCTA)",
+    "Okta Holdings LLC (Portland OR; unrelated)"
+   ],
+   "ueis": [
+    {
+     "uei": "PZPPUW81KDT2",
+     "name": "OKTA, INC. (100 1st St Ste 600, San Francisco CA; Smithsonian IAM award)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Auth0 is an Okta subsidiary (acquired 2021). A sample title references Auth0."
+  },
+  {
+   "id": "caci-international-inc",
+   "names": [
+    "CACI International Inc"
+   ],
+   "kind": "public company",
+   "legal": [
+    "CACI International Inc",
+    "CACI, Inc. - Federal",
+    "CACI Technologies, LLC",
+    "CACI NSS, LLC",
+    "CACI, LLC - Commercial",
+    "CACI Enterprise Solutions, LLC",
+    "CACI-ISS, LLC"
+   ],
+   "avoid": [
+    "Acacia Center for Justice",
+    "Cacique, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "QSRTXLFKV857",
+     "name": "CACI INTERNATIONAL INC (12021 Sunset Hills Rd, Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "N3PBJAVNKF61",
+     "name": "CACI, INC. - FEDERAL (Chantilly VA)",
+     "level": "C"
+    },
+    {
+     "uei": "NGEEG7KP11V4",
+     "name": "CACI TECHNOLOGIES, LLC (Chantilly VA)",
+     "level": "C"
+    },
+    {
+     "uei": "EELEC8QCC3N8",
+     "name": "CACI NSS, LLC (Chantilly VA)",
+     "level": "C"
+    },
+    {
+     "uei": "DCGLMVAM4VG5",
+     "name": "CACI ENTERPRISE SOLUTIONS, LLC (Chantilly VA)",
+     "level": "C"
+    },
+    {
+     "uei": "E5E6SMMJYPL3",
+     "name": "CACI, LLC - COMMERCIAL (Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "EPPXR2P9KYU6",
+     "name": "CACI-ISS, LLC (Chantilly VA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "CACI, Inc. - Federal is the main US employing entity. Acquired companies (Azure Summit, LGS Innovations, Six3, etc.) appear as alternate names under the parent."
+  },
+  {
+   "id": "ecs",
+   "names": [
+    "ECS"
+   ],
+   "kind": "public company",
+   "legal": [
+    "ECS Federal, LLC"
+   ],
+   "avoid": [
+    "Engineering Consulting Services, Ltd. (ECS Limited, geotechnical engineering firm)",
+    "ECS Tuning",
+    "On Assignment, Inc. / ASGN Incorporated (parent; its other staffing brands are not ECS)"
+   ],
+   "ueis": [
+    {
+     "uei": "XYB4JU4PA6T4",
+     "name": "ECS FEDERAL, LLC (2750 Prosperity Ave Ste 600, Fairfax VA; f/k/a Electronic Consulting Services, Inc.)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "'ECS' is a generic acronym. The sample titles (OCI Gov Cloud observability, security engineer, VA remote) identify ECS Federal, the federal IT unit of ASGN Incorporated (NYSE: ASGN)."
+  },
+  {
+   "id": "asm-research",
+   "names": [
+    "ASM Research"
+   ],
+   "kind": "public company",
+   "legal": [
+    "ASM Research, LLC"
+   ],
+   "avoid": [
+    "ASM International N.V.",
+    "ASM America, Inc.",
+    "ASM Global (venue management)",
+    "Accenture plc (parent; not to be matched as ASM)"
+   ],
+   "ueis": [
+    {
+     "uei": "TDJMB5JLT149",
+     "name": "ASM RESEARCH, LLC (4050 Legato Rd Ste 800, Fairfax VA; f/k/a ASM Research, Inc.)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "ASM Research is an Accenture Federal Services company, wholly owned by Accenture plc."
+  },
+  {
+   "id": "stripe",
+   "names": [
+    "Stripe"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Stripe, Inc.",
+    "Stripe Payments Company"
+   ],
+   "avoid": [
+    "Stripe Inc (UEI P1QJJGYGL1H4, South San Francisco signage vendor, 2008 award predates Stripe)",
+    "Stripes Global, Inc.",
+    "Stripes LLC (convenience stores)",
+    "Accu-Stripe, Inc.",
+    "Soundstripe Inc",
+    "Paws and Stripes"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The payments company is headquartered in South San Francisco/SF and hires remotely in the US."
+  },
+  {
+   "id": "ais-applied-information-sciences",
+   "names": [
+    "AIS (Applied Information Sciences)"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Applied Information Sciences, Inc."
+   ],
+   "avoid": [
+    "Applied Insight, LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "MGCZNCNTQPE9",
+     "name": "APPLIED INFORMATION SCIENCES INC (11440 Commerce Park Dr Ste 600, Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "JVVFEDU23LP6",
+     "name": "APPLIED INFORMATION SCIENCES INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Reston VA Microsoft/Azure-focused federal and commercial IT firm."
+  },
+  {
+   "id": "micron-technology",
+   "names": [
+    "Micron Technology",
+    "Micron"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Micron Technology, Inc.",
+    "Micron Semiconductor Products, Inc."
+   ],
+   "avoid": [
+    "Precision Micron Technology, Inc.",
+    "Micron Solutions, Inc. (Fitchburg MA)",
+    "Micron Products, Inc.",
+    "Micron Biomedical Inc",
+    "Micronet Associates Inc.",
+    "Micron Solutions, Inc.",
+    "Scienta Omicron, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "C4APHJ5G5LL8",
+     "name": "MICRON TECHNOLOGY INC (8000 S Federal Way, Boise ID)",
+     "level": "P"
+    },
+    {
+     "uei": "M7YSYMW91F11",
+     "name": "MICRON SEMICONDUCTOR PRODUCTS, INC. (3475 E Commercial Ct, Meridian ID; child of Micron Technology)",
+     "level": "C"
+    },
+    {
+     "uei": "K9PLMYK25QV4",
+     "name": "CRUCIAL TECHNOLOGY, DIV. OF MICRON SEMICONDUCTOR PRODUCTS (Meridian ID)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Boise ID HQ security roles."
+  },
+  {
+   "id": "chainguard",
+   "names": [
+    "Chainguard"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Chainguard, Inc."
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Software supply-chain security startup (container images), remote US. The legal name comes from general knowledge and was not verified against state records."
+  },
+  {
+   "id": "allstate",
+   "names": [
+    "Allstate"
+   ],
+   "kind": "public company",
+   "legal": [
+    "The Allstate Corporation",
+    "Allstate Insurance Company",
+    "Allstate Fire and Casualty Insurance Company",
+    "Allstate Property and Casualty Insurance Company",
+    "Allstate Indemnity Company"
+   ],
+   "avoid": [
+    "Independent agencies doing business as 'Allstate Insurance' (e.g., Hartelius Agency Services Inc DBA Allstate Insurance, Brooks Allstate Insurance Agency Inc, GGP Insurance Services Inc DBA Allstate Insurance Services)",
+    "Allstate Peterbilt Group"
+   ],
+   "ueis": [
+    {
+     "uei": "DAM1QKBQN9R3",
+     "name": "ALLSTATE CORPORATION, THE (2775 Sanders Rd, Northbrook IL)",
+     "level": "P"
+    },
+    {
+     "uei": "JULPANJZNX15",
+     "name": "ALLSTATE INSURANCE CO. (2775 Sanders Rd, Northbrook IL)",
+     "level": "R"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Allstate Insurance Company is the usual employer entity. National General (acquired 2021) hires under its own brand, so it is excluded."
+  },
+  {
+   "id": "providence",
+   "names": [
+    "Providence"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "Providence Health & Services",
+    "Providence St. Joseph Health",
+    "Providence Health & Services - Washington",
+    "Providence Health & Services - Oregon",
+    "Providence Health & Services - Montana",
+    "Providence Health System - Southern California",
+    "Providence Health Plan"
+   ],
+   "avoid": [
+    "The Providence Service Corporation (now ModivCare)",
+    "Providence Health System (Waco TX, Ascension)",
+    "Providence Hospital (Mobile AL, Ascension)",
+    "Providence Health Care (Vancouver BC)",
+    "City of Providence, RI",
+    "Providence College",
+    "Providence Equity Partners"
+   ],
+   "ueis": [
+    {
+     "uei": "SB1QMW62T3G9",
+     "name": "PROVIDENCE HEALTH & SERVICES (parent of Spokane and Anchorage children; no address on record)",
+     "level": "P"
+    },
+    {
+     "uei": "WGE5EL2D8KE6",
+     "name": "PROVIDENCE HEALTH & SERVICES-WASHINGTON (1801 Lind Ave SW, Renton WA)",
+     "level": "P"
+    },
+    {
+     "uei": "H3R1MLL2VLT7",
+     "name": "PROVIDENCE HEALTH & SERVICES - OREGON (1801 Lind Ave SW, Renton WA)",
+     "level": "P"
+    },
+    {
+     "uei": "WB37MHU2NZD3",
+     "name": "PROVIDENCE HEALTH & SERVICES-WASHINGTON (Sacred Heart Medical Center, Spokane WA)",
+     "level": "C"
+    },
+    {
+     "uei": "N16JHYXBFCF8",
+     "name": "PROVIDENCE HEALTH & SERVICES-WASHINGTON (920 Compassion Circle, Anchorage AK)",
+     "level": "C"
+    },
+    {
+     "uei": "RQ16QWDNAMP3",
+     "name": "PROVIDENCE HEALTH & SERVICES-WASHINGTON (3300 Providence Dr, Anchorage AK)",
+     "level": "C"
+    },
+    {
+     "uei": "E453B7SHHZ55",
+     "name": "PROVIDENCE HEALTH & SERVICES-WASHINGTON (910 Compassion Cir, Anchorage AK)",
+     "level": "P"
+    },
+    {
+     "uei": "XYCMC7DJ8VN5",
+     "name": "PROVIDENCE HEALTH & SERVICES-WASHINGTON (1321 Colby Ave, Everett WA)",
+     "level": "P"
+    },
+    {
+     "uei": "MPJMU3DHSVN5",
+     "name": "PROVIDENCE HEALTH & SERVICES - MONTANA (St. Patrick Hospital, Missoula MT)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The Everett and Renton WA locations identify the Renton-based Providence system. Affiliates such as Swedish, Kadlec, Covenant and Pacific Medical Centers hire under their own brands, so they are excluded."
+  },
+  {
+   "id": "tailscale",
+   "names": [
+    "Tailscale"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Tailscale Inc."
+   ],
+   "avoid": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "WireGuard-based networking startup (Toronto HQ, remote US). The exact US legal entity was not verified against state records."
+  },
+  {
+   "id": "reddit",
+   "names": [
+    "Reddit"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Reddit, Inc."
+   ],
+   "avoid": [
+    "Bill Redditt Ford, Inc.",
+    "NJ Redditt Express, Inc.",
+    "individuals surnamed Redditt"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "NYSE: RDDT since its March 2024 IPO. Remote US roles."
+  },
+  {
+   "id": "openai",
+   "names": [
+    "OpenAI"
+   ],
+   "kind": "private company",
+   "legal": [
+    "OpenAI OpCo, LLC",
+    "OpenAI Group PBC",
+    "OpenAI, Inc.",
+    "OpenAI Foundation",
+    "OpenAI Global, LLC",
+    "OpenAI, L.L.C.",
+    "OpenAI Holdings, LLC",
+    "OAI Corporation, LLC",
+    "OpenAI Public Sector LLC"
+   ],
+   "avoid": [
+    "Open Artificial Intelligence, Inc. (Guy Ravine company, unrelated)",
+    "OpenAir / OpenAir Academy",
+    "OpenAirplane Inc.",
+    "OpenAire America, Inc."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "OpenAI OpCo, LLC is the usual employing entity. After the October 2025 recapitalization the for-profit became OpenAI Group PBC and the nonprofit OpenAI, Inc. became the OpenAI Foundation. Court captions often list several of these entities together."
+  },
+  {
+   "id": "vanta",
+   "names": [
+    "Vanta"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Vanta Inc."
+   ],
+   "avoid": [
+    "Covanta Energy Group Inc / Covanta Holding Corporation",
+    "Vantage Industries Inc",
+    "Savantage Financial Services, Inc.",
+    "Mitchell Vantage Systems LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Compliance automation (SOC 2/GRC) SaaS, SF-based, remote US. The legal entity name comes from general knowledge."
+  },
+  {
+   "id": "anduril",
+   "names": [
+    "Anduril"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Anduril Industries, Inc."
+   ],
+   "avoid": [
+    "Anduril LLC (Winooski VT sole proprietor, UEI JJP3TT4EA9G7)",
+    "Anduril Engineering LLC (UEI MMLFZGBVYMB8)",
+    "Anduril Partners, LLC",
+    "Anduril Strategy LLC",
+    "Anduril Enterprises PC",
+    "Anduril Detailing Ltd."
+   ],
+   "ueis": [
+    {
+     "uei": "EPJXQLHEJ4Q7",
+     "name": "ANDURIL INDUSTRIES INC. (parent of Costa Mesa entity; no address)",
+     "level": "P"
+    },
+    {
+     "uei": "KC3CH2MSK7Q3",
+     "name": "ANDURIL INDUSTRIES, INC. (1400 Anduril, Costa Mesa CA)",
+     "level": "C"
+    },
+    {
+     "uei": "JA9NV8H3L2T9",
+     "name": "ANDURIL INDUSTRIES, INC. (909 E St NW, Washington DC)",
+     "level": "P"
+    },
+    {
+     "uei": "MKV8NLBR4191",
+     "name": "ANDURIL INDUSTRIES, INC (P record, no address; its awards resolve to Costa Mesa KC3CH2MSK7Q3)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Costa Mesa CA defense tech company. The Seattle engineering roles fit Anduril. Acquired subsidiaries now operate under the Anduril brand."
+  },
+  {
+   "id": "empower-ai-inc",
+   "names": [
+    "Empower AI Inc."
+   ],
+   "kind": "private company",
+   "legal": [
+    "Empower AI, Inc.",
+    "NCI Information Systems, Inc."
+   ],
+   "avoid": [
+    "Empower Annuity Insurance Company of America (Empower Retirement)",
+    "Empower Federal Credit Union",
+    "Empower Pharmacy",
+    "NCI, Inc. (North Central Instruments, Brooklyn Park MN)",
+    "NCI Building Systems / Cornerstone Building Brands",
+    "National Cancer Institute (NCI)"
+   ],
+   "ueis": [
+    {
+     "uei": "HC6QJAM2F4E3",
+     "name": "EMPOWER AI, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Reston VA federal IT contractor, formerly NCI Information Systems, Inc. and renamed Empower AI in 2021. It bought Highlight Technologies (Fairfax VA) in 2025. The Radford VA remote listing fits its DoD work."
+  },
+  {
+   "id": "zaden-technologies",
+   "names": [
+    "Zaden Technologies"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Zaden Technologies, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "NZURD3WJR541",
+     "name": "ZADEN TECHNOLOGIES, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Defense and space software firm, registered in Huntsville AL and largely remote. The posting's Chantilly VA location (NRO/IC corridor) is not in any company source and may be a customer site. No other company with this name was found."
+  },
+  {
+   "id": "virtual-service-operations",
+   "names": [
+    "Virtual Service Operations"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Virtual Service Operations, LLC",
+    "Virtual Service Operations Federal, LLC"
+   ],
+   "avoid": [
+    "Veterans Service Organizations (VSOs, generic)"
+   ],
+   "ueis": [
+    {
+     "uei": "GLY6K1JCYDF4",
+     "name": "VIRTUAL SERVICE OPERATIONS LLC",
+     "level": "P"
+    },
+    {
+     "uei": "RC7RDRW5F2X8",
+     "name": "VIRTUAL SERVICE OPERATIONS FEDERAL, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "VSO (vso-inc.com) is a Northern Virginia IT and managed-services firm founded 2017 that runs a SkillBridge veteran program. Sources give its HQ as Warrenton, Sterling or Manassas. It is not certain which of the two LLCs is the employer of record, so both are listed."
+  },
+  {
+   "id": "databricks",
+   "names": [
+    "Databricks"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Databricks, Inc.",
+    "Databricks Federal LLC"
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "LMMPVG29C9F4",
+     "name": "DATABRICKS FEDERAL LLC",
+     "level": "P"
+    },
+    {
+     "uei": "HKJ3X29D3L59",
+     "name": "DATABRICKS FEDERAL LLC",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Data and AI platform company headquartered in San Francisco. Databricks Federal LLC is its US public-sector subsidiary."
+  },
+  {
+   "id": "xcelerate-solutions",
+   "names": [
+    "Xcelerate Solutions"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Celerity Government Solutions, LLC",
+    "VMD Systems Integrators, LLC",
+    "clearAvenue, LLC"
+   ],
+   "avoid": [
+    "Excelerate Energy / Excelerate Gas Marketing, LP",
+    "Excelerate Solutions Inc",
+    "Celerity IT, LLC (commercial Celerity)",
+    "Doxcelerate Corporation",
+    "Xcelerate LLC",
+    "Echelon Xcelerate JV, LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "K4V5LZ9H16G5",
+     "name": "CELERITY GOVERNMENT SOLUTIONS LLC",
+     "level": "P"
+    },
+    {
+     "uei": "ULHMANN9V8A5",
+     "name": "VMD SYSTEMS INTEGRATORS, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "Z4GXWDMQR879",
+     "name": "VMD SYSTEMS INTEGRATORS INC",
+     "level": "P"
+    },
+    {
+     "uei": "TZJXKXNHDLX1",
+     "name": "CLEARAVENUE LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "McLean VA federal IT and national-security contractor, owned by McNally Capital. It was spun out of Celerity's government arm. After the VMD and clearAvenue deals, the combined company operates as Xcelerate Solutions. It also bought GDIT's background-investigation assets."
+  },
+  {
+   "id": "unisys",
+   "names": [
+    "Unisys"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Unisys Corporation"
+   ],
+   "avoid": [
+    "Unisys Electric Inc",
+    "Unisys Technical Solutions LLC (Tempe AZ)",
+    "Munisys, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "LVM1BDGL5BN3",
+     "name": "UNISYS CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "JPJ6R3Q6M613",
+     "name": "UNISYS CORPORATION",
+     "level": "C"
+    },
+    {
+     "uei": "Q4DXVNNTA789",
+     "name": "UNISYS CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "ECG9NQ1817J6",
+     "name": "UNISYS CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "N2UXMMFAK5P6",
+     "name": "UNISYS CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "HUHGJLDBB4N5",
+     "name": "UNISYS GOVERNMENT SYSTEMS INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "NYSE: UIS, headquartered in Blue Bell PA. Its US federal business was sold to SAIC in 2020, so older federal awards under these UEIs include work that is now SAIC's."
+  },
+  {
+   "id": "guidepoint-security-llc",
+   "names": [
+    "GuidePoint Security LLC"
+   ],
+   "kind": "private company",
+   "legal": [
+    "GuidePoint Security, LLC",
+    "GuidePoint Security Government Solutions, LLC"
+   ],
+   "avoid": [
+    "Guidepoint Global, LLC (expert-network firm)"
+   ],
+   "ueis": [
+    {
+     "uei": "JDLCCA1DSVX3",
+     "name": "GUIDEPOINT SECURITY LLC",
+     "level": "P"
+    },
+    {
+     "uei": "D5TJTZWJ8L95",
+     "name": "GUIDEPOINT SECURITY GOVERNMENT SOLUTIONS LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Cybersecurity solutions provider and reseller headquartered in Herndon/Reston VA."
+  },
+  {
+   "id": "github",
+   "names": [
+    "GitHub"
+   ],
+   "kind": "public company",
+   "legal": [
+    "GitHub, Inc."
+   ],
+   "avoid": [
+    "GitLab Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "WR2ZN519GFX4",
+     "name": "GITHUB INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Wholly owned subsidiary of Microsoft Corporation (NASDAQ: MSFT). GitHub itself is not separately traded."
+  },
+  {
+   "id": "aalyria",
+   "names": [
+    "Aalyria"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Aalyria Technologies, Inc."
+   ],
+   "avoid": [
+    "Aalyria Beale (individual recipient)"
+   ],
+   "ueis": [
+    {
+     "uei": "NQGKLXMVNR65",
+     "name": "AALYRIA TECHNOLOGIES, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Google spinout (Spacetime and Tightbeam network orchestration and laser comms) headquartered in Livermore CA."
+  },
+  {
+   "id": "vultr",
+   "names": [
+    "Vultr"
+   ],
+   "kind": "private company",
+   "legal": [
+    "The Constant Company, LLC",
+    "Choopa, LLC"
+   ],
+   "avoid": [
+    "The Constant Company, LLC of Lawrenceville GA (unrelated small business with the identical name)",
+    "Constant Contact, Inc.",
+    "Vultron LLC"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "The Vultr brand is owned and operated by The Constant Company, LLC, formerly Choopa, LLC, with its principal office at 319 Clematis St, West Palm Beach FL. Because an unrelated Georgia company has the identical name, any name match needs the West Palm Beach / Choopa / Vultr context. The entity name "
+  },
+  {
+   "id": "gitlab",
+   "names": [
+    "GitLab"
+   ],
+   "kind": "public company",
+   "legal": [
+    "GitLab Inc."
+   ],
+   "avoid": [
+    "GitHub, Inc.",
+    "DigitLabs.io Inc"
+   ],
+   "ueis": [
+    {
+     "uei": "DAMDA7UKMRJ8",
+     "name": "GITLAB INC.",
+     "level": "P"
+    },
+    {
+     "uei": "CEFQXWF7A9Z4",
+     "name": "GITLAB B.V.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "NASDAQ: GTLB. Delaware company, all-remote, with a nominal San Francisco HQ."
+  },
+  {
+   "id": "situsamc",
+   "names": [
+    "SitusAMC"
+   ],
+   "kind": "private company",
+   "legal": [
+    "SitusAMC Holdings Corporation"
+   ],
+   "avoid": [
+    "Situs, Inc. (Covington KY)",
+    "Situs Fox, LLC",
+    "Situs Valuation Group",
+    "Situs Outsourcing Solutions LLC",
+    "AMC Entertainment Holdings, Inc.",
+    "AMC Holdings, Inc.",
+    "AMC Networks Inc."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Real-estate finance and mortgage services firm headquartered in New York. It faces consolidated 2025 data-breach class actions in SDNY. Its operating-subsidiary entity names were not verified, so only the holding company is listed."
+  },
+  {
+   "id": "healthequity",
+   "names": [
+    "HealthEquity"
+   ],
+   "kind": "public company",
+   "legal": [
+    "HealthEquity, Inc.",
+    "WageWorks, Inc."
+   ],
+   "avoid": [
+    "InsuranceMarketsForHealthEquity",
+    "Health equity nonprofits or programs (generic phrase)"
+   ],
+   "ueis": [
+    {
+     "uei": "JHYDEGZ72RH3",
+     "name": "HEALTHEQUITY, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "H6LMDQMVBJ57",
+     "name": "WAGEWORKS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "NASDAQ: HQY, an HSA custodian based in Draper UT. It acquired WageWorks in 2019."
+  },
+  {
+   "id": "meta",
+   "names": [
+    "Meta"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Meta Platforms, Inc.",
+    "Facebook, Inc.",
+    "Meta Platforms Technologies, LLC",
+    "Facebook Technologies, LLC"
+   ],
+   "avoid": [
+    "Meta Materials Inc.",
+    "Meta Financial Group / MetaBank (now Pathward)"
+   ],
+   "ueis": [
+    {
+     "uei": "QQESPKRHTCJ7",
+     "name": "FACEBOOK, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "NHMHVDSDG719",
+     "name": "META PLATFORMS, INC",
+     "level": "R"
+    },
+    {
+     "uei": "KY1AMFLK4UE5",
+     "name": "FACEBOOK GLOBAL HOLDINGS I, LLC",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "NASDAQ: META. Facebook, Inc. renamed itself Meta Platforms, Inc. in 2021, and Facebook Technologies, LLC became Meta Platforms Technologies, LLC."
+  },
+  {
+   "id": "acronis",
+   "names": [
+    "Acronis"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Acronis, Inc.",
+    "Acronis International GmbH"
+   ],
+   "avoid": [
+    "Acronis SCS, Inc. (independent US public-sector company, Scottsdale AZ)"
+   ],
+   "ueis": [
+    {
+     "uei": "WKBLAKTSRQH6",
+     "name": "ACRONIS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "GBLCDCHCBPN1",
+     "name": "ACRONIS INTERNATIONAL GMBH",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Swiss-headquartered cyber-protection and backup vendor. Acronis, Inc. is its US operating company."
+  },
+  {
+   "id": "starbucks",
+   "names": [
+    "Starbucks"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Starbucks Corporation"
+   ],
+   "avoid": [
+    "Starbucks Landscaping LLC",
+    "Licensed-store operators trading as Starbucks (e.g., Ren Cen Starbucks LLC)",
+    "Zachary Starbucks (individual)"
+   ],
+   "ueis": [
+    {
+     "uei": "LKN7SNYDQEZ3",
+     "name": "STARBUCKS CORP",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "NASDAQ: SBUX. The postings are corporate tech roles at the Seattle Support Center."
+  },
+  {
+   "id": "shield-ai",
+   "names": [
+    "Shield AI"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Shield AI, Inc.",
+    "Heron Systems, Inc."
+   ],
+   "avoid": [
+    "Shield Air Solutions, Inc.",
+    "Weathershield Air Conditioning, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "DVEJNK717BB6",
+     "name": "SHIELD AI INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Defense autonomy and drone company (Hivemind, V-BAT), headquartered in San Diego with offices in Dallas, DC and Seattle."
+  },
+  {
+   "id": "vetsez",
+   "names": [
+    "VetsEZ"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Veterans EZ Info, Inc."
+   ],
+   "avoid": [
+    "VETS, LLC",
+    "22VETS LLC",
+    "Atlanta Consulting Group LLC",
+    "Veteran Enhanced, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "HH52KZGMV2Y6",
+     "name": "VETERANS EZ INFO INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "VetsEZ is the brand of Veterans EZ Info, Inc., a California SDVOSB and VA health-IT contractor. The posting's Atlanta and Austin locations are remote listing cities."
+  },
+  {
+   "id": "sherwin-williams",
+   "names": [
+    "Sherwin-Williams"
+   ],
+   "kind": "public company",
+   "legal": [
+    "The Sherwin-Williams Company",
+    "The Valspar Corporation"
+   ],
+   "avoid": [
+    "Sherwin Alumina Company, LLC",
+    "The Williams Companies, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "GAJ1F3WQCWY5",
+     "name": "THE SHERWIN-WILLIAMS COMPANY",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The sample titles are HQ cybersecurity roles in Cleveland, which is The Sherwin-Williams Company. Valspar has been a wholly owned subsidiary since the 2017 acquisition."
+  },
+  {
+   "id": "general-motors",
+   "names": [
+    "General Motors"
+   ],
+   "kind": "public company",
+   "legal": [
+    "General Motors Company",
+    "General Motors LLC",
+    "GM Global Technology Operations LLC",
+    "GM Defense LLC",
+    "GM Cruise Holdings LLC",
+    "Cruise LLC",
+    "General Motors Financial Company, Inc.",
+    "AmeriCredit Financial Services, Inc."
+   ],
+   "avoid": [
+    "Motors Liquidation Company",
+    "Ally Financial Inc.",
+    "Allison Transmission Holdings, Inc.",
+    "Southwest General Motors LLC",
+    "General Motors Minority Dealers Association"
+   ],
+   "ueis": [
+    {
+     "uei": "CM1LMUBUQN68",
+     "name": "GENERAL MOTORS COMPANY",
+     "level": "P"
+    },
+    {
+     "uei": "D6Y7J4H9JEB8",
+     "name": "GENERAL MOTORS LLC",
+     "level": "P"
+    },
+    {
+     "uei": "U7TPTYVLNWK8",
+     "name": "GM DEFENSE LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "The postings are GM software and security roles (Seattle Innovation Center, remote). Independent dealerships that carry GM brand names are separate employers and must not be matched. Old GM (General Motors Corporation, before 2009) is a legally distinct predecessor."
+  },
+  {
+   "id": "bugcrowd",
+   "names": [
+    "Bugcrowd"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Bugcrowd Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "DRCHBQ1G4D38",
+     "name": "BUGCROWD INC.",
+     "level": "P"
+    },
+    {
+     "uei": "HH6QGNKLHR41",
+     "name": "BUGCROWD INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Crowdsourced security and bug-bounty company based in San Francisco."
+  },
+  {
+   "id": "beyondtrust",
+   "names": [
+    "BeyondTrust"
+   ],
+   "kind": "private company",
+   "legal": [
+    "BeyondTrust Corporation",
+    "BeyondTrust Software, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "M7U8NDFYRPJ9",
+     "name": "BEYONDTRUST CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "ZAGJKJ6GT7L6",
+     "name": "BEYONDTRUST SOFTWARE, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "GRL4XFETQNF3",
+     "name": "BEYONDTRUST CORPORATION",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Owned by Francisco Partners. BeyondTrust Corporation is the renamed Bomgar Corporation (merged in 2018). Bomgar is a former name of the same company, not a different one."
+  },
+  {
+   "id": "logistics-management-institute",
+   "names": [
+    "Logistics Management Institute"
+   ],
+   "kind": "private company",
+   "legal": [
+    "LMI Consulting, LLC",
+    "Logistics Management Institute",
+    "LMI Consulting, Inc."
+   ],
+   "avoid": [
+    "LMI Aerospace, Inc.",
+    "LMI Consulting Solutions Inc.",
+    "Leadership Management International, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "QVEKLLJUGHJ7",
+     "name": "LMI CONSULTING, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "XV6BLPWT44H7",
+     "name": "LOGISTICS MANAGEMENT INSTITUTE",
+     "level": "P"
+    },
+    {
+     "uei": "F4RZLRHJTFQ2",
+     "name": "LMI CONSULTING, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "LMI moved from the nonprofit Logistics Management Institute to the for-profit LMI Consulting, LLC. Current hiring is most likely through LMI Consulting, LLC. The roles are federal cleared IT and cyber work."
+  },
+  {
+   "id": "tessera-labs",
+   "names": [
+    "Tessera Labs"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Tessera Labs, Inc."
+   ],
+   "avoid": [
+    "Tessera Technologies, Inc.",
+    "Tessera Therapeutics, Inc.",
+    "Tesseract Ventures LLC",
+    "Tessera Group"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "San Jose AI startup founded in 2024 that builds a multi-agent platform for ERP modernization (Series A led by a16z in 2026). The employer is clear, but the 'Inc.' suffix is unverified. Do not confuse it with Tessera Technologies (semiconductor packaging, now Xperi/Adeia) or Tessera Therapeutics (bio"
+  },
+  {
+   "id": "pure-storage",
+   "names": [
+    "Pure Storage"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Everpure, Inc.",
+    "Pure Storage, Inc.",
+    "Portworx, Inc."
+   ],
+   "avoid": [
+    "ForeverPure Corporation",
+    "Sportworx Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "DFJJN9A164P5",
+     "name": "EVERPURE, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Pure Storage, Inc. changed its corporate name to Everpure, Inc. in March 2026 (still NYSE: PSTG). Portworx was acquired in 2020. Court and agency records may use either name."
+  },
+  {
+   "id": "city-of-portland",
+   "names": [
+    "City of Portland"
+   ],
+   "kind": "government",
+   "legal": [
+    "City of Portland (Oregon)"
+   ],
+   "avoid": [
+    "City of Portland, Maine",
+    "City of South Portland, Maine",
+    "City of Portland, Texas",
+    "City of Portland, Indiana",
+    "City of Portland, North Dakota",
+    "Port of Portland",
+    "Portland Public Schools",
+    "Multnomah County"
+   ],
+   "ueis": [
+    {
+     "uei": "N5NMTXG2UE65",
+     "name": "CITY OF PORTLAND",
+     "level": "R"
+    },
+    {
+     "uei": "TLSBKZ89KYK8",
+     "name": "CITY OF PORTLAND",
+     "level": "R"
+    },
+    {
+     "uei": "CKESW99VJ5X7",
+     "name": "CITY OF PORTLAND",
+     "level": "R"
+    },
+    {
+     "uei": "LKKZKMH6FYN7",
+     "name": "CITY OF PORTLAND COMMUNICATION SERVICES",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Oregon municipal corporation; the postings are city IT roles at the Portland Building. Many other US cities named Portland must not be matched."
+  },
+  {
+   "id": "rackner",
+   "names": [
+    "Rackner"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Rackner, Inc."
+   ],
+   "avoid": [
+    "Rackner Vision, LLC",
+    "RacknerWolf, LLC",
+    "Rackner Solutions",
+    "Gearing, Rackner & McGrath, LLP",
+    "McDowell Rackner & Gibson PC"
+   ],
+   "ueis": [
+    {
+     "uei": "MCLCAYU7FB38",
+     "name": "RACKNER INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Federal health IT and DevSecOps contractor (Military Health System work)."
+  },
+  {
+   "id": "lucayan-technology-solutions-llc",
+   "names": [
+    "Lucayan Technology Solutions LLC"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Lucayan Technology Solutions, LLC"
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "N8BZNAQJAP43",
+     "name": "LUCAYAN TECHNOLOGY SOLUTIONS LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Tampa-based federal cybersecurity and information assurance contractor."
+  },
+  {
+   "id": "docker",
+   "names": [
+    "Docker"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Docker, Inc."
+   ],
+   "avoid": [
+    "Dry Docker Inc",
+    "Boondocker Equipment Inc",
+    "Rodocker Construction Company",
+    "Mirantis, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "EBLJWG51VJ19",
+     "name": "DOCKER, INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Container software company, formerly dotCloud, Inc. Docker Enterprise was sold to Mirantis in 2019, and Mirantis is a separate employer."
+  },
+  {
+   "id": "wrike",
+   "names": [
+    "Wrike"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Wrike, Inc."
+   ],
+   "avoid": [
+    "DA&C Restaurants LLC (dba Sutton's at the Wrike)"
+   ],
+   "ueis": [
+    {
+     "uei": "WZMAGCCUSSS3",
+     "name": "WRIKE  INC.",
+     "level": "P"
+    },
+    {
+     "uei": "WZK9DCF2FJV8",
+     "name": "WRIKE, INC.",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Work-management SaaS. It was owned by Citrix and later Cloud Software Group, and is now owned by Symphony Technology Group. Some postings list a Cyprus office, but the US hiring entity is Wrike, Inc."
+  },
+  {
+   "id": "world-wide-technology",
+   "names": [
+    "World Wide Technology"
+   ],
+   "kind": "private company",
+   "legal": [
+    "World Wide Technology, LLC",
+    "World Wide Technology Holding Co., LLC",
+    "World Wide Technology Holding Co., Inc.",
+    "World Wide Technology, Inc."
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "XLLLFFAR2YT7",
+     "name": "WORLD WIDE TECHNOLOGY HOLDING CO., INC.",
+     "level": "P"
+    },
+    {
+     "uei": "C1X5PJL441B8",
+     "name": "WORLD WIDE TECHNOLOGY HOLDING CO LLC",
+     "level": "P"
+    },
+    {
+     "uei": "C8VFSNKTMQB6",
+     "name": "WORLD WIDE TECHNOLOGY LLC",
+     "level": "C"
+    },
+    {
+     "uei": "ZERWYFJ9WFH6",
+     "name": "WORLD WIDE TECHNOLOGY, INC.",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "St. Louis IT solutions provider and systems integrator. Watch for unrelated small firms with plural or one-word names (e.g. 'Worldwide Technologies'); match only the exact 'World Wide Technology' forms."
+  },
+  {
+   "id": "group-1001",
+   "names": [
+    "Group 1001"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Group 1001 Resources, LLC",
+    "Group 1001 Insurance Holdings, LLC",
+    "Delaware Life Insurance Company",
+    "Gainbridge Life Insurance Company",
+    "Clear Spring Life and Annuity Company"
+   ],
+   "avoid": [
+    "Delaware Life Insurance Company of New York"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Insurance and annuity holding group, formerly Delaware Life Holdings. Group 1001 Resources, LLC is the shared-services entity that most likely employs staff. Delaware Life Insurance Company of New York was sold to Nassau Financial Group in 2023, so it is now outside the group."
+  },
+  {
+   "id": "wellbe-senior-medical",
+   "names": [
+    "Wellbe Senior Medical"
+   ],
+   "kind": "private company",
+   "legal": [
+    "WellBe Senior Medical"
+   ],
+   "avoid": [
+    "Wellbeats Inc",
+    "C3 Wellbeing",
+    "Wellbeing Initiative Inc"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Chicago-based home-based primary care provider for complex Medicare Advantage seniors (225 W Washington St; backed by CVS Health Ventures and Chicago Pacific Founders). The entity suffix (e.g. LLC) was not confirmed, so only the brand-level name is given."
+  },
+  {
+   "id": "keeper-security",
+   "names": [
+    "Keeper Security"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Keeper Security, Inc."
+   ],
+   "avoid": [
+    "Gatekeeper Security, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "GBDZQW5JFM52",
+     "name": "KEEPER SECURITY, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Password and privileged-access management vendor. Keeper Security Government Cloud is a product line, not a separate entity."
+  },
+  {
+   "id": "newgen-technologies-inc",
+   "names": [
+    "NewGen Technologies Inc."
+   ],
+   "kind": "private company",
+   "legal": [
+    "NewGen Technologies, Inc."
+   ],
+   "avoid": [
+    "Newgen Software Technologies Limited",
+    "Newgen Software Inc.",
+    "New Gen Technologies & Management Inc",
+    "NewGen Surgical, Inc."
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Maryland-incorporated, minority woman-owned government IT contractor that hires cleared network engineers (DHS, Ft. Meade, Chantilly VA). Do not confuse it with Newgen Software, the Indian BPM vendor whose US subsidiary is in McLean VA. Note on scope: the relayed user request (about political donati"
+  },
+  {
+   "id": "amazon",
+   "names": [
+    "Amazon",
+    "Amazon.com"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Amazon.com, Inc.",
+    "Amazon.com Services LLC",
+    "Amazon Web Services, Inc.",
+    "Amazon Logistics, Inc.",
+    "Amazon Data Services, Inc.",
+    "Kuiper Systems LLC",
+    "Amazon.com Services, Inc."
+   ],
+   "avoid": [
+    "SAFEATOU DIALLO DBA AMAZON.COM, INC (individual DBA)",
+    "PACKAGE DELIVERY SERVICES FOR ONLINE RETAIL ORDERS DBA AMAZON.COM PACKAGE DELIVERY",
+    "SRS PLATINUM INCORPORATED, 3HPRODUCTS (AMAZON.COM)",
+    "AMAZON.COM (UEI ERY2DHJ83US5, small-business registrant at 1260 Mercer St Seattle)",
+    "Independent Amazon Delivery Service Partner companies"
+   ],
+   "ueis": [
+    {
+     "uei": "G5F2C46HBCM3",
+     "name": "AMAZON.COM, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "Q8G2AUUQQNM4",
+     "name": "AMAZON.COM INC.",
+     "level": "P"
+    },
+    {
+     "uei": "TMKBFBRHFKH3",
+     "name": "AMAZON.COM SERVICES LLC",
+     "level": "P"
+    },
+    {
+     "uei": "NQEWN6C1LSU5",
+     "name": "AMAZON WEB SERVICES, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "H6S2VKM5U6C5",
+     "name": "AMAZON WEB SERVICES, INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Same employer as the 'Amazon.com' entry. Sample titles (OISL, Payload SW) are Project Kuiper, now Amazon Leo (Kuiper Systems LLC). Boardman OR is an AWS data-center site (Amazon Data Services, Inc.). Amazon.com Services LLC is the main US employing entity for corporate and warehouse staff; it was Am"
+  },
+  {
+   "id": "microsoft",
+   "names": [
+    "Microsoft"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Microsoft Corporation"
+   ],
+   "avoid": [
+    "MicroStrategy Incorporated",
+    "Microsemi Corporation",
+    "Microsoft Innovation Center Armenia (foreign, not Microsoft Corp)",
+    "Computer Cloud Migration Consultants and Specialists (Microsoft Partner Program)"
+   ],
+   "ueis": [
+    {
+     "uei": "FMVPEWNJGLM1",
+     "name": "MICROSOFT CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "NX52EXRHRDK7",
+     "name": "MICROSOFT CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "LVHRB75CBL94",
+     "name": "MICROSOFT CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "XHB1K9HA7VQ1",
+     "name": "MICROSOFT CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "XKUCKD228XT8",
+     "name": "MICROSOFT CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "VMJMZDUJGCV5",
+     "name": "MICROSOFT CORPORATION",
+     "level": "C"
+    },
+    {
+     "uei": "DEKPQK6ACFM5",
+     "name": "MICROSOFT ONLINE, INC.",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "LinkedIn, GitHub, Activision Blizzard and Nuance are Microsoft subsidiaries that hire under their own brands, so they are not listed. GitHub is a separate entry in the input."
+  },
+  {
+   "id": "nvidia",
+   "names": [
+    "NVIDIA"
+   ],
+   "kind": "public company",
+   "legal": [
+    "NVIDIA Corporation",
+    "NVIDIA Public Sector Corporation"
+   ],
+   "avoid": [
+    "InvidiaTech Media LLC",
+    "Envidia Floors L.L.C.",
+    "Invidia Salon Inc",
+    "Invidia Hair Design LLC",
+    "Skin Invidia LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "ESRLMLGWDNM3",
+     "name": "NVIDIA CORP",
+     "level": "P"
+    },
+    {
+     "uei": "DGCXHYTC7AD5",
+     "name": "NVIDIA PUBLIC SECTOR CORPORATION",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Santa Clara HQ; Hillsboro OR engineering site."
+  },
+  {
+   "id": "crowdstrike",
+   "names": [
+    "CrowdStrike"
+   ],
+   "kind": "public company",
+   "legal": [
+    "CrowdStrike Holdings, Inc.",
+    "CrowdStrike, Inc."
+   ],
+   "avoid": [
+    "CrowdStreet, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "JXV5KPM56S34",
+     "name": "CROWDSTRIKE INC",
+     "level": "P"
+    },
+    {
+     "uei": "N6JPF7M6HJR3",
+     "name": "CROWDSTRIKE INC.",
+     "level": "P"
+    },
+    {
+     "uei": "XYNNR46URJR8",
+     "name": "CROWDSTRIKE HOLDINGS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "HQ moved to Austin TX in 2021. The public parent is CrowdStrike Holdings, Inc. and the operating company is CrowdStrike, Inc."
+  },
+  {
+   "id": "salesforce",
+   "names": [
+    "Salesforce"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Salesforce, Inc.",
+    "salesforce.com, inc."
+   ],
+   "avoid": [
+    "Salesforce4Hire LLC",
+    "Williams Elite Salesforce LLC",
+    "Lift Salesforce Consulting Corporation",
+    "RobotSalesforce",
+    "SalesforceNextGen LLC",
+    "TGA Salesforce",
+    "Small Business Salesforce"
+   ],
+   "ueis": [
+    {
+     "uei": "LWBQASLBNKN5",
+     "name": "SALESFORCE, INC",
+     "level": "P"
+    },
+    {
+     "uei": "L4KMK8BHCA99",
+     "name": "SALESFORCE COM",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Renamed from salesforce.com, inc. in 2022. Slack Technologies, LLC, Tableau Software, LLC and MuleSoft, LLC are subsidiaries that hire partly under their own brands, so they are not listed."
+  },
+  {
+   "id": "palo-alto-networks",
+   "names": [
+    "Palo Alto Networks"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Palo Alto Networks, Inc.",
+    "Palo Alto Networks Public Sector, LLC"
+   ],
+   "avoid": [
+    "City of Palo Alto",
+    "Palo Alto Medical Foundation",
+    "Palo Alto University",
+    "Palo Alto Research Center (PARC)"
+   ],
+   "ueis": [
+    {
+     "uei": "KXQCTZ1GS851",
+     "name": "PALO ALTO NETWORKS, INC",
+     "level": "P"
+    },
+    {
+     "uei": "DLMDL9F7L456",
+     "name": "PALO ALTO NETWORKS PUBLIC SECTOR, LLC",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Santa Clara CA HQ."
+  },
+  {
+   "id": "spacex",
+   "names": [
+    "SpaceX"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Space Exploration Technologies Corp.",
+    "Starlink Services, LLC"
+   ],
+   "avoid": [
+    "Starlink Technologies LLC (Hazleton PA)",
+    "SpaceX Trucking",
+    "SpaceX Construction Inc.",
+    "SpaceX Fireworks LLC",
+    "SpaceX Enterprises Inc",
+    "Starlink Logistics Inc",
+    "Crawlspacexperts LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "C6M7C2FLKER5",
+     "name": "SPACE EXPLORATION TECHNOLOGIES CORP.",
+     "level": "P"
+    },
+    {
+     "uei": "UWSJVJQGB2X5",
+     "name": "SPACE EXPLORATION TECHNOLOGIES CORP.",
+     "level": "P"
+    },
+    {
+     "uei": "H5JUPMRB3KX6",
+     "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
+     "level": "C"
+    },
+    {
+     "uei": "F7SJGCR9K7M5",
+     "name": "SPACE EXPLORATION TECHNOLOGIES CORP",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Starlink roles are SpaceX jobs. Shown as private as of my knowledge; a 2026 IPO and a combination with xAI were reported, so check whether 'kind' needs updating."
+  },
+  {
+   "id": "t-mobile",
+   "names": [
+    "T-Mobile"
+   ],
+   "kind": "public company",
+   "legal": [
+    "T-Mobile US, Inc.",
+    "T-Mobile USA, Inc.",
+    "T-Mobile Secure Federal Operations LLC"
+   ],
+   "avoid": [
+    "T-Mobile Austria GmbH",
+    "T-Mobile Austria Holding GmbH",
+    "T-Mobile Polska S.A.",
+    "Talk More Wireless d/b/a Metro by T-Mobile (independent dealer)",
+    "E. J. Wireless, Inc. (Metro by T-Mobile dealer)",
+    "A Wireless Importer Inc dba Metro by T-Mobile",
+    "Sterling Wireless One LLC (T-Mobile dealer)",
+    "MyMarketing Designs LLC dba Metro by T-Mobile"
+   ],
+   "ueis": [
+    {
+     "uei": "ZVW2T2CCG7V9",
+     "name": "T-MOBILE USA, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "ZK3UXLGJCQC8",
+     "name": "T-MOBILE SECURE FEDERAL OPERATIONS LLC",
+     "level": "P"
+    },
+    {
+     "uei": "U5KEFDV4N965",
+     "name": "T-MOBILE US, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Sprint (Sprint LLC / Sprint Communications) has been a T-Mobile subsidiary since 2020 but was not added. Pre-2020 Sprint cases are Sprint's, not T-Mobile's."
+  },
+  {
+   "id": "decisionpoint-corporation",
+   "names": [
+    "DecisionPoint Corporation"
+   ],
+   "kind": "private company",
+   "legal": [
+    "DecisionPoint Corporation"
+   ],
+   "avoid": [
+    "DecisionPoint Systems, Inc.",
+    "DecisionPoint Systems CA, Inc.",
+    "DecisionPoint Technologies Inc. (formerly Barcoding, Inc., Baltimore)",
+    "DecisionPoint Advisors, LLC",
+    "DecisionPoint Financial LLC",
+    "DecisionPoint Selling LLC",
+    "DecisionPoint Marketing and Research",
+    "Cortek, Inc. (sold to EM Key Solutions)",
+    "DecisionPoint LLC (Alpharetta GA)",
+    "DecisionPoint (Mesa AZ)"
+   ],
+   "ueis": [
+    {
+     "uei": "GPASKFTTVQL9",
+     "name": "DECISIONPOINT CORPORATION",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "EBCEBS16JHL1"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "An SDVOSB federal IT contractor in Gaithersburg MD, founded 2011 (web-confirmed). It bought Cortek (Fredericksburg VA) in 2018 and later sold it to EM Key Solutions. The sample titles (Windows sysadmin, DevSecOps) fit its federal IT work."
+  },
+  {
+   "id": "hp",
+   "names": [
+    "HP"
+   ],
+   "kind": "public company",
+   "legal": [
+    "HP Inc.",
+    "Hewlett-Packard Company"
+   ],
+   "avoid": [
+    "Hewlett Packard Enterprise Company",
+    "HP Enterprise Services, LLC (now Peraton Enterprise Solutions LLC)",
+    "DXC Technology Company",
+    "Agilent Technologies, Inc.",
+    "H.P. Hood LLC",
+    "RHP Inc.",
+    "JHP, Inc.",
+    "Hewlett-Packard Financial Services Company (HPE's since the 2015 split)"
+   ],
+   "ueis": [
+    {
+     "uei": "SMLNZ8X9SHE7",
+     "name": "HP, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "DJRUN4KK1HK3",
+     "name": "HPI FEDERAL LLC",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Hewlett-Packard Company renamed itself HP Inc. in November 2015 when it split off HPE, so HP Inc. is the same legal entity. Pre-2015 cases may involve staff now at HPE. HPE is a separate entry in the input. Corvallis OR and Vancouver WA are HP Inc. sites."
+  },
+  {
+   "id": "horizon3-ai",
+   "names": [
+    "Horizon3.ai"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Horizon 3 AI, Inc.",
+    "Horizon3 AI, Inc."
+   ],
+   "avoid": [
+    "Horizon327 LLC",
+    "HORIZON31",
+    "Horizon Blue Cross Blue Shield of New Jersey",
+    "Horizon Therapeutics"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Maker of the NodeZero autonomous pentesting product, based in San Francisco. USPTO trademark filings list the owner as 'Horizon 3 AI, Inc.' (683 Spruce St, San Francisco). A state incorporation record was not checked."
+  },
+  {
+   "id": "peraton",
+   "names": [
+    "Peraton"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Peraton Inc.",
+    "Peraton Enterprise Solutions LLC",
+    "Peraton Technology Services Inc.",
+    "Peraton Labs Inc.",
+    "Peraton Risk Decision Inc.",
+    "Peraton Government Communications Inc.",
+    "Peraton Services & Solutions Inc.",
+    "Peraton Aerospace & Defense Inc.",
+    "Perspecta Inc."
+   ],
+   "avoid": [
+    "Northrop Grumman Systems Corporation",
+    "L3Harris Technologies, Inc. (formerly Harris Corporation)",
+    "Hewlett Packard Enterprise Company",
+    "DXC Technology Company",
+    "QinetiQ Inc.",
+    "Kroll LLC"
+   ],
+   "ueis": [
+    {
+     "uei": "ZBPQEJVECCT4",
+     "name": "PERATON INC.",
+     "level": "P"
+    },
+    {
+     "uei": "MBSRAWAQ9559",
+     "name": "PERATON ENTERPRISE SOLUTIONS LLC",
+     "level": "P"
+    },
+    {
+     "uei": "KXRRR28NB974",
+     "name": "PERATON TECHNOLOGY SERVICES INC.",
+     "level": "P"
+    },
+    {
+     "uei": "P78LRLNYPUF4",
+     "name": "PERATON RISK DECISION INC.",
+     "level": "P"
+    },
+    {
+     "uei": "NQKWRHGLTD55",
+     "name": "PERATON LABS INC",
+     "level": "P"
+    },
+    {
+     "uei": "D9B2YFMUZ796",
+     "name": "PERATON AEROSPACE & DEFENSE INC.",
+     "level": "P"
+    },
+    {
+     "uei": "KLQZPHMGKK23",
+     "name": "PERATON GOVERNMENT COMMUNICATIONS INC.",
+     "level": "P"
+    },
+    {
+     "uei": "KJLHKFLNQL59",
+     "name": "PERATON SERVICES & SOLUTIONS INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Owned by Veritas Capital. Absorbed Perspecta in 2021 (Perspecta lineage: Vencore, KeyPoint, Vencore Labs/TT Government Solutions, QinetiQ North America, Westar, Arrowhead) and Northrop Grumman's federal IT business in 2021. Former names like Perspecta Enterprise Solutions LLC belong to these same en"
+  },
+  {
+   "id": "general-dynamics-information-technology",
+   "names": [
+    "General Dynamics Information Technology"
+   ],
+   "kind": "public company",
+   "legal": [
+    "General Dynamics Information Technology, Inc.",
+    "CSRA LLC",
+    "CSRA Inc."
+   ],
+   "avoid": [
+    "General Dynamics Corporation (parent; its family also covers Electric Boat, Bath Iron Works, Gulfstream, GD Land Systems)",
+    "General Dynamics Mission Systems, Inc.",
+    "General Dynamics Land Systems Inc.",
+    "Electric Boat Corporation",
+    "Computer Sciences Corporation / DXC Technology Company",
+    "Sterling Parent Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "SMNWM6HN79X5",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "L2RLDSEQJ5M1",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "Z2L7LVNEAPC3",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY INC.",
+     "level": "C"
+    },
+    {
+     "uei": "K7EJUD3JHKW5",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "K3AHJM8QL164",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "E1Y7PS9K4L85",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "L7BCP6N3NPT6",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "UYDAVC59NVH3",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "V49MAKM4ABZ5",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "QB9ZMXLJ2QC8",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "C"
+    },
+    {
+     "uei": "L9QSJLNJL9Q3",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "DCLWX76AVGZ4",
+     "name": "GENERAL DYNAMICS INFORMATION TECHNOLOGY, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "GCGFC4BXG713",
+     "name": "CSRA LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "C16WE1ZDKT21"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "A General Dynamics subsidiary headquartered in Falls Church VA. It absorbed CSRA (2018), which carried the CSC US public-sector and SRA International history, as well as Anteon and Vangent. Pre-2015 'Computer Sciences Corporation' cases belong to CSC/DXC, not GDIT. General Dynamics Mission Systems i"
+  },
+  {
+   "id": "f5",
+   "names": [
+    "F5"
+   ],
+   "kind": "public company",
+   "legal": [
+    "F5, Inc.",
+    "F5 Networks, Inc."
+   ],
+   "avoid": [
+    "F5, Inc (small business, Galata MT)",
+    "F5 Inc DBA F5 Inc (non-F5 registrant)",
+    "2F5 Inc",
+    "WF5 Inc",
+    "EF5, Inc."
+   ],
+   "ueis": [
+    {
+     "uei": "LPH1U4GHAVY9",
+     "name": "F5 NETWORKS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Renamed from F5 Networks, Inc. to F5, Inc. in 2021. Seattle HQ. NGINX, Shape and Volterra are folded into F5."
+  },
+  {
+   "id": "lam-research",
+   "names": [
+    "Lam Research"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Lam Research Corporation"
+   ],
+   "avoid": [],
+   "ueis": [
+    {
+     "uei": "MK7WB8E5KVM4",
+     "name": "LAM RESEARCH CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "NB5QSAAQ1FM5",
+     "name": "LAM RESEARCH CORPORATION",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Tualatin OR is a major Lam site. No look-alike traps turned up in USAspending."
+  },
+  {
+   "id": "leidos",
+   "names": [
+    "Leidos"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Leidos, Inc.",
+    "Leidos Holdings, Inc.",
+    "Leidos Innovations Corporation",
+    "Leidos Biomedical Research, Inc.",
+    "Leidos Engineering, LLC"
+   ],
+   "avoid": [
+    "Science Applications International Corporation (new SAIC, spun off 2013; pre-Sept-2013 records under this name are Leidos)",
+    "SAIC Motor Corporation",
+    "North Wind-Leidos JV, LLC",
+    "Cardno GS - AECOM Pacific JV",
+    "Stantec GS - WSP JV",
+    "Cardno - AMEC Foster Wheeler Joint Venture"
+   ],
+   "ueis": [
+    {
+     "uei": "ZL41ERXMPAR3",
+     "name": "LEIDOS HOLDINGS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "MDSWM6MB1BH7",
+     "name": "LEIDOS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "JSTDGZNFP4A3",
+     "name": "LEIDOS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "LK5RJU5V68X6",
+     "name": "LEIDOS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "QLNMVC12KWY3",
+     "name": "LEIDOS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "XGNZDXFUESH2",
+     "name": "LEIDOS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "GLMMBP7GKM63",
+    "KK28MBCGKCT6",
+    "L9WNGQLE8339",
+    "M7U8ERAYGD84",
+    "X2KSLTU1CM33"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Leidos, Inc. was Science Applications International Corporation until September 2013, when the new SAIC was spun off. Name-matching 'Science Applications International Corp' needs a date cutoff. Leidos Innovations Corporation is the former Lockheed IS&GS business. Dynetics, Gibbs & Cox and QTC hire "
+  },
+  {
+   "id": "nordstrom",
+   "names": [
+    "Nordstrom"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Nordstrom, Inc."
+   ],
+   "avoid": [
+    "Nordstrom Contracting & Consulting Corp",
+    "Nordstrom Vegetation LLC",
+    "Nordstrom Construction Company, Inc.",
+    "Amana-Nordstrom, Inc.",
+    "The Nordstrom Law Firm (Vincent Nordstrom)",
+    "K and C Nordstrom Inc",
+    "NORDSTROM INC (UEI MEGZYVUL2HR5, Bradenton FL small business, alt name Rolf Erik Nordstrom)"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Seattle-based retailer. It went private in May 2025 (Nordstrom family and El Puerto de Liverpool), so 'kind' is private. Nordstrom Rack is a division of Nordstrom, Inc."
+  }
+ ]
+}

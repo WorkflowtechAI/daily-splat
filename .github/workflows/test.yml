@@ -41,10 +41,14 @@ jobs:
         run: python3 --version
 
       - name: Compile
-        run: python3 -m py_compile splat.py infra/test_splat.py infra/intake.py
+        run: python3 -m py_compile splat.py infra/test_splat.py infra/intake.py company_check.py infra/test_company_check.py
 
       - name: Rules tests
         run: python3 infra/test_splat.py
+
+      # company_check.py and the reviewed name table it reads (company_names.json).
+      - name: Company check tests
+        run: python3 infra/test_company_check.py
 
       # index.html ships as-is next to jobs.json; a syntax error in its one
       # inline script empties the page for everyone. node is on the runner.
