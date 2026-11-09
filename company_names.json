@@ -6761,5 +6761,31 @@
    "confidence": "high",
    "notes": "Checked: the UEI is confirmed live, is not in the existing list, and the capture contains only LinkedIn and Lynda.com. No changes. LinkedIn Corporation is a wholly owned Microsoft subsidiary (Bellevue WA engineering roles); Microsoft is a separate employer in the table."
   }
+ ],
+ "unclear": [
+  {
+   "name": "Trase Systems",
+   "why": "Agentic-AI company incubated by Red Cell Partners (McLean VA), with healthcare and federal/Navy customers. The entity suffix ('Inc.') is unconfirmed; CB Insights lists a Delaware registered address. Its cards duplicate the Red Cell Partners"
+  },
+  {
+   "name": "Raydar",
+   "why": "This is an early-stage San Francisco/Seattle AI startup. Job boards (Workable, Built In) show security and infrastructure roles, but its incorporated legal name could not be confirmed. legal_names is left empty because 'Raydar, Inc.' would "
+  },
+  {
+   "name": "Inviso",
+   "why": "Inviso Corporation is a Bellevue WA IT consulting and staffing firm with a Kuala Lumpur presence, which fits the 'Remote (MY)' location. These postings say Inviso is recruiting for an unnamed client (an enterprise AI platform), so the actua"
+  },
+  {
+   "name": "micro1",
+   "why": "micro1 is an AI recruiting and AI-training talent marketplace (CEO Ali Ansari, Palo Alto/SF). Its postings are often filled for client companies or are contract AI-tutor work, so the real employer behind a card may be a client. The legal na"
+  },
+  {
+   "name": "Patriot Solutions Group, INC.",
+   "why": "Hires on SmartRecruiters as 'Patriot Solutions Group, INC.' It calls itself an agile consulting firm (business operations, financial and acquisition management, data) doing cleared work in the DC/VA/MD area. It is unclear whether it is the "
+  },
+  {
+   "name": "Solace",
+   "why": "Checked: no change. GWLUCDMGJU85 was confirmed as Solace Corporation of Ottawa and is not listed. The employer is still ambiguous: most likely Solace Health (solace.health, a patient-advocacy startup that repeatedly posts remote US Platform"
+  }
  ]
 }

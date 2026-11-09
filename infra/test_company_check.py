@@ -369,6 +369,7 @@ check("violations: otherwise a name search", cc.violations({**E, "names": ["Zed"
 # ── A whole run ──────────────────────────────────────────────────────────────
 
 state = tmp / "state"
+cc.JOBS = tmp / "no-page.json"   # no page: only the table's employers, until the auto-match tests below
 cc.TABLE = tmp / "company_names.json"
 ZED = {"id": "zed", "names": ["Zed & Co"], "legal": ["Zed Holdings, Inc."],
        "ueis": [{"uei": "OOOOOOOOOOOO", "name": "ZED UNIT", "level": "C"}]}
@@ -460,6 +461,61 @@ cl_calls.clear()
 cc.main()
 check("run: a dry run leaves courts alone unless asked", len([u for u in cl_calls if "courtlistener" in u]), 0)
 cc.COURT_BUDGET = 100
+
+# ── Employers the table does not cover: matched automatically ────────────────
+
+check("auto_name drops a note in parentheses", cc.auto_name("Syms Strategic Group, LLC (SSG)"), "Syms Strategic Group, LLC")
+RECIPIENTS = {
+    "AttainX": [{"uei": "ATTAINX00001", "name": "ATTAINX, INC.", "recipient_level": "P", "id": "ax-P"},
+                {"uei": "ATTAINX00001", "name": "ATTAINX, INC.", "recipient_level": "C", "id": "ax-C"},
+                {"uei": "ATTAINXSOL01", "name": "ATTAINX SOLUTIONS LLC", "recipient_level": "R", "id": "axs-R"},
+                {"uei": None, "name": "ATTAINX", "recipient_level": "R", "id": "old-R"}],
+    "Knock": [{"uei": "KNOCKAAAAAA1", "name": "KNOCK, INC.", "recipient_level": "R", "id": "k1-R"},
+              {"uei": "KNOCKBBBBBB2", "name": "KNOCK LLC", "recipient_level": "R", "id": "k2-R"}],
+}
+auto_calls = []
+
+
+def fake_auto(url, data=None, headers=None, timeout=60):
+    auto_calls.append((url, data))
+    if url.endswith("/api/v2/recipient/"):
+        kw = data["keyword"]
+        return {"results": RECIPIENTS.get(kw) or [r for rs in RECIPIENTS.values() for r in rs if r["uei"] == kw]}
+    return fake_usa(url, data, headers, timeout)
+
+
+cc.fetch_json = fake_auto
+found = cc.discover("AttainX")
+check("discover: the one UEI whose name equals the card's, at its parent level",
+      (found["ueis"], found["ambiguous"]), ([{"uei": "ATTAINX00001", "name": "ATTAINX, INC.", "level": "P"}], False))
+check("discover: two registrations under one name are ambiguous", cc.discover("Knock")["ambiguous"], True)
+
+cc.TABLE.write_text(json.dumps({"employers": [E, ZED]}), encoding="utf-8")
+cc.JOBS = tmp / "jobs.json"
+cc.JOBS.write_text(json.dumps({"jobs": [{"company": c} for c in ["Acme", "AttainX", "AttainX", "Knock", "Zed & Co", "ACME"]]}),
+                   encoding="utf-8")
+cc.CACHE.unlink(missing_ok=True)
+cc.pac_index = lambda refresh: {"by_org": {}, "gifts": {}, "cycles": cc.cycles(), "as_of": None}   # FEC up again
+cl_calls.clear()
+sys.argv = ["company_check.py"]
+cc.main()
+out = json.loads(cc.OUT.read_text(encoding="utf-8"))
+ax, kn = out["companies"].get("auto-attainx") or {}, out["companies"].get("auto-knock") or {}
+check("auto: every employer on the page gets a record, the table's names keep theirs",
+      {k: v for k, v in out["aliases"].items()}, {"acme": "acme", "zed and co": "zed", "attainx": "auto-attainx", "knock": "auto-knock"})
+check("auto: says it was matched automatically", (ax.get("auto"), kn.get("auto")),
+      ({"ambiguous": False, "ueis": 1}, {"ambiguous": True, "ueis": 2}))
+check("auto: contracts by the one UEI found", ax.get("contracts", {}).get("ueis"), ["ATTAINX00001"])
+check("auto: a shared name gets no numbers", (kn.get("contracts"), kn.get("labor"), kn.get("pac"), kn["violations"]["kind"]),
+      (None, cc.AMBIGUOUS, cc.AMBIGUOUS, "search"))
+check("auto: matched on the card's name", (ax["matched"], ax["labor"]["charges"]), (["AttainX"], 0))
+check("auto: CourtListener's few searches stay with reviewed employers",
+      ("courts" in ax, "courts" in kn, len([u for u in cl_calls if "AttainX" in u or "Knock" in u])), (False, False, 0))
+auto_calls.clear()
+cc.main()
+check("auto: a name looked up this week is not looked up again",
+      [d["keyword"] for u, d in auto_calls if u.endswith("/api/v2/recipient/") and d["keyword"] in ("AttainX", "Knock")], [])
+cc.JOBS = tmp / "no-page.json"
 
 # ── The reviewed table ───────────────────────────────────────────────────────
 
