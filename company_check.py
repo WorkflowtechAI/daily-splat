@@ -413,7 +413,9 @@ def vt_parents(refresh: bool) -> dict[str, str]:
 def violations(e: dict, parents: dict[str, str]) -> dict:
     slug = e.get("vt")
     if slug is None:
-        for n in [norm_entity(x) for x in (e.get("names") or []) + (e.get("legal") or [])]:
+        # The employer's own names only: a subsidiary's legal name finds the
+        # subsidiary's page (Synopsys's "ANSYS, Inc." found Ansys).
+        for n in [norm_entity(x) for x in (e.get("names") or []) + (e.get("legal") or [])[:1]]:
             if n in parents:
                 slug = parents[n]
                 break

@@ -589,6 +589,13 @@
   const money = (n) => !(n > 0) ? "$0" : n >= 1e9 ? `$${(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M`
     : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : `$${Math.round(n)}`;
   const yr = (d) => (d || "").slice(0, 4);
+  // How an NLRB charge closed, in plain words. "Adjusted" is the Board's word for
+  // closed with a settlement between the parties; anything else shows as filed.
+  const CLOSED = { "Withdrawal Non-adjusted": "withdrawn", "Withdrawal Adjusted": "withdrawn with a settlement",
+    "Dismissal Non-adjusted": "dismissed", "Dismissal Adjusted": "dismissed with a settlement", "Informal Settlement": "settled",
+    "Formal Settlement": "settled", "Compliance w/BO": "closed on compliance with a Board order",
+    "Non-Compliance w/BO": "closed without compliance with a Board order" };
+  const closedAs = (r) => CLOSED[r] || (r || "closed").toLowerCase();
   const out = (href, text) => { const u = safeUrl(href); return u ? el("a", { href: u, target: "_blank", rel: "noopener noreferrer nofollow", text }) : document.createTextNode(text); };
   const para = (cls, ...kids) => el("p", cls ? { class: cls } : {}, ...kids.map((k) => typeof k === "string" ? document.createTextNode(k) : k));
   const bullets = (items) => el("ul", {}, ...items.map((kids) => el("li", {}, ...kids.map((k) => typeof k === "string" ? document.createTextNode(k) : k))));
@@ -653,11 +660,13 @@
     else if (l.ambiguous) ambiguous(`https://www.nlrb.gov/search/case/${encodeURIComponent(n)}`, "Search the NLRB");
     else if (!l.charges) box.push(para("", `No unfair-labor-practice charges against it at the NLRB since ${yr(l.since)}, under the names checked.`));
     else {
-      const closed = Object.entries(l.closed || {}).slice(0, 3).map(([r, n]) => `${n} ${r.toLowerCase()}`).join(", ");
+      const merged = {};
+      for (const [r, k] of Object.entries(l.closed || {})) merged[closedAs(r)] = (merged[closedAs(r)] || 0) + k;
+      const closed = Object.entries(merged).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([r, k]) => `${fmt(k)} ${r}`).join(", ");
       box.push(para("", el("b", { text: `${fmt(l.charges)} unfair-labor-practice charge${l.charges === 1 ? "" : "s"}` }),
         ` filed at the NLRB since ${yr(l.since)}; ${fmt(l.open)} open.` + (closed ? ` Closed: ${closed}.` : "")));
-      box.push(bullets((l.recent || []).slice(0, 3).map((r) => [out(r.link, r.case), ` · filed ${r.filed || "?"} · ${r.status || ""}${r.reason ? ` (${r.reason})` : ""}`])));
-      box.push(para("fine", "A charge is an allegation, not a finding. Case data from the NLRB via the labordata project", asOf.labor ? `, as of ${asOf.labor}.` : "."));
+      box.push(bullets((l.recent || []).slice(0, 3).map((r) => [out(r.link, r.case), ` · filed ${r.filed || "?"} · ${r.reason ? closedAs(r.reason) : (r.status || "").toLowerCase()}`])));
+      box.push(para("fine", "A charge is an allegation, not a finding. Counts charges that name the employer by one of the legal names below; ones filed under another spelling or a joint-employer name are not counted. NLRB case data via the labordata project", asOf.labor ? `, as of ${asOf.labor}.` : "."));
     }
 
     head("Employment discrimination cases");

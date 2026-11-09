@@ -241,6 +241,8 @@ check("violations: the table's slug wins", cc.violations({**E, "vt": "acme-inc"}
       "https://violationtracker.goodjobsfirst.org/parent/acme-inc")
 check("violations: a parent matched on a reviewed name", cc.violations(E, parents),
       {"link": "https://violationtracker.goodjobsfirst.org/parent/acme-corporation", "kind": "parent"})
+check("violations: never through a subsidiary's legal name",
+      cc.violations({**E, "names": ["Synopsys"], "legal": ["Synopsys, Inc.", "ANSYS, Inc."]}, {"ansys": "ansys"})["kind"], "search")
 check("violations: otherwise a name search", cc.violations({**E, "names": ["Zed"], "legal": ["Zed Holdings, Inc."]}, parents),
       {"link": "https://violationtracker.goodjobsfirst.org/?company_op=starts&company=Zed+Holdings+Inc", "kind": "search"})
 
