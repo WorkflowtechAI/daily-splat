@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daily Splat · Cyber, IT &amp; Tech PM Jobs · Portland, PNW &amp; Remote</title>
 <link rel="canonical" href="https://iambraun.com/cv/job-sources/daily-splat/">
-<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them and the project, program and product managers of technology work, entry to senior level, in Portland, Oregon and the rest of the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
+<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them and the project, program and product managers of technology work, entry to principal level, in Portland, Oregon and the rest of the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
 <meta property="og:title" content="Daily Splat: cyber, IT and tech PM jobs in Portland, the PNW and remote">
-<meta property="og:description" content="Entry to senior cybersecurity, infrastructure, IT support and tech PM openings in Oregon, WA, ID or remote-US. Rebuilt daily.">
+<meta property="og:description" content="Entry to principal cybersecurity, infrastructure, IT support and tech PM openings in Oregon, WA, ID or remote-US. Rebuilt daily.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#F4F7F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14100c" media="(prefers-color-scheme: dark)">
@@ -60,6 +60,7 @@
   #q{flex:1 1 240px;min-width:0;font:15px var(--sans);padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);color:var(--ink)}
   #q:focus,button:focus-visible{outline:2px solid var(--copper);outline-offset:1px}
   #shown{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px}
+  #hint{font-size:.86rem;color:var(--ink-soft);margin:0 0 4px;max-width:72ch}
 
   h2{font-family:var(--serif);font-weight:600;font-size:1.4rem;margin:34px 0 10px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
   h2 small{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-faint);letter-spacing:.05em}
@@ -79,7 +80,7 @@
   .tag.eng{background:var(--moss-soft);color:var(--moss);border-color:transparent}
   .tag.pm{background:var(--pm-soft);color:var(--pm);border-color:transparent}
   .tag.new{background:var(--moss);color:var(--paper);border-color:transparent;font-weight:600}
-  .tag.pay{color:var(--ink)}
+  .tag.pay{color:var(--ink);white-space:normal;overflow-wrap:anywhere}  /* a long pay line wraps instead of widening a phone */
   .tag.warn{color:var(--copper-ink);border-color:var(--copper)}
   .more{margin:10px 0 0;font:500 13px var(--sans);padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:3px;cursor:pointer}
   .empty{padding:24px 0;color:var(--ink-faint)}
@@ -157,8 +158,8 @@
     .standfirst{font-size:.95rem}
     /* Phone: the chips name themselves, so the row labels go and each row fits one line. */
     .bar .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-    .bar{gap:6px;margin-bottom:8px}
-    .chip{font-size:12.5px;padding:7px 9px}
+    .bar{gap:6px 5px;margin-bottom:8px}
+    .chip{font-size:12.5px;padding:7px 8px}
     .seg{display:flex;width:100%}
     .seg button{flex:1 1 auto;font-size:12.5px;padding:8px 6px;white-space:nowrap}
   }
@@ -169,7 +170,7 @@
   <header class="mast">
     <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
     <h1>The Daily Splat</h1>
-    <p class="standfirst">Cyber, Infra &amp; IT and tech PM jobs in Portland, Oregon and the rest of the PNW, or remote in the US. Entry to senior, straight from employer job boards, rebuilt every morning.</p>
+    <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud) and tech PM jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
     <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button></p>
   </header>
 
@@ -194,13 +195,15 @@
   </div>
   <div class="bar">
     <span class="lbl">Only</span>
-    <button class="chip" data-flag="new">New today<span class="n"></span></button>
+    <button class="chip" data-flag="new"><span id="new-lbl">New today</span><span class="n"></span></button>
+    <button class="chip" data-flag="week" title="Posted in the last seven days">Last 7 days<span class="n"></span></button>
     <button class="chip" data-flag="pay">Pay listed<span class="n"></span></button>
     <button class="chip" data-flag="noclr" title="Hides roles that ask for a clearance, and federal or defense contractors, whose roles often need one">No clearance<span class="n"></span></button>
   </div>
   <div class="bar">
     <input id="q" type="search" placeholder="Search: soc, help desk, cloud, Hillsboro…" aria-label="Search title, company or city" autocomplete="off">
   </div>
+  <p id="hint" hidden></p>
   <p id="shown" aria-live="polite"><span id="shown-n"></span><button type="button" class="linkbtn" id="reset" hidden>Reset filters</button><button type="button" class="linkbtn" id="copy">Copy link to this view</button></p>
   </section>
 
@@ -319,7 +322,8 @@
   <details>
     <summary>How this works</summary>
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse and Workable.</p>
-    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. Federal and defense contractors get a "Check clearance" tag, since many of their roles need one the title never mentions. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
+    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. Federal and defense contractors get a "Check clearance" tag, since many of their roles need one the title never mentions. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
+    <p>If your last visit on this device was before yesterday, "New" counts from that visit ("New since Thu") instead of from this morning. The visit date is kept only in this browser and never leaves it.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
     <ul class="srcs" id="srcs"></ul>
@@ -340,8 +344,17 @@
   const LEVEL = { entry: "Entry", mid: "Mid", senior: "Senior", staff: "Staff+" };
   const TRACK = { cyber: "Cyber", eng: "Infra & IT", pm: "Tech PM" };
   const ZONE = { oregon: "Portland & OR", waid: "WA / ID", remote: "Remote US" };
-  const FLAGS = ["new", "pay", "noclr"];
-  const SAVED = "splat-view";
+  const FLAGS = ["new", "week", "pay", "noclr"];
+  const SAVED = "splat-view", VISIT = "splat-visit";
+  // What a filter means, in plain words: the button's tooltip, and the line
+  // under the filters while it is on (phones have no tooltips).
+  const HINT = {
+    cyber: "Cyber: SOC, security engineering, AppSec, GRC and other security roles",
+    eng: "Infra & IT: help desk, desktop support, sysadmin, networks, cloud, DevOps and SRE",
+    pm: "Tech PM: project, program and product managers of technology, IT or security work",
+    entry: "Entry: junior, associate, Engineer I / Analyst I, tier 1, new grad and apprentice titles, and roles asking about 0-2 years",
+    staff: "Staff+: titles that say staff, principal, distinguished or fellow; Senior Manager titles are under Senior",
+  };
   // A search word also finds what people mean by it. Matching is from the start
   // of a word, so "soc" finds SOC and not Associate.
   const SYN = {
@@ -391,6 +404,9 @@
     $$("[data-flag]").forEach((b) => b.setAttribute("aria-pressed", String(st.flags.has(b.dataset.flag))));
     if ($("#q").value !== st.q) $("#q").value = st.q;
     $("#reset").hidden = !hashString();
+    const hints = [st.track, ...["entry", "staff"].filter((l) => st.levels.has(l))].map((k) => HINT[k]).filter(Boolean);
+    $("#hint").textContent = hints.join(" · ");
+    $("#hint").hidden = !hints.length;
   }
 
   const el = (tag, props = {}, ...kids) => {
@@ -405,13 +421,35 @@
   // and a link is used only if it is plain http(s).
   const safeUrl = (u) => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : null; } catch { return null; } };
 
-  let DATA = null, today = "";
+  // since: the data date of this device's last visit, kept only when it was
+  // before yesterday; then "New" means new since that visit, not since this morning.
+  let DATA = null, today = "", since = null;
   const daysAgo = (d) => d ? Math.round((Date.parse(today) - Date.parse(d)) / 864e5) : null;
   const ago = (n) => n == null ? "" : n <= 0 ? "today" : n === 1 ? "1 day ago" : `${n} days ago`;
+  const age = (j) => daysAgo(j.posted || j.first_seen) ?? 99;
   const zone = (j) => j.where === "pnw" ? "waid" : j.where;
   const inZone = (j, z) => zone(j) === z || (z === "remote" && j.also_remote);
-  const hasFlag = (j, f) => f === "new" ? j.first_seen === today : f === "pay" ? !!j.salary : !(j.clearance || j.clearance_check);
+  const isNew = (j) => since ? j.first_seen > since : j.first_seen === today;
+  const hasFlag = (j, f) => f === "new" ? isNew(j) : f === "week" ? age(j) <= 7 : f === "pay" ? !!j.salary : !(j.clearance || j.clearance_check);
   const fmt = (n) => n.toLocaleString();
+  // "Thu" within the week, "Oct 29" before that. Built as a local date: "2026-11-05"
+  // alone parses as UTC midnight, which is the evening before in Oregon.
+  function dayName(d) {
+    const [y, m, dd] = d.split("-").map(Number);
+    return new Date(y, m - 1, dd).toLocaleDateString([], daysAgo(d) <= 6 ? { weekday: "short" } : { month: "short", day: "numeric" });
+  }
+  const newLabel = () => since ? `New since ${dayName(since)}` : "New today";
+  function rememberVisit() {
+    try {
+      const v = JSON.parse(localStorage.getItem(VISIT) || "{}");
+      let prev = typeof v.prev === "string" ? v.prev : null;
+      if (v.cur !== today) {
+        prev = typeof v.cur === "string" && v.cur < today ? v.cur : null;
+        localStorage.setItem(VISIT, JSON.stringify({ cur: today, prev }));
+      }
+      since = prev && /^\d{4}-\d{2}-\d{2}$/.test(prev) && daysAgo(prev) > 1 ? prev : null;
+    } catch { since = null; /* private mode, or a mangled value */ }
+  }
 
   // skip: leave one filter out, to count what each of its buttons would show.
   function matches(j, skip) {
@@ -443,11 +481,12 @@
     const url = safeUrl(j.url);
     const title = url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer nofollow", text: j.title }) : document.createTextNode(j.title);
     const tags = el("div", { class: "tags" });
-    if (j.first_seen === today) tags.append(el("span", { class: "tag new", text: "NEW" }));
+    if (isNew(j)) tags.append(el("span", { class: "tag new", text: "NEW" }));
     tags.append(el("span", { class: `tag ${j.track}`, text: TRACK[j.track] || j.track }));
     tags.append(el("span", { class: "tag", text: LEVEL[j.level] || j.level }));
     tags.append(el("span", { class: "tag", text: ZONE[zone(j)] || j.where }));
     if (j.also_remote) tags.append(el("span", { class: "tag", text: "Also listed remote" }));
+    if ((daysAgo(j.posted || j.first_seen) ?? 0) > 21) tags.append(el("span", { class: "tag", text: "Open 3+ weeks", title: "Posted more than three weeks ago" }));
     if (j.salary) tags.append(el("span", { class: "tag pay", text: j.salary }));
     if (j.clearance) tags.append(el("span", { class: "tag warn", text: "Clearance" }));
     else if (j.clearance_check) tags.append(el("span", { class: "tag warn", text: "Check clearance", title: "Federal or defense contractor: many of its roles need a clearance the title does not mention" }));
@@ -481,13 +520,12 @@
 
   function render() {
     const rows = DATA.jobs.filter((j) => matches(j));
-    const age = (j) => daysAgo(j.first_seen === today ? today : (j.posted || j.first_seen)) ?? 99;
     const list = $("#list");
     list.replaceChildren();
     const groups = [
-      ["New today", rows.filter((j) => j.first_seen === today)],
-      ["This week", rows.filter((j) => j.first_seen !== today && age(j) <= 7)],
-      ["Earlier", rows.filter((j) => j.first_seen !== today && age(j) > 7)],
+      [newLabel(), rows.filter(isNew)],
+      ["This week", rows.filter((j) => !isNew(j) && age(j) <= 7)],
+      ["Earlier", rows.filter((j) => !isNew(j) && age(j) > 7)],
     ];
     groups.forEach(([t, r]) => { const g = group(t, r); if (g) list.append(g); });
     if (!rows.length) list.append(el("p", { class: "empty", text: "Nothing matches those filters today." }));
@@ -498,6 +536,7 @@
   function header() {
     const c = DATA.counts;
     const when = new Date(DATA.generated_at);
+    $("#new-lbl").textContent = newLabel();
     $("#today").replaceChildren(el("b", { text: `${fmt(c.new_today)} new today` }),
       document.createTextNode(` · ${fmt(c.total)} open · ${fmt(c.dropped_since_last_run)} gone since yesterday · updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`));
     $("#updated").textContent = `Updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
@@ -511,6 +550,9 @@
 
   function toggle(set, v) { set.has(v) ? set.delete(v) : set.add(v); changed(); }
   function wire() {
+    $$("[data-key=track] button, [data-level]").forEach((b) => {
+      const h = HINT[b.dataset.v || b.dataset.level]; if (h) b.title = h;
+    });
     $("[data-key=track]").addEventListener("click", (e) => {
       const b = e.target.closest("button"); if (!b) return;
       st.track = b.dataset.v; changed();
@@ -544,7 +586,7 @@
   fetch("jobs.json", { cache: "no-cache" })
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then((d) => {
-      DATA = d; today = d.date; header(); render();
+      DATA = d; today = d.date; rememberVisit(); header(); render();
       // Linked only once it exists: the file is written on the box, never shipped.
       $("#raw").append(el("a", { href: "jobs.json", text: "jobs.json" }), document.createTextNode(" · "));
     })
