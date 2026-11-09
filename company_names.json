@@ -5408,6 +5408,1358 @@
    "vt": null,
    "confidence": "medium",
    "notes": "Seattle-based retailer. It went private in May 2025 (Nordstrom family and El Puerto de Liverpool), so 'kind' is private. Nordstrom Rack is a division of Nordstrom, Inc."
+  },
+  {
+   "id": "oddball",
+   "names": [
+    "Oddball"
+   ],
+   "kind": "private company",
+   "legal": [
+    "ODDBALL, INC."
+   ],
+   "avoid": [
+    "ODDBALL",
+    "Oddball Shoe Co LLC",
+    "Oddball Acres, Inc.",
+    "Oddball Fermentables, LLC",
+    "Oddball Industries, Inc"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "MHNFNJ1J5RF5",
+     "name": "ODDBALL, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: the UEI is live, not already in the table, self-parented, and the captured search turns up no JVs or other units. legal_names stays empty on purpose. Once the suffix is dropped, 'Oddball, Inc.' becomes 'oddball', which equals the unrelated business named 'ODDBALL' in Hampton, GA (USAspendin"
+  },
+  {
+   "id": "teksynap",
+   "names": [
+    "TekSynap"
+   ],
+   "kind": "private company",
+   "legal": [
+    "TekSynap Corporation"
+   ],
+   "avoid": [
+    "Synaptek LLC",
+    "Synaptek Corporation"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "C2T2JWN1D2K4",
+     "name": "TEKSYNAP CORPORATION",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: UEI, address, family and captured search all confirmed; nothing to exclude. Its own alternate name 'Synaptek Corporation' is deliberately not in legal_names and is added to avoid. Once the suffix is dropped it becomes 'synaptek', which equals the unrelated Synaptek LLC in Lexington KY. Rest"
+  },
+  {
+   "id": "nationwide-it-services",
+   "names": [
+    "Nationwide IT Services"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Nationwide IT Services, Inc."
+   ],
+   "avoid": [
+    "Nationwide Mutual Insurance Company"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "RR2VC8Y3MK47",
+     "name": "NATIONWIDE IT SERVICES INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: UEI, address, family and captured search all confirmed; nothing to exclude and no changes. Fairfax, VA federal IT services contractor; not connected to Nationwide insurance."
+  },
+  {
+   "id": "lightfeather",
+   "names": [
+    "LightFeather"
+   ],
+   "kind": "private company",
+   "legal": [
+    "LightFeather IO LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "DWHMBJN4VZG8",
+     "name": "LIGHTFEATHER IO LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: UEI, address, family and captured search all confirmed; nothing to exclude and no changes. 'lightfeather io' does not collide with any other company. Arlington, VA federal digital-services firm."
+  },
+  {
+   "id": "palantir-technologies",
+   "names": [
+    "Palantir Technologies"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Palantir Technologies Inc.",
+    "Palantir USG, Inc."
+   ],
+   "avoid": [
+    "Palantir.net, Inc.",
+    "Palantir USA Inc.",
+    "PalantirIII, LLC",
+    "Palantir Associates LLC",
+    "Lonely Mountain Palantir Enterprises"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "FSY4LVSBGWB7",
+     "name": "PALANTIR TECHNOLOGIES INC.",
+     "level": "P"
+    },
+    {
+     "uei": "HNN4F9JZWDY8",
+     "name": "PALANTIR USG INC",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: both UEIs are live, not already in the table, and this employer's; the family and captured search are clean, with nothing to exclude. Noted that HNN4F9JZWDY8 also has a self-parented P record, which its listed UEI already covers. No legal-name collisions: 'palantir technologies' and 'palant"
+  },
+  {
+   "id": "credence-management-solutions-llc",
+   "names": [
+    "Credence Management Solutions, LLC"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Credence Management Solutions, LLC",
+    "Credence Management Solutions Limited Liability Company"
+   ],
+   "avoid": [
+    "Credence Dynamo Solutions LLC",
+    "Credence Dynamo Technologies LLC",
+    "Credence Streamline Solutions, LLC",
+    "Credence Systems Corporation"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "FZNCSKF4X6D9",
+     "name": "CREDENCE MANAGEMENT SOLUTIONS LIMITED LIABILITY COMPANY",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: UEI, address, family and captured search all confirmed; nothing to exclude and no changes. The JVs reduce to 'credence dynamo solutions' and 'credence dynamo technologies', so they do not collide with 'credence management solutions'. McLean, VA defense and federal contractor."
+  },
+  {
+   "id": "initiate-government-solutions-llc",
+   "names": [
+    "Initiate Government Solutions, LLC."
+   ],
+   "kind": "private company",
+   "legal": [
+    "Initiate Government Solutions, LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "P3LMWYENMDY6",
+     "name": "INITIATE GOVERNMENT SOLUTIONS LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: UEI, address, family and captured search all confirmed; nothing to exclude and no changes. WOSB federal IT contractor (VA work)."
+  },
+  {
+   "id": "syms-strategic-group-llc-ssg",
+   "names": [
+    "Syms Strategic Group, LLC (SSG)"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Syms Strategic Group, LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "G2M6HEE75CJ4",
+     "name": "SYMS STRATEGIC GROUP, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: the UEI, address and family are confirmed, and the captured search for FY24-26 is empty, so there is nothing to exclude and no changes. Confidence stays medium only because the link between the job's Virginia Beach (remote) location and the Ashburn/Broadlands firm was not confirmed from the"
+  },
+  {
+   "id": "edgewater-federal-solutions",
+   "names": [
+    "Edgewater Federal Solutions"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Edgewater Federal Solutions, Inc."
+   ],
+   "avoid": [
+    "Edgewater Technology, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "DA71PM1JFL51",
+     "name": "EDGEWATER FEDERAL SOLUTIONS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: the UEI and family are confirmed, and TB1NSLQ77B56 was confirmed redundant. SAM alternate names include 'Edgewater Technology Associates, Inc.'; that name is left out of legal_names as a conservative choice because it is a former name close to the unrelated Edgewater Technology, Inc. No cha"
+  },
+  {
+   "id": "collibra",
+   "names": [
+    "Collibra"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Collibra Inc."
+   ],
+   "avoid": [
+    "CollabraLink Technologies, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: the recipient search for 'Collibra' is empty, so ueis stays empty. Creditsafe lists the US entity 'Collibra Inc', New York, incorporated in 2014; the state of incorporation was not confirmed from a filing, so confidence stays medium. 'collibra' does not collide with any other company; Colla"
+  },
+  {
+   "id": "network-designs-inc",
+   "names": [
+    "Network Designs Inc."
+   ],
+   "kind": "private company",
+   "legal": [
+    "Network Designs, Inc."
+   ],
+   "avoid": [
+    "Network Designs Integration Services, Inc.",
+    "Advanced Network Designs Inc",
+    "Total Network Designs, LLC",
+    "Innovative Network Designs Corporation",
+    "IV Network Designs Inc"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "LCT9TCMAMQ11",
+     "name": "NETWORK DESIGNS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "RCP6RL2U1LB2",
+     "name": "NETWORK DESIGNS INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: both UEIs confirmed live, and neither is in the existing-UEI list. The FY24-26 capture contains only NDi. The BitSec acquisition is confirmed. No changes. The keyword search also turns up an R-level 'NETWORK DESIGNS' sole proprietorship in Boynton Beach FL ($27.6K). It drops to the same mat"
+  },
+  {
+   "id": "motorola-solutions",
+   "names": [
+    "Motorola Solutions"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Motorola Solutions, Inc."
+   ],
+   "avoid": [
+    "Motorola Mobility LLC",
+    "Freescale Semiconductor, Inc.",
+    "Symbol Technologies, Inc.",
+    "Zebra Technologies Corporation"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "G2LUXP8ND8U6",
+     "name": "MOTOROLA SOLUTIONS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "HFK9V1G2B513",
+     "name": "MOTOROLA SOLUTIONS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "KHTDDZHHW8L7",
+     "name": "MOTOROLA SOLUTIONS CONNECTIVITY, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "HLLPW1Z5UBT3",
+     "name": "MOTOROLA SOLUTIONS, INC",
+     "level": "P"
+    },
+    {
+     "uei": "DPLBA7E1GJQ4",
+     "name": "RAVE WIRELESS INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "JHLWQLEVMUG5",
+    "JYMHEJ7DMMG1",
+    "UFCMMVY8T3J6",
+    "X9X2T1Z5QF67"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all 4 original UEIs confirmed live, and none is in the existing-UEI list. Added Rave Wireless DPLBA7E1GJQ4, a self-parented, wholly owned subsidiary since about Dec 2021 with $326K in FY24-26 contracts the parent search missed. Flagged that KHTDDZHHW8L7 carries pre-2018 Airbus-era amounts. "
+  },
+  {
+   "id": "tier-one-technologies",
+   "names": [
+    "Tier One Technologies"
+   ],
+   "kind": "private company",
+   "legal": [
+    "TIER ONE TECHNOLOGIES LLC"
+   ],
+   "avoid": [
+    "Tier One Technologies, Inc.",
+    "Tier One Technologies of Florida",
+    "Tier One Technology Partners",
+    "TierOne Corporation",
+    "TierOne Bank",
+    "Tier Tech International, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "S3RVLM9CNDC6",
+     "name": "TIER ONE TECHNOLOGIES LLC",
+     "level": "P"
+    },
+    {
+     "uei": "W9KVKHTVCMN7",
+     "name": "TIER ONE TECHNOLOGIES LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: both UEIs confirmed live and not in the existing-UEI list. Re-fetched the careers site and confirmed the McMurray PA address matches. Changed kind from 'unclear' to 'private company', since it is a privately held LLC (IT consulting and staffing for federal clients). Raised confidence from l"
+  },
+  {
+   "id": "parsons-corporation",
+   "names": [
+    "Parsons Corporation"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Parsons Corporation",
+    "Parsons Government Services Inc.",
+    "Parsons Transportation Group Inc.",
+    "Parsons Environment & Infrastructure Group Inc."
+   ],
+   "avoid": [
+    "Michael Baker International, Inc.",
+    "Parsons Brinckerhoff, Inc.",
+    "Parsons Electric LLC",
+    "Amentum Parsons Logistics Services LLC",
+    "DZSP 21 LLC",
+    "Parsons-Versar Joint Venture",
+    "Parsons Company, Inc.",
+    "Gnostech, LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "FFCMDLMXRK49",
+     "name": "PARSONS CORPORATION",
+     "level": "P"
+    },
+    {
+     "uei": "NMBCAG1JBKL7",
+     "name": "PARSONS GOVERNMENT SERVICES INC.",
+     "level": "P"
+    },
+    {
+     "uei": "E8E4EKJKKJW7",
+     "name": "PARSONS GOVERNMENT SERVICES INTERNATIONAL INC.",
+     "level": "P"
+    },
+    {
+     "uei": "QJD7W4CUEN63",
+     "name": "PARSONS GOVERNMENT SERVICES INC",
+     "level": "P"
+    },
+    {
+     "uei": "DT2NPK1X9HD5",
+     "name": "PARSONS GOVERNMENT SERVICES INC.",
+     "level": "P"
+    },
+    {
+     "uei": "V6HHNX7LE717",
+     "name": "PTSI MANAGED SERVICES INC",
+     "level": "P"
+    },
+    {
+     "uei": "H3RFVAELHB73",
+     "name": "SPACE GROUND SYSTEM SOLUTIONS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "ZJFDNMA46LT9",
+     "name": "XATOR LLC",
+     "level": "P"
+    },
+    {
+     "uei": "CFKVXZJ329K7",
+     "name": "BLACKHORSE, A PARSONS LLC",
+     "level": "P"
+    },
+    {
+     "uei": "HJ8PBEJHM4P3",
+     "name": "PARSONS TECHNICAL SERVICES INC",
+     "level": "P"
+    },
+    {
+     "uei": "D1JARVWENN16",
+     "name": "INCADENCE STRATEGIC SOLUTIONS LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "NLEPYKK37NF4",
+    "S29VDXQ66187",
+    "W9NNLCGR6F18",
+    "YXLJKN2QF2A5",
+    "ZECEB9SUEDD6"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all original UEIs confirmed live and none is in the existing-UEI list. Removed HV36BGW8JDH5 because it contributes nothing in FY24-26 and mostly pre-acquisition Braxton contracts. Added HJ8PBEJHM4P3 (Parsons Technical Services) and D1JARVWENN16 (InCadence). Both are self-parented, Parsons-o"
+  },
+  {
+   "id": "bellese",
+   "names": [
+    "Bellese"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Bellese Technologies, LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "HXBBEPUC48F5",
+     "name": "BELLESE TECHNOLOGIES, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "XZSMJ5STMDM6",
+     "name": "BELLESE TECHNOLOGIES LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: both UEIs confirmed live and not in the existing-UEI list. The capture contains only Bellese. Found no sign of an acquisition or parent change. No changes. Civic and health tech contractor, mainly for CMS. The name is distinctive, so collision risk is low."
+  },
+  {
+   "id": "amentum",
+   "names": [
+    "Amentum"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Amentum Holdings, Inc.",
+    "Amentum Services, Inc.",
+    "Amentum Technology, Inc.",
+    "Amentum Government Services Holdings LLC",
+    "Amentum Environment & Energy, Inc."
+   ],
+   "avoid": [
+    "Amentum Parsons Logistics Services LLC",
+    "Jacobs Solutions Inc.",
+    "Jacobs Engineering Group Inc.",
+    "Parsons Corporation",
+    "DZSP 21 LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "TU4KCXMM9AP6",
+     "name": "AMENTUM HOLDINGS INC.",
+     "level": "P"
+    },
+    {
+     "uei": "QEMLRQA7PLG4",
+     "name": "AMENTUM SERVICES, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "Q3BYWA4EY5G3",
+     "name": "AMENTUM JOINT VENTURE LP",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "CM39N6XPQF41",
+    "CQE8EF6LB317",
+    "GM2QNEGF7CA3",
+    "H1HWLSEDDKQ8",
+    "HSR1EWL8JSK1",
+    "J4TDNRDMRMZ3",
+    "JA12NCN424K3",
+    "JKCNBX9J66E6",
+    "LQ5ZLNE3EM27",
+    "M6KXM8MLNGD6",
+    "MQVGANNMJDN6",
+    "NYYVB7U3D766",
+    "PW8NMYB8WLP5",
+    "QHN6R6M114L7",
+    "VWDRE72J7AF3",
+    "X4YFE154MMJ8",
+    "X6QUFXZRKZW4"
+   ],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: the 3 UEIs confirmed live (Amentum Holdings, Amentum Services, Amentum Joint Venture LP), and none is in the existing-UEI list. Re-ran the FY24-26 capture: all 16 captured JV/partner entities are in exclude_ueis. CH2M Hill Plateau Remediation (-$6.6M), Jacobs Government Services Company ($4"
+  },
+  {
+   "id": "raventek",
+   "names": [
+    "RavenTek"
+   ],
+   "kind": "private company",
+   "legal": [
+    "RavenTek Solution Partners, LLC"
+   ],
+   "avoid": [
+    "RavenTek, Inc.",
+    "RavenTek Huna JV, LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "RCKJZ5KGE3H6",
+     "name": "RAVENTEK SOLUTION PARTNERS, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "KKWLVLLKM924",
+     "name": "RAVENTEK ALLIANCE, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "LKRBH89MRPT5",
+     "name": "RAVENTEK BUSINESS GROUP, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all 3 UEIs confirmed live at the Ashburn address and not in the existing-UEI list. The FY24-26 capture is only RavenTek Solution Partners and RavenTek Alliance. No changes. Federal IT and cyber contractor in Ashburn/Herndon VA. RavenTek, Inc./RavenTek, LLC of Moreno Valley CA (CS6JBZPL9T27)"
+  },
+  {
+   "id": "rand-corporation",
+   "names": [
+    "RAND Corporation"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "The RAND Corporation",
+    "RAND Corporation"
+   ],
+   "avoid": [
+    "Ingersoll Rand Inc.",
+    "Remington Rand Corporation",
+    "Rand Capital Corporation",
+    "Rand McNally & Company",
+    "Hamilton Sundstrand Corporation"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "YY46Q97AEZA8",
+     "name": "THE RAND CORPORATION",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: the UEI is confirmed live and not in the existing-UEI list. The capture contains only RAND. No changes. Nonprofit research organization with no corporate PAC. 'RAND Corporation' drops to just 'rand', so check any name-matched hit for the Santa Monica/Arlington/Pittsburgh think tank."
+  },
+  {
+   "id": "noblis",
+   "names": [
+    "Noblis"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "Noblis, Inc.",
+    "Noblis MSD LLC",
+    "Noblis ESI, LLC"
+   ],
+   "avoid": [
+    "Noblisse Inc"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "NPJ9GV7K4CL1",
+     "name": "NOBLIS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "G9VKEZM3P5Y5",
+     "name": "NOBLIS MSD LLC",
+     "level": "P"
+    },
+    {
+     "uei": "DGS2ZJQJMSP3",
+     "name": "NOBLIS ESI, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all UEIs confirmed live and not in the existing-UEI list. Removed LNQAX12C25Z2 because a gap test showed it adds nothing after FY2021 beyond what the parent UEIs already capture, only pre-acquisition Mikros contracts. Noblis, Inc. (formerly Mitretek Systems) is a 501(c)(3) nonprofit science"
+  },
+  {
+   "id": "capital-technology-group",
+   "names": [
+    "Capital Technology Group"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Capital Technology Group, LLC"
+   ],
+   "avoid": [
+    "Capital Technology Solutions, LLC",
+    "Capital Technology Partners LLC",
+    "Capital Technology, Inc.",
+    "Capital Technology Resources, LLC",
+    "OCT Capital Technology JV LLC",
+    "Computer Task Group, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "LHHXTSTETNJ6",
+     "name": "CAPITAL TECHNOLOGY GROUP LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: the UEI is confirmed live and not in the existing-UEI list. The capture contains only CTG. Found no sign of an acquisition. Added Computer Task Group, Inc. (Buffalo NY, the former Nasdaq: CTG, now owned by Cegeka) to avoid, because it shares the 'CTG' acronym. Federal digital-services and c"
+  },
+  {
+   "id": "esimplicity",
+   "names": [
+    "eSimplicity"
+   ],
+   "kind": "private company",
+   "legal": [
+    "eSimplicity, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "MN3CC66ZL4R8",
+     "name": "ESIMPLICITY, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "GSF3K3X629P3",
+     "name": "ESIMPLICITY INC.",
+     "level": "P"
+    },
+    {
+     "uei": "HTCQFJB8LLV3",
+     "name": "ESIMPLICITY INC",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live. All three UEIs are eSimplicity's and none is in the existing table. The FY24-26 capture of $269.7M is only HTCQFJB8LLV3. HTCQFJB8LLV3 carries an odd alternate name, 'Strategic Spectrum Solutions Corp', but no contract was recorded under that name, so nothing changed. Nothing"
+  },
+  {
+   "id": "planned-systems-international",
+   "names": [
+    "Planned Systems International"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Planned Systems International, Inc."
+   ],
+   "avoid": [
+    "Enterprise Resource Planned Systems International, LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "UCJYKA5ZB3U7",
+     "name": "PLANNED SYSTEMS INTERNATIONAL INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live. The UEI and its children match, nothing is in the existing table, and no joint ventures were found. Nothing found about PSI being acquired; its last acquisition was ProSphere Tek in 2021. A McLean, VA record (E824J2VCLPU5) with no prime contracts was added to the note. PSI i"
+  },
+  {
+   "id": "via-logic-llc",
+   "names": [
+    "Via Logic LLC"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Via Logic, LLC"
+   ],
+   "avoid": [
+    "ViaLogic Tech, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "HUNAFAJSTCJ8",
+     "name": "VIA LOGIC LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live. The capture search returns only Via Logic at $0, and the UEI is not in the existing table. HigherGov and GovConInABox confirm the Arlington, VA 8(a) firm. Added ViaLogic Tech, Inc. to avoid as a near-namesake; it does not equal 'Via Logic' after normalization. Via Logic LLC "
+  },
+  {
+   "id": "teleperformance",
+   "names": [
+    "Teleperformance"
+   ],
+   "kind": "public company",
+   "legal": [
+    "TPUSA, Inc.",
+    "Teleperformance USA",
+    "Teleperformance SE"
+   ],
+   "avoid": [
+    "Turning Point USA, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "J6N3NKCKRLL1",
+     "name": "TELEPERFORMANCE SE",
+     "level": "P"
+    },
+    {
+     "uei": "S4LFDPR47NB5",
+     "name": "TELEPERFORMANCE SE",
+     "level": "P"
+    },
+    {
+     "uei": "MBX8ML63QR57",
+     "name": "TPUSA, INC.",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: confirmed live. None of the UEIs is in the existing table, and the capture search shows only Language Line and Senture, with no joint ventures. Corrected the note: Senture is captured only in FY24, because SAM shows it self-parented afterward. It is still owned by TP; nothing found about a "
+  },
+  {
+   "id": "hypori",
+   "names": [
+    "Hypori"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Hypori, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "TR1XHJJ6N1Q3",
+     "name": "HYPORI, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live. The capture search shows only Hypori at $62.87M, and the UEI is not in the existing table. Corrected Hypori Federal's old contract total from $475K to about $1.47M (FY2016-17). Hypori makes virtual mobile device software for DoD and federal users. The older Austin entity had"
+  },
+  {
+   "id": "imagineeer",
+   "names": [
+    "Imagineeer"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Imagineeer LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "FUJ3VFE4DCM1",
+     "name": "IMAGINEEER LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live. The capture search shows only Imagineeer at $8.91M, and the UEI is not in the existing table. Directory listings confirm UEI FUJ3VFE4DCM1, CAGE 8YU74, 8(a) since July 2024, and the Arlington, VA address. Similar recipients (Imagineer Contractors LLC, Imagineering Inc, Imagin"
+  },
+  {
+   "id": "national-laboratory-of-the-rockies",
+   "names": [
+    "National Laboratory of the Rockies"
+   ],
+   "kind": "nonprofit or university",
+   "legal": [
+    "Alliance for Energy Innovation, LLC",
+    "Alliance for Sustainable Energy, LLC"
+   ],
+   "avoid": [
+    "Battelle Memorial Institute",
+    "MRIGlobal"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "DVGLNXBURMP3",
+     "name": "ALLIANCE FOR ENERGY INNOVATION, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live. The capture search shows only the Alliance at $3.07B, and the UEI is not in the existing table. The old and new names sit on the same UEI, so they are one renamed entity. No other recipient carries either name. DOE renamed NREL the National Laboratory of the Rockies on Dec 1"
+  },
+  {
+   "id": "dexian",
+   "names": [
+    "Dexian"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Dexian, LLC",
+    "LinTech Global, Inc.",
+    "DISYS Solutions, Inc.",
+    "Digital Intelligence Systems, LLC"
+   ],
+   "avoid": [
+    "Signature Consultants, LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "N3PNJGKDX4L3",
+     "name": "DEXIAN, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "XYZGGNGGFRG5",
+     "name": "LINTECH GLOBAL INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: four changes. (1) Added LinTech Global, Inc. and parent UEI XYZGGNGGFRG5. DISYS bought LinTech at the end of 2022, and Dexian has since rebranded it Dexian Government Solutions, so it hires under the Dexian brand and is the likely home of the DC 'Systems Engineer-Intermediate' role. The ear"
+  },
+  {
+   "id": "enterprise-horizon-consulting-group",
+   "names": [
+    "Enterprise Horizon Consulting Group"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Enterprise Horizon Consulting Group"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "ER7GLEL2CE99",
+     "name": "ENTERPRISE HORIZON CONSULTING GROUP",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: confirmed live that ER7GLEL2CE99 is self-parented at the SF address. The FY24-26 capture is $1,000 from this UEI only, and lifetime is $42.5M. Nothing else is captured, there are no joint ventures, and the UEI is not in the existing list. The name has no other USAspending namesake. No chang"
+  },
+  {
+   "id": "aptive",
+   "names": [
+    "Aptive"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Aptive Resources LLC"
+   ],
+   "avoid": [
+    "Aptive Environmental, LLC",
+    "Aptiv PLC",
+    "Adaptive Resources, Inc.",
+    "Captive Resources, LLC",
+    "Aptive HTG LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "WBYHRMKUWCE1",
+     "name": "APTIVE RESOURCES",
+     "level": "P"
+    },
+    {
+     "uei": "CP2JANC9NLK1",
+     "name": "APTIVE RESOURCES LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: both UEIs confirmed live, and neither is in the existing list. The FY24-26 capture is CP2JANC9NLK1 only ($118.6M), with no joint ventures or other companies. USAspending's business types confirm that Aptive HTG LLC is a joint venture, so leaving it out is right. 'Aptive Resources' has no na"
+  },
+  {
+   "id": "nakupuna-companies",
+   "names": [
+    "Nakupuna Companies"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Nakupuna Solutions, LLC",
+    "Nakupuna Consulting LLC",
+    "Nakupuna Prime, LLC",
+    "Nakupuna Services LLC",
+    "Nakupuna Federal LLC",
+    "Nakupuna Resources LLC",
+    "Nakupuna Companies"
+   ],
+   "avoid": [
+    "Nakupuna Prime-NIKA JV, LLC",
+    "Nakupuna Services-ERRG JV LLC",
+    "Nakupuna NIKA JV LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "V4GVJZF4S263",
+     "name": "NAKUPUNA SOLUTIONS, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "FAP4HJHRMJU3",
+     "name": "NAKUPUNA CONSULTING LLC",
+     "level": "P"
+    },
+    {
+     "uei": "QEX5RKDK18L8",
+     "name": "NAKUPUNA PRIME, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "KJWYRLCRJ4S5",
+     "name": "NAKUPUNA SERVICES LLC",
+     "level": "P"
+    },
+    {
+     "uei": "PTH7Z5BD9GK5",
+     "name": "NAKUPUNA FEDERAL LLC",
+     "level": "P"
+    },
+    {
+     "uei": "YS5CFDHQR3V8",
+     "name": "NAKUPUNA RESOURCES LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all six UEIs confirmed live at the Arlington HQ, and none is in the existing list. The FY24-26 and lifetime captures include only these five contract-holding units, with no joint ventures. The 8(a) joint venture flags on the JV records confirm they belong in avoid. No changes. 'Nakupuna Com"
+  },
+  {
+   "id": "tyto-athene",
+   "names": [
+    "Tyto Athene"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Tyto Athene, LLC",
+    "Tyto Government Solutions, Inc.",
+    "MindPoint Group, LLC",
+    "stackArmor, Inc.",
+    "Mutual Telecom Services Inc."
+   ],
+   "avoid": [
+    "Tyto LLC",
+    "Tyton Holdings Inc.",
+    "AT&T Government Solutions, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "FUJBQFTWPPH6",
+     "name": "TYTO ATHENE, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "XJ4CPJNZGG97",
+     "name": "TYTO GOVERNMENT SOLUTIONS INC",
+     "level": "P"
+    },
+    {
+     "uei": "RFT6PGN45CG5",
+     "name": "MINDPOINT GROUP LLC",
+     "level": "P"
+    },
+    {
+     "uei": "C4NNS2MA4ZY1",
+     "name": "MUTUAL TELECOM SERVICES INC.",
+     "level": "P"
+    },
+    {
+     "uei": "Z553Q1FPWYK5",
+     "name": "STACKARMOR, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "NJAJLKZ8B2M6",
+     "name": "MICROTEL LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all six UEIs confirmed live at the Reston address, and none is in the existing list. The FY24-26 capture contains only these UEIs. A press release confirms the Microtel deal (April 2024, a NASA flight-software firm in Greenbelt MD). IITC (bought in 2019) has no searchable USAspending record"
+  },
+  {
+   "id": "din-development-corporation",
+   "names": [
+    "Diné Development Corporation"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Diné Development Corporation",
+    "Dine Development Corporation",
+    "DDC IT Services, LLC",
+    "Dine Source, LLC",
+    "SpinSys-Dine, LLC",
+    "Nova-Dine LLC",
+    "Red Canyon Technologies, LLC",
+    "Seventh Emergence Solutions, LLC",
+    "DDC 4C, LLC",
+    "DDC Construction Services, LLC"
+   ],
+   "avoid": [
+    "Dine Community Development Corporation, Inc.",
+    "Dine College",
+    "Dine Gray & Pape JV",
+    "North Stone Landscaping LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "G1MEUAEKKF69",
+     "name": "NORTH STONE LLC (parent record; alt names DDC IT Services, Dine Source, Nova-Dine)",
+     "level": "P"
+    },
+    {
+     "uei": "LKCXFSNY42Q3",
+     "name": "DDC IT SERVICES LLC",
+     "level": "P"
+    },
+    {
+     "uei": "RNJEG6TBZM41",
+     "name": "DINE' SOURCE, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "NELLFW72SWH5",
+     "name": "NOVA-DINE LLC",
+     "level": "P"
+    },
+    {
+     "uei": "MMUTKX7AUN65",
+     "name": "SPINSYS-DINE, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "RP1MS622MZN7",
+     "name": "SPIN SYSTEMS INC.",
+     "level": "P"
+    },
+    {
+     "uei": "VWGUN22NPY25",
+     "name": "RED CANYON TECHNOLOGIES, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "G2CHH73KX5G2",
+     "name": "SEVENTH EMERGENCE SOLUTIONS, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "UFC4DKBKLS22",
+     "name": "NORTH STONE LLC",
+     "level": "P"
+    },
+    {
+     "uei": "CVQSGFR6JHQ7",
+     "name": "DDC 4C, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "HBJLFT785Y73",
+     "name": "DDC CONSTRUCTION SERVICES LLC",
+     "level": "P"
+    },
+    {
+     "uei": "K2JFNNAJRK85",
+     "name": "BRIC LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "KTCXCJE3LPY5"
+   ],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Checked: all 12 UEIs confirmed live, and none is in the existing list. Every unit except Spin Systems sits at the Scottsdale HQ. DDC's own Dec 2023 press release confirms the Spin Systems acquisition; it was rebranded SpinSys-Diné. SpinSys-Diné is tribally owned, not a joint venture. DDC's site list"
+  },
+  {
+   "id": "accenture-federal-services",
+   "names": [
+    "Accenture Federal Services"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Accenture Federal Services LLC",
+    "Accenture National Security Services LLC",
+    "Cognosante MVH, LLC",
+    "Cognosante, LLC",
+    "Cognosante CDS, LLC"
+   ],
+   "avoid": [
+    "Accenture LLP",
+    "Accenture Inc.",
+    "Accenture plc",
+    "Avanade Inc.",
+    "ASM Research, LLC"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "C47BNA8GM833",
+     "name": "ACCENTURE FEDERAL SERVICES LLC",
+     "level": "C"
+    },
+    {
+     "uei": "S71BLA1TM5A6",
+     "name": "ACCENTURE FEDERAL SERVICES LLC (ex-Novetta / White Oak)",
+     "level": "P"
+    },
+    {
+     "uei": "ZGREJDD6LDQ3",
+     "name": "ACCENTURE FEDERAL SERVICES LLC",
+     "level": "C"
+    },
+    {
+     "uei": "Q4ULE5XCJ236",
+     "name": "ACCENTURE NATIONAL SECURITY SE",
+     "level": "P"
+    },
+    {
+     "uei": "XDDKMXTVJSN8",
+     "name": "COGNOSANTE MVH LLC",
+     "level": "P"
+    },
+    {
+     "uei": "DKP2F2S75GG5",
+     "name": "COGNOSANTE, LLC",
+     "level": "P"
+    },
+    {
+     "uei": "PHHAGK2GAFK9",
+     "name": "COGNOSANTE CDS, LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: all seven UEIs confirmed live, and none is in the existing list. The FY24-26 and lifetime captures contain only the listed UEIs, with no joint ventures. PHHAGK2GAFK9 was corrected from level C to P, since it has a self-parented P record. 'Cognosante CDS, LLC' was added to legal_names; it is"
+  },
+  {
+   "id": "trillion-technology-solutions",
+   "names": [
+    "Trillion Technology Solutions"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Trillion Technology Solutions, Inc."
+   ],
+   "avoid": [
+    "Sentrillion Corporation",
+    "Trillion ERP VentureTech, LLC",
+    "Trillion ERP Next Generation LLC",
+    "Centrillion Technologies, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "JL52GGBB7YE5",
+     "name": "TRILLION TECHNOLOGY SOLUTIONS INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: the UEI is confirmed live, is not in the existing list, and the capture contains only this UEI. USAspending flags Trillion ERP VentureTech as an 8(a) joint venture, so leaving it out is correct. No changes. Trillion Technology Solutions is a Reston VA federal IT contractor; the card's 'Wash"
+  },
+  {
+   "id": "google",
+   "names": [
+    "Google"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Google LLC",
+    "Google Public Sector LLC",
+    "Mandiant, Inc."
+   ],
+   "avoid": [
+    "Googleplex Technologies, LLC",
+    "Google Construction Services Inc",
+    "Google & Associates Accounting Services",
+    "Verily Health Inc.",
+    "Boston Dynamics, Inc.",
+    "Aardvark Tactical, Inc."
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "NQV3T7DDKNT6",
+     "name": "GOOGLE LLC",
+     "level": "P"
+    },
+    {
+     "uei": "N424F1LU4FK3",
+     "name": "GOOGLE PUBLIC SECTOR LLC",
+     "level": "P"
+    },
+    {
+     "uei": "XJC7R1819BX5",
+     "name": "MANDIANT, INC. (ex-FireEye, Reston VA)",
+     "level": "P"
+    },
+    {
+     "uei": "M9MYEME61QB7",
+     "name": "MANDIANT LLC (Herndon VA)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "CG78ATJ18YX5",
+    "FDXAEHMRGJH1",
+    "M2W7FNML77Q3"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: Mandiant LLC (M9MYEME61QB7) was added. It is a self-parented P record whose C record's parent is Mandiant Inc., and it holds a -$0.32M FY24-26 deobligation that the old UEI set missed; its $20.4M lifetime is mostly FireEye-era. Its name normalizes to 'mandiant', already covered by Mandiant,"
+  },
+  {
+   "id": "linkedin",
+   "names": [
+    "LinkedIn"
+   ],
+   "kind": "public company",
+   "legal": [
+    "LinkedIn Corporation"
+   ],
+   "avoid": [
+    "LinkedInTech Inc",
+    "Angela Dunz LinkedIn Consulting",
+    "LinkedIn Profiles and Resume Writing Services"
+   ],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "UHSKTT51H633",
+     "name": "LINKEDIN CORPORATION",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Checked: the UEI is confirmed live, is not in the existing list, and the capture contains only LinkedIn and Lynda.com. No changes. LinkedIn Corporation is a wholly owned Microsoft subsidiary (Bellevue WA engineering roles); Microsoft is a separate employer in the table."
   }
  ]
 }
