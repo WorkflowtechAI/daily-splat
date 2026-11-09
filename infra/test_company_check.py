@@ -13,6 +13,8 @@ import re
 import sqlite3
 import sys
 import tempfile
+import time
+import urllib.parse
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -69,6 +71,12 @@ E = {"id": "acme", "names": ["Acme"], "legal": ["Acme Corporation", "Acme Federa
                                                {"uei": "BBBBBBBBBBBB", "name": "ACME FEDERAL", "level": "C"}],
      "exclude_ueis": ["JVJVJVJVJVJV"], "vt": None}
 check("legal_set drops a name the table says to avoid", cc.legal_set(E), {"acme", "acme federal"})
+for name, want in [("The Boeing Company", "Boeing"), ("Amazon.com Services, LLC", "Amazon.com Services"),
+                   ("CACI, Inc. - Federal", "CACI, Inc. - Federal"), ("Bank of America, N.A.", "Bank of America"),
+                   ("Acme Corp., Inc.", "Acme"), ("Starbucks Corporation", "Starbucks")]:
+    check(f"core_name({name!r})", cc.core_name(name), want)
+check("matched_names: one legal name per normalized form, avoided ones left out",
+      cc.matched_names({**E, "legal": E["legal"] + ["ACME CORP."]}), ["Acme Corporation", "Acme Federal LLC"])
 # Every legal name is also someone else's once the suffix goes: the name-matched
 # sources say they cannot tell, rather than "none found".
 TWIN = {**E, "legal": ["Acme Corporation"], "avoid": ["Acme LLC"]}
@@ -111,7 +119,7 @@ def fake_usa(url, data=None, headers=None, timeout=60):
     rows = [t for t in WORLD if t[0] in f["recipient_search_text"] or t[1] in f["recipient_search_text"]]
     for ag in f.get("agencies") or []:
         rows = [t for t in rows if (t[2] == TOP.get(ag["name"]) if ag["tier"] == "toptier" else t[3] == SUBTIER.get(ag["name"]))]
-    if data["category"] == "awarding_subagency":
+    if data["category"].endswith("_subagency"):
         by = {}
         for t in rows:
             by[(t[2], t[3])] = by.get((t[2], t[3]), 0) + t[4]
@@ -133,6 +141,9 @@ check("contracts: names what came off", got["excluded"], ["JVJVJVJVJVJV", "OOOOO
 check("contracts: one search over every UEI at once, never one of the excluded",
       {tuple(d["filters"]["recipient_search_text"]) for u, d in calls if "spending_by_category" in u},
       {("AAAAAAAAAAAA", "BBBBBBBBBBBB")})
+check("contracts: shares by the agency that paid",
+      ({d["category"] for u, d in calls if d and d.get("category", "").endswith("_subagency")},
+       {a["type"] for u, d in calls if d and "filters" in d for a in d["filters"].get("agencies") or []}), ({"funding_subagency"}, {"funding"}))
 check("contracts: contracts only, no grants or loans",
       {tuple(d["filters"]["award_type_codes"]) for u, d in calls if "spending_by_category" in u}, {("A", "B", "C", "D")})
 check("contracts: reads every page of recipients",
@@ -220,8 +231,14 @@ cc.fetch_json = fake_cl
 budget = [10]
 got = cc.courts(E, "t0k", budget)
 check("courts: dockets with an exact party name only", got["cases"], 2)
-check("courts: open", got["open"], 1)
-check("courts: one search per legal name not avoided", (len(seen_q), budget[0]), (2, 8))
+check("courts: no closing date on record", got["unclosed"], 1)
+check("courts: one search per legal name not avoided, by its core", (len(seen_q), budget[0]), (2, 8))
+check("courts: the core of each name is the phrase searched",
+      [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query)["q"][0] for u in seen_q],
+      ['party:("Acme") AND suitNature:(442 OR 445)', 'party:("Acme Federal") AND suitNature:(442 OR 445)'])
+seen_q.clear()
+cc.courts({**E, "legal": ["Acme Corporation", "Acme Federal LLC", "Acme Labs Inc", "Acme Space LLC", "Acme Air Co"]}, "t0k", [20])
+check("courts: every legal name is searched, not only the first three", len(seen_q), 5)
 check("courts: newest first, with the docket link", (got["recent"][0]["name"], got["recent"][0]["link"]),
       ("Roe v. Acme Corporation", "https://www.courtlistener.com/docket/1/roe-v-acme/"))
 check("courts: no token, no search", cc.courts(E, "", [10]), None)
@@ -238,31 +255,103 @@ check("courts: says so when there are more pages than it reads", cc.courts({**E,
 
 def fake_fec(kind, cycle, refresh):
     if kind == "cn":
-        return iter([["H0OR01001", "SMITH, A", "DEM"], ["S0OR02002", "JONES, B", "REP"], ["H0OR03003", "LEE, C", "LIB"]])
+        return iter([["H0OR01001", "SMITH, A", "DEM"], ["S0OR02002", "JONES, B", "REP"], ["H0OR03003", "LEE, C", "LIB"],
+                     ["S6MN00267", "KLOBUCHAR, A", "DFL"]])
     if kind == "cm":
-        row = lambda cid, name, org_tp, tp, org: [cid, name, "", "", "", "", "", "", "U", tp, "", "Q", org_tp, org, ""]
+        row = lambda cid, name, org_tp, tp, org, cand="": [cid, name, "", "", "", "", "", "", "U", tp, "", "Q", org_tp, org, cand]
         return iter([row("C001", "ACME CORP PAC", "C", "Q", "ACME CORPORATION"),
                      row("C002", "ACME FEDERAL PAC", "C", "N", "Acme Federal, LLC"),
                      row("C003", "ACME WORKERS UNION PAC", "L", "Q", "ACME CORPORATION"),   # a union's, not the company's
-                     row("C004", "ACMECO PAC", "C", "Q", "ACMECO CORPORATION")])
+                     row("C004", "ACMECO PAC", "C", "Q", "ACMECO CORPORATION"),
+                     row("C005", "ACME FEDERAL MUTUAL PAC", "W", "Q", "Acme Federal LLC"),  # corporation without capital stock
+                     row("C900", "KLOBUCHAR FOR MINNESOTA", "", "S", "", "S6MN00267")])
     rows = []
-    for cmte, tp, amt, cand in [("C001", "24K", "1000", "H0OR01001"), ("C001", "24K", "2500", "S0OR02002"),
-                                ("C001", "24E", "9999", "H0OR01001"),   # an independent expenditure, not a gift
-                                ("C002", "24K", "500", "H0OR03003"), ("C004", "24K", "7777", "H0OR01001")]:
+    for cmte, tp, amt, other, cand, memo in [
+            ("C001", "24K", "1000", "", "H0OR01001", ""), ("C001", "24K", "2500", "", "S0OR02002", ""),
+            ("C001", "24E", "9999", "", "H0OR01001", ""),     # an independent expenditure, not a gift
+            ("C001", "24K", "5000", "", "H0OR01001", "X"),    # a memo line: already counted elsewhere
+            ("C001", "24K", "300", "", "S6MN00267", ""),      # Minnesota's Democrats file as DFL
+            ("C001", "24K", "200", "C900", "", ""),           # no CAND_ID: found through the receiving committee
+            ("C002", "24K", "500", "", "H0OR03003", ""), ("C005", "24K", "400", "", "S0OR02002", ""),
+            ("C004", "24K", "7777", "", "H0OR01001", "")]:
         r = [""] * 22
-        r[0], r[5], r[14], r[16] = cmte, tp, amt, cand
+        r[0], r[5], r[14], r[15], r[16], r[19] = cmte, tp, amt, other, cand, memo
         rows.append(r)
     return iter(rows) if cycle == cc.cycles()[0] else iter([])
 
 
-cc.fec_rows = fake_fec
+fec_dir = tmp / "fec"
+fec_dir.mkdir()
+
+
+def fake_fec_file(kind, cycle, refresh):
+    f = fec_dir / f"{kind}{cycle}.zip"
+    f.touch()
+    return f
+
+
+cc.fec_rows, cc.fec_file = fake_fec, fake_fec_file
 idx = cc.pac_index(False)
 check("pac_index: corporate PACs by connected organization", sorted(idx["by_org"]), ["acme", "acme federal", "acmeco"])
 got = cc.pac(E, idx)
-check("pac: both of the employer's committees", sorted(c["id"] for c in got["committees"]), ["C001", "C002"])
-check("pac: this cycle's gifts by party", {k: got["cycles"][0][k] for k in ("dem", "rep", "other", "gifts")},
-      {"dem": 1000, "rep": 2500, "other": 500, "gifts": 3})
+check("pac: the employer's committees, a W one too", sorted(c["id"] for c in got["committees"]), ["C001", "C002", "C005"])
+check("pac: this cycle's gifts by party, DFL as Democratic, memo lines left out",
+      {k: got["cycles"][0][k] for k in ("dem", "rep", "other", "gifts")}, {"dem": 1500, "rep": 2900, "other": 500, "gifts": 6})
 check("pac: a cycle with no gifts", got["cycles"][1]["gifts"], 0)
+check("pac_index: when the files date from", idx["as_of"], date.today().isoformat())
+
+
+def fec_404(newest):
+    def rows(kind, cycle, refresh):
+        if cycle == cc.cycles()[0 if newest else 1]:
+            raise RuntimeError("HTTPError: HTTP Error 404: Not Found")
+        return fake_fec(kind, cc.cycles()[0], refresh)
+    return rows
+
+
+cc.fec_rows = fec_404(True)
+idx = cc.pac_index(False)
+got = cc.pac(E, idx)
+check("pac_index: a new cycle not published yet is left out, not fatal", idx["cycles"], [cc.cycles()[1]])
+check("pac: and says so", (got["cycles"][0].get("unpublished"), got["cycles"][1]["gifts"]), (True, 6))
+cc.fec_rows = fec_404(False)
+try:
+    cc.pac_index(False)
+    check("pac_index: an older cycle missing is an error", "no error", "error")
+except RuntimeError:
+    check("pac_index: an older cycle missing is an error", "error", "error")
+cc.fec_rows = fake_fec
+
+# ── Downloads ────────────────────────────────────────────────────────────────
+
+
+class Short:
+    """A response that ends before its Content-Length."""
+    headers = {"Content-Length": "100"}
+
+    def __init__(self):
+        self.left = [b"x" * 50]
+
+    def read(self, n=-1):
+        return self.left.pop() if self.left else b""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+real_urlopen = cc.urllib.request.urlopen
+cc.urllib.request.urlopen = lambda req, timeout=60: Short()
+target = tmp / "cut.json"
+try:
+    cc.fetch("https://example.test/f", to_file=target, tries=1)
+    check("fetch: a cut-off download is refused", "kept", "refused")
+except RuntimeError as err:
+    check("fetch: a cut-off download is refused", ("incomplete" in str(err), target.exists(), target.with_suffix(".json.part").exists()),
+          (True, False, False))
+cc.urllib.request.urlopen = real_urlopen
 
 # ── Violation Tracker ────────────────────────────────────────────────────────
 
@@ -328,6 +417,42 @@ check("run: another employer's new UEI re-checks every employer's contracts",
       sorted({tuple(d["filters"]["recipient_search_text"]) for _, d in asked if d and "filters" in d}),
       [("AAAAAAAAAAAA", "BBBBBBBBBBBB"), ("OOOOOOOOOOOO", "PPPPPPPPPPPP")])
 
+# BREAKER failures in a row stop a source for the day; the rest keep their facts.
+FIVE = [{"id": f"e{i}", "names": [f"E{i}"], "legal": [f"E{i} Inc"], "ueis": [{"uei": f"{i}" * 12, "name": "X", "level": "P"}]}
+        for i in range(5)]
+cc.TABLE.write_text(json.dumps({"employers": FIVE}), encoding="utf-8")
+cc.fetch_json = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("TimeoutError: timed out"))
+sys.argv = ["company_check.py", "--refresh", "--only", "contracts"]
+cc.main()
+st = json.loads(cc.OUT.read_text(encoding="utf-8"))["stats"]["contracts"]
+check("run: a source that keeps failing stops for the day", (st["failed"], st["kept"], st["error"][:22]), (3, 2, "stopped after 3 failur"))
+cc.START = time.monotonic() - 3600
+cc.main()
+st = json.loads(cc.OUT.read_text(encoding="utf-8"))["stats"]["contracts"]
+check("run: past its time, a stage stops and the run still writes", (st["failed"], st["kept"], st["error"][:11]), (0, 5, "out of time"))
+cc.START = time.monotonic()
+
+# CourtListener's limit is a day's, so a second run that day spends only what is left.
+cc.COURT_BUDGET = 3
+cc.os.environ["COURTLISTENER_TOKEN"] = "t0k"
+TWO = [{"id": "a", "names": ["A"], "legal": ["Acme Corporation", "Acme Federal LLC"]},
+       {"id": "b", "names": ["B"], "legal": ["Bolt Corporation", "Bolt Federal LLC"]}]
+cc.TABLE.write_text(json.dumps({"employers": TWO}), encoding="utf-8")
+cl_calls = []
+cc.fetch_json = lambda url, data=None, headers=None, timeout=60: cl_calls.append(url) or {"results": [], "next": None}
+sys.argv = ["company_check.py", "--only", "courts"]
+cc.main()
+st = json.loads(cc.OUT.read_text(encoding="utf-8"))["stats"]["courts"]
+check("run: courts stops at the day's budget", (len(cl_calls), st["updated"], st["kept"]), (3, 1, 1))
+cc.main()
+check("run: a second run that day searches no more", len(cl_calls), 3)
+sys.argv = ["company_check.py", "--dry-run"]
+cc.CACHE.unlink()
+cl_calls.clear()
+cc.main()
+check("run: a dry run leaves courts alone unless asked", len([u for u in cl_calls if "courtlistener" in u]), 0)
+cc.COURT_BUDGET = 100
+
 # ── The reviewed table ───────────────────────────────────────────────────────
 
 table = json.loads((ROOT / "company_names.json").read_text(encoding="utf-8"))
@@ -338,6 +463,11 @@ for e in table["employers"]:
     check(f"table: {eid} has a unique id", eid not in ids, True)
     ids.add(eid)
     check(f"table: {eid} has names and legal names", bool(e.get("names")) and bool(e.get("legal")), True)
+    # A note left in a name ("... (unrelated, Union City NJ)") never equals a
+    # record's name, so an avoid entry with one blocks nothing and a legal name
+    # with one matches nothing. Notes go in avoid_notes or notes.
+    for x in (e.get("legal") or []) + (e.get("avoid") or []):
+        check(f"table: {eid} name {x!r} is a bare name", "(" not in x and ";" not in x, True)
     for u in e.get("ueis") or []:
         check(f"table: {eid} UEI {u.get('uei')} is well formed", bool(UEI.match(u.get("uei") or "")), True)
         check(f"table: UEI {u.get('uei')} belongs to one employer", uei_owner.setdefault(u.get("uei"), eid), eid)

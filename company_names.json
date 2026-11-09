@@ -14,6 +14,7 @@
     "10gen, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "WLEGNSKC3L73",
@@ -44,6 +45,7 @@
     "Liftoff Athletics L.L.C.",
     "Liftoff Pediatric Therapy Services, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -62,6 +64,7 @@
    "avoid": [
     "Muir & Associates"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -80,6 +83,7 @@
    "avoid": [
     "Errant Packet Labs"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -100,6 +104,7 @@
     "R1 RCM Inc.",
     "Ensemble Therapeutics"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -116,6 +121,7 @@
     "ExtraHop Networks, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -133,6 +139,7 @@
     "SendGrid, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "LR6HEB6T5C69",
@@ -163,6 +170,7 @@
     "BCDW LLC",
     "MCDW LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "DNDLL934GK55",
@@ -215,6 +223,7 @@
     "Red Hat Ventures, LLC",
     "Red Hat Neighborhood Dentist, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "CWGDUMKVDUC4",
@@ -244,6 +253,7 @@
     "Altamira Properties Corporation",
     "Altamirano Consulting Inc"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "GFAHTQUD1AM7",
@@ -288,6 +298,9 @@
     "DIRECTV, LLC",
     "Warner Bros. Discovery, Inc.",
     "Tyto Athene, LLC",
+    "Nokia of America Corporation"
+   ],
+   "avoid_notes": [
     "Nokia of America Corporation (formerly Lucent Technologies)"
    ],
    "ueis": [
@@ -327,6 +340,7 @@
     "TherapyNotes, LLC"
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -345,6 +359,7 @@
    "avoid": [
     "Temporal Defense Systems, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -364,6 +379,7 @@
     "Pantheon Systems, Inc.",
     "Pantheon Ventures"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "UKLHZJG2KUN4",
@@ -389,6 +405,7 @@
     "Valiant Integrated Services LLC",
     "Valiant Solutions Group LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "GKF8ERUXED41",
@@ -421,6 +438,7 @@
     "Aveeva Hospice",
     "AVEVA Software, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -437,6 +455,7 @@
     "Supabase, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -457,6 +476,7 @@
     "Atlassian Corporation Plc"
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "GUF7H1L6K9Y8",
@@ -485,6 +505,7 @@
     "Fluidstack Management Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -504,6 +525,7 @@
     "Virtusa Corporation",
     "Virtana Corp."
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -525,6 +547,7 @@
     "Cape Environmental Management Inc.",
     "Signalscape, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "U42VNM49XD15",
@@ -561,6 +584,7 @@
     "Collins Industries, Inc.",
     "Pratt Industries, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "PPLZG8J3N9D4",
@@ -607,6 +631,7 @@
     "Absolute Business Solutions LLC",
     "Absolute Software Corporation"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "X4DHVKEF7L16",
@@ -636,6 +661,7 @@
     "Oracle Elevator",
     "Oracle Lighting"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "J3TKCN6S76D6",
@@ -681,6 +707,7 @@
     "Global Service Titan LLC",
     "Multistack Service Titan, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -700,7 +727,9 @@
     "Cohere Technologies, Inc.",
     "Cohere Health, Inc.",
     "Coherent Corp.",
-    "Cohere Solutions LLC",
+    "Cohere Solutions LLC"
+   ],
+   "avoid_notes": [
     "iCohere Inc."
    ],
    "ueis": [],
@@ -721,6 +750,7 @@
    "avoid": [
     "Trase Systems"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "XHRWKAHGHKX7",
@@ -744,6 +774,7 @@
     "CNC Software, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "E89MJN8WNAH4",
@@ -769,6 +800,7 @@
     "Loft Orbital Solutions, Inc.",
     "Loftware, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -791,6 +823,7 @@
     "Global Enterprise Systems LLC",
     "GES-SHR LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "YQUTBU6K3EM6",
@@ -816,6 +849,7 @@
    "avoid": [
     "Flex Ltd."
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -832,6 +866,10 @@
     "Qualia Labs, Inc."
    ],
    "avoid": [
+    "Qualia Labs, Inc",
+    "Neurohacker Collective"
+   ],
+   "avoid_notes": [
     "Qualia Labs, Inc (Dallas TX medical-device vendor, UEI RYJDFVFJ8451)",
     "Neurohacker Collective (Qualia supplements)"
    ],
@@ -856,6 +894,7 @@
     "University of South Carolina",
     "South Carolina State University"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "NHV3GTWSALA7",
@@ -918,6 +957,9 @@
     "Magellan Health, Inc."
    ],
    "avoid": [
+    "HealthNet, Inc."
+   ],
+   "avoid_notes": [
     "HealthNet, Inc. (Indianapolis community health centers)",
     "Centene Company of Texas LP is fine; avoid individual-name substring hits like 'Centenera'"
    ],
@@ -951,6 +993,7 @@
     "Credence Dynamo Technologies LLC",
     "Dynamo Software, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "P3DJNPYU6KY3",
@@ -977,7 +1020,9 @@
    ],
    "avoid": [
     "MONY Life Insurance Company",
-    "Lincoln Life & Annuity Company of New York",
+    "Lincoln Life & Annuity Company of New York"
+   ],
+   "avoid_notes": [
     "individual agent DBAs naming New York Life (e.g. '... agent of New York Life Insurance Company')"
    ],
    "ueis": [
@@ -1006,6 +1051,7 @@
     "ION Geophysical Corporation",
     "Ionis Pharmaceuticals, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "EH32NDF7YPM7",
@@ -1028,13 +1074,17 @@
     "General Dynamics Mission Systems, Inc."
    ],
    "avoid": [
-    "General Dynamics Corporation (parent; its records cover GDIT, Electric Boat, Gulfstream, Land Systems, etc.)",
+    "General Dynamics Corporation",
     "General Dynamics Information Technology, Inc.",
     "General Dynamics Land Systems, Inc.",
     "General Dynamics Ordnance and Tactical Systems, Inc.",
     "Electric Boat Corporation",
-    "National Steel and Shipbuilding Company (GD NASSCO)",
+    "National Steel and Shipbuilding Company",
     "Gulfstream Aerospace Corporation"
+   ],
+   "avoid_notes": [
+    "General Dynamics Corporation (parent; its records cover GDIT, Electric Boat, Gulfstream, Land Systems, etc.)",
+    "National Steel and Shipbuilding Company (GD NASSCO)"
    ],
    "ueis": [
     {
@@ -1231,6 +1281,7 @@
     "Phoenix Energy LLC",
     "Apex Energy & Environmental Products Inc"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "G9VTBQMKSTQ8",
@@ -1256,9 +1307,12 @@
     "Render Security Engineering LLC",
     "National Renderers Association, Inc.",
     "Sacramento Rendering Co.",
-    "Render Network / OTOY Inc.",
-    "iRender",
+    "Render Network",
     "Colorado Services Rendered, Inc."
+   ],
+   "avoid_notes": [
+    "Render Network / OTOY Inc.",
+    "iRender"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -1281,6 +1335,9 @@
     "Zayon Consulting, Inc.",
     "Zayos Trucking Corp",
     "Cazayoux Ewing LLC",
+    "Zayo Canada Inc"
+   ],
+   "avoid_notes": [
     "Zayo Canada Inc (Canadian affiliate, not US employer)"
    ],
    "ueis": [
@@ -1316,11 +1373,14 @@
     "Columbia Sportswear USA Corporation"
    ],
    "avoid": [
-    "Columbia University (The Trustees of Columbia University in the City of New York)",
+    "Columbia University",
     "Columbia Gas",
     "Columbia Pictures Industries",
     "Columbia Sussex",
     "Columbia Southern University"
+   ],
+   "avoid_notes": [
+    "Columbia University (The Trustees of Columbia University in the City of New York)"
    ],
    "ueis": [
     {
@@ -1349,12 +1409,17 @@
    ],
    "avoid": [
     "U.S. Standard Insurance Company",
-    "Standard Fire Insurance Company (Travelers)",
-    "Standard Guaranty Insurance Company (Assurant)",
+    "Standard Fire Insurance Company",
+    "Standard Guaranty Insurance Company",
     "Standard Security Life Insurance Company of New York",
     "Standard Life and Accident Insurance Company",
     "Standard Chartered",
     "Standard Industries",
+    "Standard Life"
+   ],
+   "avoid_notes": [
+    "Standard Fire Insurance Company (Travelers)",
+    "Standard Guaranty Insurance Company (Assurant)",
     "Standard Life (UK)"
    ],
    "ueis": [
@@ -1392,6 +1457,10 @@
     "Tusaar Corp",
     "Advantage USAA",
     "USAATO USA Inc.",
+    "Victory Capital",
+    "Charles Schwab"
+   ],
+   "avoid_notes": [
     "Victory Capital (former USAA Asset Management Company / USAA Investments, sold 2019)",
     "Charles Schwab (acquired USAA brokerage accounts 2020)"
    ],
@@ -1424,6 +1493,7 @@
     "Stryker Housing Development Fund Co., Inc.",
     "Western Michigan University Homer Stryker M.D. School of Medicine"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "LUKNHKAUQG65",
@@ -1468,6 +1538,9 @@
    "avoid": [
     "Swing Technologies, Inc.",
     "Glasswing Tech LLC",
+    "Swingtech B&B Solutions LLC"
+   ],
+   "avoid_notes": [
     "Swingtech B&B Solutions LLC (separate DC entity, likely a JV)"
    ],
    "ueis": [
@@ -1492,11 +1565,14 @@
     "American College of Education, Inc."
    ],
    "avoid": [
-    "American Council on Education (also 'ACE')",
+    "American Council on Education",
     "American College of Healthcare Sciences, Inc.",
     "The American College of Financial Services",
     "American College of Radiology",
     "American College of Surgeons"
+   ],
+   "avoid_notes": [
+    "American Council on Education (also 'ACE')"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -1515,6 +1591,10 @@
     "Esri Global, Inc."
    ],
    "avoid": [
+    "Esri Korea, Inc.",
+    "Esri Canada Limited"
+   ],
+   "avoid_notes": [
     "Esri Korea, Inc. (foreign distributor)",
     "Esri Canada Limited (independent distributor)"
    ],
@@ -1558,6 +1638,7 @@
     "Ricky Fleetion",
     "William Fleetion"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "N2LKQNYUJJK1",
@@ -1582,6 +1663,10 @@
    ],
    "avoid": [
     "Alpha Synopsys Inc.",
+    "Black Duck Software, Inc.",
+    "Synopsis"
+   ],
+   "avoid_notes": [
     "Black Duck Software, Inc. (Synopsys Software Integrity Group, divested 2024)",
     "Synopsis (misspelling-based entities)"
    ],
@@ -1619,6 +1704,7 @@
     "Colorado College Board of Trustees",
     "Ellsworth College Board of Trustees"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "CLZXHJ5A8G84",
@@ -1647,6 +1733,9 @@
    ],
    "avoid": [
     "Quantifi, Inc.",
+    "Quantiphi Analytics Solutions Private Limited"
+   ],
+   "avoid_notes": [
     "Quantiphi Analytics Solutions Private Limited (Indian affiliate, not US employer)"
    ],
    "ueis": [
@@ -1671,6 +1760,7 @@
     "Alteryx, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "LFDGDH5VZQ58",
@@ -1696,10 +1786,13 @@
     "Oscar Insurance Company"
    ],
    "avoid": [
-    "OSCAR HEALTH INC. (unrelated small business, 4505 Bergenline Ave, Union City NJ)",
+    "OSCAR HEALTH INC.",
     "Oscar Mayer",
     "Oscar de la Renta",
     "Oscar W. Larson Co."
+   ],
+   "avoid_notes": [
+    "OSCAR HEALTH INC. (unrelated small business, 4505 Bergenline Ave, Union City NJ)"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -1729,6 +1822,7 @@
     "Altera Corporation",
     "Mobileye"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "NKSNLH2RMHT3",
@@ -1775,6 +1869,7 @@
     "Cisco-Eagle, Inc.",
     "Cisco Brothers Corp."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "V3JJMWE4SRC6",
@@ -1807,6 +1902,9 @@
     "DXC Technology Company",
     "Micro Focus Government Solutions LLC",
     "Hewlett-Packard Federal, LLC",
+    "Hewlett-Packard Company legacy pre-2015 records"
+   ],
+   "avoid_notes": [
     "Hewlett-Packard Company legacy pre-2015 records (e.g. Z8F4LC2ZA2A6, under the HP Inc. parent SMLNZ8X9SHE7)"
    ],
    "ueis": [
@@ -1854,6 +1952,7 @@
     "TikTok Lounge Inc",
     "TikTokInk, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -1878,6 +1977,7 @@
     "Snowflakes, LLC",
     "Compass Medical Center Snowflake PLLC"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -1900,6 +2000,7 @@
     "Oregon State Bar",
     "Portland State University"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -1924,8 +2025,11 @@
     "Cambria Company LLC",
     "Cambium Learning Group",
     "Cambium Networks",
-    "Regence Health Network, Inc. (Plainview, TX)",
+    "Regence Health Network, Inc.",
     "Regency Centers"
+   ],
+   "avoid_notes": [
+    "Regence Health Network, Inc. (Plainview, TX)"
    ],
    "ueis": [
     {
@@ -1949,8 +2053,11 @@
     "Computer World Services Corp."
    ],
    "avoid": [
-    "Computerworld (IDG Communications, Inc.)",
+    "Computerworld",
     "Computer Sciences Corporation"
+   ],
+   "avoid_notes": [
+    "Computerworld (IDG Communications, Inc.)"
    ],
    "ueis": [
     {
@@ -1984,6 +2091,7 @@
     "Philanthropic Solutions",
     "Redwood Philanthropic Advisors Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "SPQZL8XDKGK7",
@@ -2006,6 +2114,7 @@
     "Autodesk, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "E5ARM36KBMX7",
@@ -2030,8 +2139,16 @@
     "Boeing Distribution Services, Inc."
    ],
    "avoid": [
-    "Boeing Employees' Credit Union (BECU)",
+    "Boeing Employees' Credit Union",
     "Raytheon/Lockheed Martin Javelin JV",
+    "Bell Boeing Joint Project Office",
+    "Boeing Sikorsky Aircraft Support, LLC",
+    "HRL Laboratories, LLC",
+    "Jeppesen ForeFlight, Inc.",
+    "Insituform Technologies USA, LLC"
+   ],
+   "avoid_notes": [
+    "Boeing Employees' Credit Union (BECU)",
     "Bell Boeing Joint Project Office (UEI JHFZTG8ZC9V2, Bell/Boeing V-22 JV, $3.6B FY24-26)",
     "Boeing Sikorsky Aircraft Support, LLC (JV)",
     "HRL Laboratories, LLC (Boeing/GM joint ownership)",
@@ -2109,10 +2226,16 @@
     "Optum Services, Inc."
    ],
    "avoid": [
-    "United Health Services (Binghamton, NY hospital system)",
+    "United Health Services",
     "Universal Health Services, Inc.",
-    "United Healthcare Workers West (SEIU-UHW)",
+    "United Healthcare Workers West",
     "United Health Centers of the San Joaquin Valley",
+    "North American United Healthcare Services JV LLC",
+    "Picis Clinical Solutions, Inc."
+   ],
+   "avoid_notes": [
+    "United Health Services (Binghamton, NY hospital system)",
+    "United Healthcare Workers West (SEIU-UHW)",
     "North American United Healthcare Services JV LLC (Rockville MD, UEI TZJJK15REAR5; unrelated)",
     "Picis Clinical Solutions, Inc. (Harris/Constellation since 2015)"
    ],
@@ -2177,6 +2300,7 @@
     "Schrozillow LLC",
     "ZillowGA"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -2200,6 +2324,7 @@
     "Northrop Grumman Corporation",
     "Coherent Corp."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "K3W6V7GFVHQ4",
@@ -2238,6 +2363,9 @@
     "Saxon Enterprises, Inc.",
     "Klaxon Enterprises Company",
     "Maxon Motor",
+    "Axon Enterprises, Inc."
+   ],
+   "avoid_notes": [
     "Axon Enterprises, Inc. (Nixa MO; unrelated, plural name)"
    ],
    "ueis": [
@@ -2262,6 +2390,7 @@
     "AgileBits Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -2285,9 +2414,13 @@
     "Leidos Management Systems Designers, Inc.",
     "Raytheon/Lockheed Martin Javelin Joint Venture",
     "Lockheed Federal Credit Union",
-    "Longbow LLC (LM/Northrop JV)",
-    "Boeing Sikorsky Aircraft Support, LLC (Boeing/Sikorsky JV)",
+    "Longbow LLC",
+    "Boeing Sikorsky Aircraft Support, LLC",
     "The Longbow Group, LLC"
+   ],
+   "avoid_notes": [
+    "Longbow LLC (LM/Northrop JV)",
+    "Boeing Sikorsky Aircraft Support, LLC (Boeing/Sikorsky JV)"
    ],
    "ueis": [
     {
@@ -2412,6 +2545,7 @@
    "avoid": [
     "BizScalers, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "HP7JQFY2LF58",
@@ -2435,9 +2569,11 @@
     "Uber Technologies, Inc."
    ],
    "avoid": [
-    "individual drivers registered as 'DBA UBER TECHNOLOGIES' (e.g. Mustafiz Rahman, Alpha Balde, Dominique Choute)",
     "J.M. Huber Corporation",
     "Uberti"
+   ],
+   "avoid_notes": [
+    "individual drivers registered as 'DBA UBER TECHNOLOGIES' (e.g. Mustafiz Rahman, Alpha Balde, Dominique Choute)"
    ],
    "ueis": [
     {
@@ -2467,9 +2603,12 @@
     "Deloitte Transactions and Business Analytics LLP"
    ],
    "avoid": [
-    "Deloitte Consulting Limited (non-US, UEI DM31Z2U95YV4)",
     "Deloitte Consulting Malawi",
     "Deloitte & Touche Mozambique, Lda",
+    "Deloitte Touche Tohmatsu Limited"
+   ],
+   "avoid_notes": [
+    "Deloitte Consulting Limited (non-US, UEI DM31Z2U95YV4)",
     "Deloitte & Touche (Nairobi, Kenya, UEI JH7ANFUN6XW3)",
     "Deloitte Touche Tohmatsu Limited (UK umbrella, not the US employer)"
    ],
@@ -2527,6 +2666,7 @@
     "6 Home Depot Dr LLC",
     "4 Home Depot Dr LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "UMARBLUL4KJ3",
@@ -2556,11 +2696,14 @@
     "Nike Retail Services, Inc."
    ],
    "avoid": [
-    "Nike Securities L.P. (First Trust broker-dealer, unrelated)",
+    "Nike Securities L.P.",
     "Nikon Inc.",
     "Nikken Inc.",
     "Monike Inc",
     "Alvin E Benike Inc"
+   ],
+   "avoid_notes": [
+    "Nike Securities L.P. (First Trust broker-dealer, unrelated)"
    ],
    "ueis": [
     {
@@ -2592,6 +2735,10 @@
    "avoid": [
     "Oktaha School District 8",
     "Vural Oktay Inc",
+    "Orange County Transportation Authority",
+    "Okta Holdings LLC"
+   ],
+   "avoid_notes": [
     "Orange County Transportation Authority (OCTA)",
     "Okta Holdings LLC (Portland OR; unrelated)"
    ],
@@ -2627,7 +2774,9 @@
     "Cacique, Inc.",
     "ACACIA7",
     "Acacia Heritage Consulting LLC",
-    "Acacia Health Insurance",
+    "Acacia Health Insurance"
+   ],
+   "avoid_notes": [
     "Spanish-language firms with 'CACI' inside COMUNICACIONES/EDIFICACIONES (e.g. Comunicacion Celular S.A. Comcel; Estudios Edificaciones e Interventorias en Ingenieria)"
    ],
    "ueis": [
@@ -2747,11 +2896,15 @@
     "ECS Federal, LLC"
    ],
    "avoid": [
-    "Engineering Consulting Services, Ltd. (ECS Limited, geotechnical engineering firm)",
+    "Engineering Consulting Services, Ltd.",
     "ECS Tuning",
-    "On Assignment, Inc. / ASGN Incorporated (parent; its other staffing brands are not ECS)",
+    "On Assignment, Inc.",
     "Shoreline Electronic Consulting Services, LLC",
     "OLR Electronic Consulting Services"
+   ],
+   "avoid_notes": [
+    "Engineering Consulting Services, Ltd. (ECS Limited, geotechnical engineering firm)",
+    "On Assignment, Inc. / ASGN Incorporated (parent; its other staffing brands are not ECS)"
    ],
    "ueis": [
     {
@@ -2777,6 +2930,10 @@
    "avoid": [
     "ASM International N.V.",
     "ASM America, Inc.",
+    "ASM Global",
+    "Accenture plc"
+   ],
+   "avoid_notes": [
     "ASM Global (venue management)",
     "Accenture plc (parent; not to be matched as ASM)"
    ],
@@ -2803,12 +2960,16 @@
     "Stripe Payments Company"
    ],
    "avoid": [
-    "Stripe Inc (UEI P1QJJGYGL1H4, South San Francisco signage vendor, 2008 award predates Stripe)",
+    "Stripe Inc",
     "Stripes Global, Inc.",
-    "Stripes LLC (convenience stores)",
+    "Stripes LLC",
     "Accu-Stripe, Inc.",
     "Soundstripe Inc",
     "Paws and Stripes"
+   ],
+   "avoid_notes": [
+    "Stripe Inc (UEI P1QJJGYGL1H4, South San Francisco signage vendor, 2008 award predates Stripe)",
+    "Stripes LLC (convenience stores)"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -2828,6 +2989,7 @@
    "avoid": [
     "Applied Insight, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "MGCZNCNTQPE9",
@@ -2858,16 +3020,19 @@
    ],
    "avoid": [
     "Precision Micron Technology, Inc.",
-    "Micron Solutions, Inc. (Fitchburg MA)",
+    "Micron Solutions, Inc.",
     "Micron Products, Inc.",
-    "Micron Semiconductor Ltd (Lancing, West Sussex, UK silicon-detector maker; UEIs KB4RTKUX4785, HFDXLNQJ2E46, R1NCZYVSEGT7)",
+    "Micron Semiconductor Ltd",
     "Micron Biomedical Inc",
     "Micronet Associates Inc.",
-    "Micron Solutions, Inc.",
     "Scienta Omicron, Inc.",
     "IntraMicron, Inc.",
     "Micron Air & Mechanical Solutions Inc",
     "Hosokawa Micron International Inc."
+   ],
+   "avoid_notes": [
+    "Micron Solutions, Inc. (Fitchburg MA)",
+    "Micron Semiconductor Ltd (Lancing, West Sussex, UK silicon-detector maker; UEIs KB4RTKUX4785, HFDXLNQJ2E46, R1NCZYVSEGT7)"
    ],
    "ueis": [
     {
@@ -2901,6 +3066,7 @@
     "Chainguard, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -2921,8 +3087,10 @@
     "Allstate Indemnity Company"
    ],
    "avoid": [
-    "Independent agencies doing business as 'Allstate Insurance' (e.g., Hartelius Agency Services Inc DBA Allstate Insurance, Brooks Allstate Insurance Agency Inc, GGP Insurance Services Inc DBA Allstate Insurance Services)",
     "Allstate Peterbilt Group"
+   ],
+   "avoid_notes": [
+    "Independent agencies doing business as 'Allstate Insurance' (e.g., Hartelius Agency Services Inc DBA Allstate Insurance, Brooks Allstate Insurance Agency Inc, GGP Insurance Services Inc DBA Allstate Insurance Services)"
    ],
    "ueis": [
     {
@@ -2957,13 +3125,19 @@
     "Providence Health Plan"
    ],
    "avoid": [
-    "The Providence Service Corporation (now ModivCare)",
-    "Providence Health System (Waco TX, Ascension)",
-    "Providence Hospital (Mobile AL, Ascension)",
-    "Providence Health Care (Vancouver BC)",
+    "The Providence Service Corporation",
+    "Providence Health System",
+    "Providence Hospital",
+    "Providence Health Care",
     "City of Providence, RI",
     "Providence College",
     "Providence Equity Partners"
+   ],
+   "avoid_notes": [
+    "The Providence Service Corporation (now ModivCare)",
+    "Providence Health System (Waco TX, Ascension)",
+    "Providence Hospital (Mobile AL, Ascension)",
+    "Providence Health Care (Vancouver BC)"
    ],
    "ueis": [
     {
@@ -3034,6 +3208,7 @@
     "Tailscale Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -3051,7 +3226,9 @@
    ],
    "avoid": [
     "Bill Redditt Ford, Inc.",
-    "NJ Redditt Express, Inc.",
+    "NJ Redditt Express, Inc."
+   ],
+   "avoid_notes": [
     "individuals surnamed Redditt"
    ],
    "ueis": [],
@@ -3078,10 +3255,14 @@
     "OpenAI Public Sector LLC"
    ],
    "avoid": [
-    "Open Artificial Intelligence, Inc. (Guy Ravine company, unrelated)",
-    "OpenAir / OpenAir Academy",
+    "Open Artificial Intelligence, Inc.",
+    "OpenAir",
     "OpenAirplane Inc.",
     "OpenAire America, Inc."
+   ],
+   "avoid_notes": [
+    "Open Artificial Intelligence, Inc. (Guy Ravine company, unrelated)",
+    "OpenAir / OpenAir Academy"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -3099,10 +3280,13 @@
     "Vanta Inc."
    ],
    "avoid": [
-    "Covanta Energy Group Inc / Covanta Holding Corporation",
+    "Covanta Energy Group Inc",
     "Vantage Industries Inc",
     "Savantage Financial Services, Inc.",
     "Mitchell Vantage Systems LLC"
+   ],
+   "avoid_notes": [
+    "Covanta Energy Group Inc / Covanta Holding Corporation"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -3120,12 +3304,16 @@
     "Anduril Industries, Inc."
    ],
    "avoid": [
-    "Anduril LLC (Winooski VT sole proprietor, UEI JJP3TT4EA9G7)",
-    "Anduril Engineering LLC (UEI MMLFZGBVYMB8)",
+    "Anduril LLC",
+    "Anduril Engineering LLC",
     "Anduril Partners, LLC",
     "Anduril Strategy LLC",
     "Anduril Enterprises PC",
     "Anduril Detailing Ltd."
+   ],
+   "avoid_notes": [
+    "Anduril LLC (Winooski VT sole proprietor, UEI JJP3TT4EA9G7)",
+    "Anduril Engineering LLC (UEI MMLFZGBVYMB8)"
    ],
    "ueis": [
     {
@@ -3180,9 +3368,15 @@
     "NCI Information Systems, Inc."
    ],
    "avoid": [
-    "Empower Annuity Insurance Company of America (Empower Retirement)",
+    "Empower Annuity Insurance Company of America",
     "Empower Federal Credit Union",
     "Empower Pharmacy",
+    "NCI, Inc.",
+    "NCI Building Systems",
+    "National Cancer Institute"
+   ],
+   "avoid_notes": [
+    "Empower Annuity Insurance Company of America (Empower Retirement)",
     "NCI, Inc. (North Central Instruments, Brooklyn Park MN)",
     "NCI Building Systems / Cornerstone Building Brands",
     "National Cancer Institute (NCI)"
@@ -3212,6 +3406,7 @@
     "Seiler, Zaden & Rimes, LLC",
     "Zaden Trucking Inc"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "NZURD3WJR541",
@@ -3235,6 +3430,9 @@
     "Virtual Service Operations Federal, LLC"
    ],
    "avoid": [
+    "Veterans Service Organizations"
+   ],
+   "avoid_notes": [
     "Veterans Service Organizations (VSOs, generic)"
    ],
    "ueis": [
@@ -3265,6 +3463,7 @@
     "Databricks Federal LLC"
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "LMMPVG29C9F4",
@@ -3294,13 +3493,17 @@
     "clearAvenue, LLC"
    ],
    "avoid": [
-    "Excelerate Energy / Excelerate Gas Marketing, LP",
+    "Excelerate Energy",
     "Excelerate Solutions Inc",
-    "Celerity IT, LLC (commercial Celerity)",
+    "Celerity IT, LLC",
     "Doxcelerate Corporation",
     "Xcelerate LLC",
     "Echelon Xcelerate JV, LLC",
     "Xcelerated IT Strategies, LLC"
+   ],
+   "avoid_notes": [
+    "Excelerate Energy / Excelerate Gas Marketing, LP",
+    "Celerity IT, LLC (commercial Celerity)"
    ],
    "ueis": [
     {
@@ -3340,8 +3543,11 @@
    ],
    "avoid": [
     "Unisys Electric Inc",
-    "Unisys Technical Solutions LLC (Tempe AZ)",
+    "Unisys Technical Solutions LLC",
     "Munisys, Inc."
+   ],
+   "avoid_notes": [
+    "Unisys Technical Solutions LLC (Tempe AZ)"
    ],
    "ueis": [
     {
@@ -3393,6 +3599,9 @@
     "GuidePoint Security Government Solutions, LLC"
    ],
    "avoid": [
+    "Guidepoint Global, LLC"
+   ],
+   "avoid_notes": [
     "Guidepoint Global, LLC (expert-network firm)"
    ],
    "ueis": [
@@ -3424,6 +3633,7 @@
    "avoid": [
     "GitLab Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "WR2ZN519GFX4",
@@ -3446,6 +3656,9 @@
     "Aalyria Technologies, Inc."
    ],
    "avoid": [
+    "Aalyria Beale"
+   ],
+   "avoid_notes": [
     "Aalyria Beale (individual recipient)"
    ],
    "ueis": [
@@ -3471,9 +3684,13 @@
     "Choopa, LLC"
    ],
    "avoid": [
-    "The Constant Company, LLC of Lawrenceville GA (unrelated small business with the identical name)",
+    "The Constant Company, LLC of Lawrenceville GA",
     "Constant Contact, Inc.",
-    "Vultron LLC"
+    "Vultron LLC",
+    "The Constant Company, LLC"
+   ],
+   "avoid_notes": [
+    "The Constant Company, LLC of Lawrenceville GA (unrelated small business with the identical name)"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -3494,6 +3711,7 @@
     "GitHub, Inc.",
     "DigitLabs.io Inc"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "DAMDA7UKMRJ8",
@@ -3521,13 +3739,16 @@
     "SitusAMC Holdings Corporation"
    ],
    "avoid": [
-    "Situs, Inc. (Covington KY)",
+    "Situs, Inc.",
     "Situs Fox, LLC",
     "Situs Valuation Group",
     "Situs Outsourcing Solutions LLC",
     "AMC Entertainment Holdings, Inc.",
     "AMC Holdings, Inc.",
     "AMC Networks Inc."
+   ],
+   "avoid_notes": [
+    "Situs, Inc. (Covington KY)"
    ],
    "ueis": [],
    "exclude_ueis": [],
@@ -3547,6 +3768,9 @@
    ],
    "avoid": [
     "InsuranceMarketsForHealthEquity",
+    "Health equity nonprofits or programs"
+   ],
+   "avoid_notes": [
     "Health equity nonprofits or programs (generic phrase)"
    ],
    "ueis": [
@@ -3580,6 +3804,9 @@
    ],
    "avoid": [
     "Meta Materials Inc.",
+    "Meta Financial Group"
+   ],
+   "avoid_notes": [
     "Meta Financial Group / MetaBank (now Pathward)"
    ],
    "ueis": [
@@ -3615,6 +3842,9 @@
     "Acronis International GmbH"
    ],
    "avoid": [
+    "Acronis SCS, Inc."
+   ],
+   "avoid_notes": [
     "Acronis SCS, Inc. (independent US public-sector company, Scottsdale AZ)"
    ],
    "ueis": [
@@ -3645,6 +3875,9 @@
    ],
    "avoid": [
     "Starbucks Landscaping LLC",
+    "Zachary Starbucks"
+   ],
+   "avoid_notes": [
     "Licensed-store operators trading as Starbucks (e.g., Ren Cen Starbucks LLC)",
     "Zachary Starbucks (individual)"
    ],
@@ -3674,6 +3907,7 @@
     "Shield Air Solutions, Inc.",
     "Weathershield Air Conditioning, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "DVEJNK717BB6",
@@ -3701,6 +3935,7 @@
     "Atlanta Consulting Group LLC",
     "Veteran Enhanced, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "HH52KZGMV2Y6",
@@ -3727,6 +3962,7 @@
     "Sherwin Alumina Company, LLC",
     "The Williams Companies, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "GAJ1F3WQCWY5",
@@ -3761,6 +3997,10 @@
     "Allison Transmission Holdings, Inc.",
     "Southwest General Motors LLC",
     "General Motors Minority Dealers Association",
+    "Performance Equity Management, LLC",
+    "United States Advanced Battery Consortium LLC"
+   ],
+   "avoid_notes": [
     "Performance Equity Management, LLC (independent PE firm, former GM investment-arm spin-out)",
     "United States Advanced Battery Consortium LLC (USCAR consortium of GM, Ford, Stellantis)"
    ],
@@ -3805,6 +4045,7 @@
     "Bugcrowd Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "DRCHBQ1G4D38",
@@ -3833,6 +4074,7 @@
     "BeyondTrust Software, Inc."
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "M7U8NDFYRPJ9",
@@ -3871,6 +4113,7 @@
     "LMI Consulting Solutions Inc.",
     "Leadership Management International, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "QVEKLLJUGHJ7",
@@ -3908,6 +4151,7 @@
     "Tesseract Ventures LLC",
     "Tessera Group"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -3929,6 +4173,7 @@
     "ForeverPure Corporation",
     "Sportworx Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "DFJJN9A164P5",
@@ -3948,7 +4193,7 @@
    ],
    "kind": "government",
    "legal": [
-    "City of Portland (Oregon)"
+    "City of Portland"
    ],
    "avoid": [
     "City of Portland, Maine",
@@ -3959,6 +4204,10 @@
     "Port of Portland",
     "Portland Public Schools",
     "Multnomah County",
+    "City of Portland",
+    "City of Portland Police Department"
+   ],
+   "avoid_notes": [
     "City of Portland Police Department (Portland, Maine; UEI EJSBN16HRDC5, 109 Middle St)"
    ],
    "ueis": [
@@ -4004,6 +4253,7 @@
     "Gearing, Rackner & McGrath, LLP",
     "McDowell Rackner & Gibson PC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "MCLCAYU7FB38",
@@ -4026,6 +4276,9 @@
     "Lucayan Technology Solutions, LLC"
    ],
    "avoid": [
+    "Lucayan Realty Co. LLC"
+   ],
+   "avoid_notes": [
     "Lucayan Realty Co. LLC (dba Seton Hotel)"
    ],
    "ueis": [
@@ -4055,6 +4308,7 @@
     "Rodocker Construction Company",
     "Mirantis, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "EBLJWG51VJ19",
@@ -4077,6 +4331,9 @@
     "Wrike, Inc."
    ],
    "avoid": [
+    "DA&C Restaurants LLC"
+   ],
+   "avoid_notes": [
     "DA&C Restaurants LLC (dba Sutton's at the Wrike)"
    ],
    "ueis": [
@@ -4109,6 +4366,10 @@
     "World Wide Technology, Inc."
    ],
    "avoid": [
+    "NE Worldwide Technologies Inc.",
+    "Prestige Worldwide Technologies LLC"
+   ],
+   "avoid_notes": [
     "NE Worldwide Technologies Inc. (RKGTYEZJTJR3)",
     "Prestige Worldwide Technologies LLC (J9UAP62YYCK2)"
    ],
@@ -4155,6 +4416,7 @@
    "avoid": [
     "Delaware Life Insurance Company of New York"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -4175,6 +4437,7 @@
     "C3 Wellbeing",
     "Wellbeing Initiative Inc"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -4193,6 +4456,7 @@
    "avoid": [
     "Gatekeeper Security, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "GBDZQW5JFM52",
@@ -4220,6 +4484,7 @@
     "New Gen Technologies & Management Inc",
     "NewGen Surgical, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -4243,11 +4508,15 @@
     "Amazon.com Services, Inc."
    ],
    "avoid": [
-    "SAFEATOU DIALLO DBA AMAZON.COM, INC (individual DBA)",
+    "SAFEATOU DIALLO DBA AMAZON.COM, INC",
     "PACKAGE DELIVERY SERVICES FOR ONLINE RETAIL ORDERS DBA AMAZON.COM PACKAGE DELIVERY",
-    "SRS PLATINUM INCORPORATED, 3HPRODUCTS (AMAZON.COM)",
-    "AMAZON.COM (UEI ERY2DHJ83US5, small-business registrant at 1260 Mercer St Seattle)",
+    "SRS PLATINUM INCORPORATED, 3HPRODUCTS",
     "Independent Amazon Delivery Service Partner companies"
+   ],
+   "avoid_notes": [
+    "SAFEATOU DIALLO DBA AMAZON.COM, INC (individual DBA)",
+    "SRS PLATINUM INCORPORATED, 3HPRODUCTS (AMAZON.COM)",
+    "AMAZON.COM (UEI ERY2DHJ83US5, small-business registrant at 1260 Mercer St Seattle)"
    ],
    "ueis": [
     {
@@ -4293,6 +4562,10 @@
    "avoid": [
     "MicroStrategy Incorporated",
     "Microsemi Corporation",
+    "Microsoft Innovation Center Armenia",
+    "Computer Cloud Migration Consultants and Specialists"
+   ],
+   "avoid_notes": [
     "Microsoft Innovation Center Armenia (foreign, not Microsoft Corp)",
     "Computer Cloud Migration Consultants and Specialists (Microsoft Partner Program)"
    ],
@@ -4355,6 +4628,7 @@
     "Invidia Hair Design LLC",
     "Skin Invidia LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "ESRLMLGWDNM3",
@@ -4385,6 +4659,7 @@
    "avoid": [
     "CrowdStreet, Inc."
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "JXV5KPM56S34",
@@ -4427,6 +4702,7 @@
     "Small Business Salesforce",
     "Salesforce Staffing, LLC"
    ],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "LWBQASLBNKN5",
@@ -4458,6 +4734,9 @@
     "City of Palo Alto",
     "Palo Alto Medical Foundation",
     "Palo Alto University",
+    "Palo Alto Research Center"
+   ],
+   "avoid_notes": [
     "Palo Alto Research Center (PARC)"
    ],
    "ueis": [
@@ -4488,13 +4767,16 @@
     "Starlink Services, LLC"
    ],
    "avoid": [
-    "Starlink Technologies LLC (Hazleton PA)",
+    "Starlink Technologies LLC",
     "SpaceX Trucking",
     "SpaceX Construction Inc.",
     "SpaceX Fireworks LLC",
     "SpaceX Enterprises Inc",
     "Starlink Logistics Inc",
     "Crawlspacexperts LLC"
+   ],
+   "avoid_notes": [
+    "Starlink Technologies LLC (Hazleton PA)"
    ],
    "ueis": [
     {
@@ -4538,11 +4820,16 @@
     "T-Mobile Austria GmbH",
     "T-Mobile Austria Holding GmbH",
     "T-Mobile Polska S.A.",
+    "Talk More Wireless d/b/a Metro by T-Mobile",
+    "E. J. Wireless, Inc.",
+    "A Wireless Importer Inc dba Metro by T-Mobile",
+    "Sterling Wireless One LLC",
+    "MyMarketing Designs LLC dba Metro by T-Mobile"
+   ],
+   "avoid_notes": [
     "Talk More Wireless d/b/a Metro by T-Mobile (independent dealer)",
     "E. J. Wireless, Inc. (Metro by T-Mobile dealer)",
-    "A Wireless Importer Inc dba Metro by T-Mobile",
-    "Sterling Wireless One LLC (T-Mobile dealer)",
-    "MyMarketing Designs LLC dba Metro by T-Mobile"
+    "Sterling Wireless One LLC (T-Mobile dealer)"
    ],
    "ueis": [
     {
@@ -4583,11 +4870,19 @@
    "avoid": [
     "DecisionPoint Systems, Inc.",
     "DecisionPoint Systems CA, Inc.",
-    "DecisionPoint Technologies Inc. (formerly Barcoding, Inc., Baltimore)",
+    "DecisionPoint Technologies Inc.",
     "DecisionPoint Advisors, LLC",
     "DecisionPoint Financial LLC",
     "DecisionPoint Selling LLC",
     "DecisionPoint Marketing and Research",
+    "Cortek, Inc.",
+    "DecisionPoint LLC",
+    "DecisionPoint",
+    "DecisionPoint-Agile Defense Joint Venture LLC",
+    "DecisionPoint-GAP Solutions JV LLC"
+   ],
+   "avoid_notes": [
+    "DecisionPoint Technologies Inc. (formerly Barcoding, Inc., Baltimore)",
     "Cortek, Inc. (sold to EM Key Solutions)",
     "DecisionPoint LLC (Alpharetta GA)",
     "DecisionPoint (Mesa AZ)",
@@ -4620,14 +4915,19 @@
    ],
    "avoid": [
     "Hewlett Packard Enterprise Company",
-    "HP Enterprise Services, LLC (now Peraton Enterprise Solutions LLC)",
+    "HP Enterprise Services, LLC",
     "DXC Technology Company",
     "Agilent Technologies, Inc.",
     "H.P. Hood LLC",
     "RHP Inc.",
     "JHP, Inc.",
-    "Hewlett-Packard Financial Services Company (HPE's since the 2015 split)",
+    "Hewlett-Packard Financial Services Company",
     "TimberHP, Inc.",
+    "USComputers Inc"
+   ],
+   "avoid_notes": [
+    "HP Enterprise Services, LLC (now Peraton Enterprise Solutions LLC)",
+    "Hewlett-Packard Financial Services Company (HPE's since the 2015 split)",
     "USComputers Inc (reseller recorded under HP's parent record)"
    ],
    "ueis": [
@@ -4668,6 +4968,7 @@
     "Horizon Blue Cross Blue Shield of New Jersey",
     "Horizon Therapeutics"
    ],
+   "avoid_notes": [],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
@@ -4693,11 +4994,16 @@
    ],
    "avoid": [
     "Northrop Grumman Systems Corporation",
-    "L3Harris Technologies, Inc. (formerly Harris Corporation)",
+    "L3Harris Technologies, Inc.",
     "Hewlett Packard Enterprise Company",
     "DXC Technology Company",
     "QinetiQ Inc.",
     "Kroll LLC",
+    "Global Thermostat Operations, LLC",
+    "Foster-Miller, Inc."
+   ],
+   "avoid_notes": [
+    "L3Harris Technologies, Inc. (formerly Harris Corporation)",
     "Global Thermostat Operations, LLC (name contains 'peraton' via the misspelling 'OPERATONS')",
     "Foster-Miller, Inc. (QinetiQ Inc. unit that sits under a legacy Peraton parent record)"
    ],
@@ -4775,14 +5081,19 @@
     "CSRA Inc."
    ],
    "avoid": [
-    "General Dynamics Corporation (parent; its family also covers Electric Boat, Bath Iron Works, Gulfstream, GD Land Systems)",
+    "General Dynamics Corporation",
     "General Dynamics Mission Systems, Inc.",
     "General Dynamics Land Systems Inc.",
     "Electric Boat Corporation",
-    "Computer Sciences Corporation / DXC Technology Company",
+    "Computer Sciences Corporation",
     "Sterling Parent Inc.",
-    "CSRA Economic Opportunity Authority, Inc. (Augusta GA; 'CSRA' = Central Savannah River Area)",
+    "CSRA Economic Opportunity Authority, Inc.",
     "United Way of the CSRA"
+   ],
+   "avoid_notes": [
+    "General Dynamics Corporation (parent; its family also covers Electric Boat, Bath Iron Works, Gulfstream, GD Land Systems)",
+    "Computer Sciences Corporation / DXC Technology Company",
+    "CSRA Economic Opportunity Authority, Inc. (Augusta GA; 'CSRA' = Central Savannah River Area)"
    ],
    "ueis": [
     {
@@ -4929,11 +5240,15 @@
     "F5 Networks, Inc."
    ],
    "avoid": [
-    "F5, Inc (small business, Galata MT)",
-    "F5 Inc DBA F5 Inc (non-F5 registrant)",
+    "F5, Inc",
+    "F5 Inc DBA F5 Inc",
     "2F5 Inc",
     "WF5 Inc",
     "EF5, Inc."
+   ],
+   "avoid_notes": [
+    "F5, Inc (small business, Galata MT)",
+    "F5 Inc DBA F5 Inc (non-F5 registrant)"
    ],
    "ueis": [
     {
@@ -4957,6 +5272,7 @@
     "Lam Research Corporation"
    ],
    "avoid": [],
+   "avoid_notes": [],
    "ueis": [
     {
      "uei": "MK7WB8E5KVM4",
@@ -4988,15 +5304,19 @@
     "Leidos Engineering, LLC"
    ],
    "avoid": [
-    "Science Applications International Corporation (new SAIC, spun off 2013; pre-Sept-2013 records under this name are Leidos)",
+    "Science Applications International Corporation",
     "SAIC Motor Corporation",
     "North Wind-Leidos JV, LLC",
     "Cardno GS - AECOM Pacific JV",
     "Stantec GS - WSP JV",
     "Cardno - AMEC Foster Wheeler Joint Venture",
     "Kahu, a Leidos and Pueo JV, LLC",
-    "Kaleidoscope Youth Development Services, Inc. (name contains 'leidos')",
+    "Kaleidoscope Youth Development Services, Inc.",
     "Kleidosty Pacific LLC"
+   ],
+   "avoid_notes": [
+    "Science Applications International Corporation (new SAIC, spun off 2013; pre-Sept-2013 records under this name are Leidos)",
+    "Kaleidoscope Youth Development Services, Inc. (name contains 'leidos')"
    ],
    "ueis": [
     {
@@ -5076,8 +5396,11 @@
     "Nordstrom Vegetation LLC",
     "Nordstrom Construction Company, Inc.",
     "Amana-Nordstrom, Inc.",
+    "The Nordstrom Law Firm",
+    "K and C Nordstrom Inc"
+   ],
+   "avoid_notes": [
     "The Nordstrom Law Firm (Vincent Nordstrom)",
-    "K and C Nordstrom Inc",
     "NORDSTROM INC (UEI MEGZYVUL2HR5, Bradenton FL small business, alt name Rolf Erik Nordstrom)"
    ],
    "ueis": [],

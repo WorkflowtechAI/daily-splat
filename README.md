@@ -150,7 +150,7 @@ python3 infra/test_splat.py
 
 | Source | What it shows | How it matches |
 |---|---|---|
-| [USAspending](https://api.usaspending.gov) | Prime contract obligations per federal fiscal year, and how much came from DoD, DHS, ICE and CBP | The employer's reviewed UEIs, less its joint ventures (`exclude_ueis`) |
+| [USAspending](https://api.usaspending.gov) | Prime contract obligations per federal fiscal year, and how much DoD, DHS, ICE and CBP paid for (funding agency; DoD data runs about 90 days late) | The employer's reviewed UEIs; whatever joint ventures, sold units (`exclude_ueis`) and other listed employers' UEIs received inside that search comes off |
 | NLRB, via [labordata/nlrb-data](https://github.com/labordata/nlrb-data) | Unfair-labor-practice charges against it since five years ago, and how they closed | Respondent name equals a reviewed legal name |
 | [CourtListener](https://www.courtlistener.com/help/api/) | Federal employment civil-rights cases (nature of suit 442 and 445) | A docket party equals a reviewed legal name |
 | [FEC bulk files](https://www.fec.gov/data/browse-data/?tab=bulk-data) | What the employer's connected PAC gave federal candidates, by party | The PAC's connected organization equals a reviewed legal name |
