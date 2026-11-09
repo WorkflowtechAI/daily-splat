@@ -44,6 +44,7 @@
   .standfirst{font-size:1.04rem;color:var(--ink-soft);margin:0;max-width:66ch}
   .today{font-family:var(--mono);font-size:12px;color:var(--ink-faint);margin:10px 0 0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
   .today b{color:var(--moss);font-weight:600}
+  .kicker a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
   .linkbtn{font:inherit;color:var(--copper-ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
   .linkbtn:hover{color:var(--copper)}
 
@@ -181,7 +182,7 @@
 <body>
 <div class="wrap">
   <header class="mast">
-    <p class="kicker">Job-hunt cabal · rebuilt every morning</p>
+    <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v2.0</a></p>
     <h1>The Daily Splat</h1>
     <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud) and tech PM jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
     <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button></p>

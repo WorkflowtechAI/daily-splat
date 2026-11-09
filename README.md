@@ -142,6 +142,14 @@ first sample run shipped. Run it after touching a regex:
 python3 infra/test_splat.py
 ```
 
+## Patch notes
+
+`changes.html` holds the patch notes, newest first, one `<section id="vX.Y">`
+per version. The masthead links to it with the current version
+(`<a id="version" ...>vX.Y</a>`), and CI fails if the two differ, so a release
+with user-facing changes adds an entry and bumps the link in the same PR. The
+unit installs `changes.html` beside `index.html`.
+
 ## Company check
 
 "Company check" on each card opens public records about the employer, from
