@@ -638,7 +638,7 @@
       if (s) { history.replaceState(null, "", "#" + s); restored = true; }
     } catch { /* private mode */ }
   }
-  readHash(); syncControls(); wire();
+  readHash(); wire(); syncControls();  // wire() builds the Kind chips that syncControls() shows or hides
   fetch("jobs.json", { cache: "no-cache" })
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then((d) => {
