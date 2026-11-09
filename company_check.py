@@ -65,6 +65,11 @@ UA = "daily-splat/1.0 (company check; https://iambraun.com/cv/job-sources/daily-
 REFRESH_DAYS = 7          # each source, per employer
 SINCE_YEARS = 5           # labor charges and court cases filed in the last five years
 COURT_BUDGET = 100        # CourtListener searches a day, across runs (free tier: 125 a day)
+# Its free tier also limits a minute and an hour: the first live run (2026-11-09)
+# got 429 after about 15 searches back to back. One search per COURT_GAP
+# seconds keeps under 5 a minute, and COURT_RUN under 50 an hour.
+COURT_GAP = 13
+COURT_RUN = 45
 COURT_PAGES = 2           # 20 dockets a page
 FY_COUNT = 3              # fiscal years of federal obligations shown
 RUN_MINUTES = 50          # then every stage stops and the run writes what it has (the unit allows 60)
@@ -134,7 +139,7 @@ AMBIGUOUS = {"ambiguous": True}
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
 def fetch(url: str, data: dict | None = None, headers: dict | None = None, timeout: int = 60,
-          tries: int = 2, to_file: Path | None = None):
+          tries: int = 3, to_file: Path | None = None):
     body = json.dumps(data).encode() if data is not None else None
     h = {"User-Agent": UA, "Accept": "application/json", **(headers or {})}
     if body is not None:
@@ -168,7 +173,7 @@ def fetch(url: str, data: dict | None = None, headers: dict | None = None, timeo
         except Exception as e:  # noqa: BLE001 - network trouble of every shape
             last = e
         if attempt + 1 < tries:
-            time.sleep(3 * (attempt + 1))
+            time.sleep(5 * (attempt + 1))   # USAspending drops connections in bursts
     raise RuntimeError(f"{type(last).__name__}: {str(last)[:160]}")
 
 
@@ -360,6 +365,9 @@ def labor(e: dict, idx: dict[str, list[tuple]]) -> dict:
 CL = "https://www.courtlistener.com"
 
 
+_court_last = [-1e9]   # when the last CourtListener search went out (monotonic seconds)
+
+
 def courts(e: dict, token: str, budget: list[int]) -> dict | None:
     """Federal employment civil-rights dockets (nature of suit 442, 445) since
     SINCE with one of the employer's legal names as a party. Each legal name is
@@ -380,6 +388,10 @@ def courts(e: dict, token: str, budget: list[int]) -> dict | None:
             if budget[0] <= 0:
                 raise RuntimeError("budget")
             budget[0] -= 1
+            wait = COURT_GAP - (time.monotonic() - _court_last[0])
+            if wait > 0:
+                time.sleep(wait)
+            _court_last[0] = time.monotonic()
             d = fetch_json(url, headers={"Authorization": f"Token {token}"})
             for r in d.get("results") or []:
                 if any(norm_entity(p) in names for p in r.get("party") or []):
@@ -672,7 +684,7 @@ def main() -> int:
 
     def save():
         cache["_as_of"] = as_of
-        cache["_court_used"] = {"date": TODAY.isoformat(), "n": COURT_BUDGET - budget[0] + used_before}
+        cache["_court_used"] = {"date": TODAY.isoformat(), "n": used_before + start_budget - budget[0]}
         if args.dry_run:
             return
         STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -685,7 +697,8 @@ def main() -> int:
     # CourtListener's limit is per day, so the budget counts this day's earlier runs.
     used = cache.get("_court_used") or {}
     used_before = used.get("n", 0) if used.get("date") == TODAY.isoformat() else 0
-    budget = [max(0, COURT_BUDGET - used_before)]
+    budget = [max(0, min(COURT_RUN, COURT_BUDGET - used_before))]
+    start_budget = budget[0]
 
     def labor_setup():
         idx = labor_index(nlrb_db(args.refresh))

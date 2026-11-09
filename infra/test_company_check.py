@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("company_check", ROOT / "company_check.py")
 cc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cc)
+cc.COURT_GAP = 0   # no pacing in tests
 
 bad = 0
 total = 0
@@ -446,6 +447,13 @@ st = json.loads(cc.OUT.read_text(encoding="utf-8"))["stats"]["courts"]
 check("run: courts stops at the day's budget", (len(cl_calls), st["updated"], st["kept"]), (3, 1, 1))
 cc.main()
 check("run: a second run that day searches no more", len(cl_calls), 3)
+cc.COURT_BUDGET, cc.COURT_RUN = 100, 2
+cc.CACHE.unlink()
+cl_calls.clear()
+sys.argv = ["company_check.py", "--only", "courts"]
+cc.main()
+check("run: one run spends at most COURT_RUN searches (the hourly limit)", len(cl_calls), 2)
+cc.COURT_RUN = 45
 sys.argv = ["company_check.py", "--dry-run"]
 cc.CACHE.unlink()
 cl_calls.clear()
