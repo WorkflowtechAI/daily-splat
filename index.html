@@ -394,9 +394,15 @@
   const st = { track: "all", subs: new Set(), where: new Set(), levels: new Set(), flags: new Set(), q: "" };
   let terms = [], restored = false;
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // A phrase with a space ("help desk", "site reliability") stands for its whole
+  // synonym set, as its one-word key does; other words each have to match.
+  const PHRASE = Object.entries(SYN).flatMap(([k, alts]) => alts.filter((a) => a.includes(" ")).map((a) => [a, k]))
+    .sort((a, b) => b[0].length - a[0].length);
   function setQuery(q) {
     st.q = q;
-    terms = q.toLowerCase().split(/\s+/).filter(Boolean)
+    let s = q.toLowerCase();
+    for (const [a, k] of PHRASE) s = s.replace(new RegExp(`(^|[^a-z0-9])${esc(a)}(?![a-z0-9])`, "g"), `$1${k}`);
+    terms = s.split(/\s+/).filter(Boolean)
       .map((w) => new RegExp("(?:^|[^a-z0-9])(?:" + (SYN[w] || [w]).map(esc).join("|") + ")", "i"));
   }
   function readHash() {
@@ -435,7 +441,9 @@
     $$("[data-where]").forEach((b) => b.setAttribute("aria-pressed", String(st.where.has(b.dataset.where))));
     $$("[data-level]").forEach((b) => b.setAttribute("aria-pressed", String(st.levels.has(b.dataset.level))));
     $$("[data-flag]").forEach((b) => b.setAttribute("aria-pressed", String(st.flags.has(b.dataset.flag))));
-    if ($("#q").value !== st.q) $("#q").value = st.q;
+    // Compare trimmed: the query is stored trimmed, and rewriting the box with it ate
+    // the space someone had just typed between two words (user report, 2026-11-09).
+    if ($("#q").value.trim() !== st.q) $("#q").value = st.q;
     $("#reset").hidden = !hashString();
     const hints = [st.track, ...["entry", "staff"].filter((l) => st.levels.has(l))].map((k) => HINT[k]).filter(Boolean);
     $("#hint").textContent = hints.join(" · ");
