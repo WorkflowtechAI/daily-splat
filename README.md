@@ -146,9 +146,16 @@ python3 infra/test_splat.py
 
 `changes.html` holds the patch notes, newest first, one `<section id="vX.Y">`
 per version. The masthead links to it with the current version
-(`<a id="version" ...>vX.Y</a>`), and CI fails if the two differ, so a release
-with user-facing changes adds an entry and bumps the link in the same PR. The
-unit installs `changes.html` beside `index.html`.
+(`<a id="version" ...>vX.Y</a>`), and CI fails if the two differ. The unit
+installs `changes.html` beside `index.html`.
+
+A PR that changes what people see (`index.html`, `splat.py`,
+`company_check.py`, `infra/intake.py`) adds its entry and bumps the version in
+the same PR; CI fails it otherwise. A fix nobody would notice gets the
+`no-notes` label instead. A new entry is a minor bump (v2.1) for fixes and
+small additions, a major one (v3.0) for a new feature. The notes are written
+to the group, plainly, in David's voice; `company_names.json` updates need
+none.
 
 ## Company check
 
@@ -260,7 +267,8 @@ sudo systemctl start daily-splat.service      # first run now, so the page has d
    `rule_level` with a test case for it in `infra/test_splat.py`.
 2. Run the tests (`python3 infra/test_splat.py`) and, for a new source, one
    source by hand (`python3 splat.py --dry-run --only greenhouse --dump /tmp/s.json`).
-3. Open a PR into `main`. It needs a maintainer's review; once merged it runs
-   on the next morning's build.
+3. Open a PR into `main`. If it changes what people see, add a patch notes
+   entry (see "Patch notes"). It needs a maintainer's review; once merged it
+   runs on the next morning's build.
 
 Stdlib Python only: no pip dependencies. Never commit keys or `jobs.json`.
