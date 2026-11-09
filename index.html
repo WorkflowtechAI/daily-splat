@@ -92,8 +92,6 @@
   .cc ul{margin:2px 0 4px;padding-left:18px;max-width:80ch}
   .cc b{color:var(--ink);font-weight:600}
   .cc .fine{font-size:.8rem;color:var(--ink-faint)}
-  .cc details{background:none;border:0;padding:0;margin:0;display:inline}
-  .cc summary{display:inline;font-weight:400;color:var(--copper-ink);text-decoration:underline;text-underline-offset:2px}
   .more{margin:10px 0 0;font:500 13px var(--sans);padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:3px;cursor:pointer}
   .empty{padding:24px 0;color:var(--ink-faint)}
   .loading{padding:40px 0;color:var(--ink-faint);font-family:var(--mono);font-size:12px}
@@ -657,7 +655,7 @@
         return [el("b", { text: `FY${y.fy}${i === 0 ? " so far" : ""}${dodLag(y.fy) ? "*" : ""}: ${money(y.total)}` }), of.length ? `, of which ${of.join(", ")}` : ""];
       })));
       const less = years.reduce((a, y) => a + (y.less > 0 ? y.less : 0), 0);
-      if (years.some((y) => dodLag(y.fy))) box.push(para("fine", "* Defense Department contracts reach USAspending about 90 days late, so this year is still missing its latest Defense months."));
+      if (years.some((y) => dodLag(y.fy))) box.push(para("fine", "* Defense Department contracts reach USAspending about 90 days late, so a starred year is still missing its latest Defense months."));
       box.push(para("fine", "Prime contract obligations to the employer and the units it owns, by federal fiscal year (October to September); "
         + "the Defense and Homeland Security parts are by the agency that paid. "
         + `Joint ventures, units it has sold and units of other employers on this list are left out${less > 0 ? ` (${money(less)} over these years)` : ""}. `,
@@ -712,11 +710,9 @@
 
     // Every legal name the labor, court and PAC counts use, so a count can be checked.
     const names = c.matched || c.legal || [];
-    const shown = names.length > 4 ? names.slice(0, 3) : names;
-    const rest = names.slice(shown.length);
-    box.push(para("fine", names.length ? `Records matched on legal names a person reviewed: ${shown.join("; ")}${rest.length ? "; " : ". "}` : "Its legal names are shared with other employers, so only its federal contractor IDs are matched. ",
-      rest.length ? el("details", {}, el("summary", { text: `and ${rest.length} more` }), document.createTextNode(` ${rest.join("; ")}.`)) : "",
-      rest.length ? " " : "", out(CHAT, "Spot a wrong match? Say so on Discord.")));
+    box.push(para("fine", names.length ? `Records matched on legal names a person reviewed: ${names.join("; ").replace(/\.$/, "")}. `
+      : "Its legal names are shared with other employers, so only its federal contractor IDs are matched. ",
+      out(CHAT, "Spot a wrong match? Say so on Discord.")));
     return box;
   }
 
