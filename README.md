@@ -115,10 +115,25 @@ a wrong token shows up as a failed source, it does not break the run.
      without asking.
    - A read posting's own words replace the guesses: its clearance answer
      replaces the federal-contractor `clearance_check`, and pay found in
-     the text fills a row the source left without pay.
+     the text fills a row the source left without pay (or with one figure
+     where the posting gives a range).
+   - Accuracy, from a 60-posting audit on 2026-11-09 against each posting's
+     own text: clearance 60/60, people manager 60/60, office days 60/60,
+     pay 57/60, degree 57/60, years 54/60 (58 counting the years a source
+     states), kind of work 54/60 with the rest left blank, not mislabeled.
+     Work mode and remote limits are shown only when Jev is at least 0.8
+     sure; wrong ones fell from 14 to 2 in 60.
    - A posting that could not be fetched is not cached and is tried again
-     the next day; `jobs.json` reports the pass under `reader` and
-     `counts.read`.
+     the next day; a 403, 404 or 410, or a refused URL, waits a week. A
+     posting Jev still owes answers to is never cached. `jobs.json` reports
+     the pass under `reader` and `counts.read`.
+   - The run still lands when a source or Jev misbehaves. Posting URLs come
+     from listings, so only public https hosts on port 443 are fetched, each
+     fetch has 25 seconds in all (a timer shuts its sockets), pages are cut
+     at 500 KB and parsed with linear patterns. Jev gets four calls at a
+     time and two tries; after 10 failed questions in a row a breaker skips
+     the rest of the day's questions. The read pass has 15 minutes and ends
+     in time for the unit's 45; a fetch still stuck then is left behind.
 
 `infra/test_splat.py` holds the rule cases, most of them bugs the
 first sample run shipped. Run it after touching a regex:
