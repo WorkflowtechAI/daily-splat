@@ -586,6 +586,16 @@ def check_reader() -> tuple[int, int]:
     j = {"clearance": False}
     splat.apply_read(j, {"read": True, "clr": "top_secret"})
     eq("apply_read(top secret)", j, {"clearance": True, "clr": "top_secret", "read": True})
+    # Listings supply the URLs the reader fetches: never this box, its network, or metadata.
+    for host in ("127.0.0.1", "10.1.2.3", "192.168.1.5", "169.254.169.254", "::1", "localhost"):
+        eq(f"public_host({host!r})", splat.public_host(host), False)
+    for url in ("http://example.com/job", "https://127.0.0.1:8791/api/splat-intake", "file:///etc/passwd"):
+        try:
+            splat.host_get(url)
+            got = "fetched"
+        except RuntimeError:
+            got = "refused"
+        eq(f"host_get({url!r})", got, "refused")
     return bad, total
 
 

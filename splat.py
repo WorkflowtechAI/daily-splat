@@ -40,9 +40,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import os
 import re
+import socket
 import sys
 import threading
 import time
@@ -532,7 +534,7 @@ def http_json(url: str, data: dict | None = None, headers: dict | None = None, t
 
 
 def http_text(url: str, data: dict | None = None, headers: dict | None = None, tries: int = 3, timeout: int = 40,
-              limit: int | None = None) -> str:
+              limit: int | None = None, opener=None) -> str:
     body = json.dumps(data).encode() if data is not None else None
     h = {"User-Agent": UA, "Accept": "application/json", **(headers or {})}
     if body is not None:
@@ -541,7 +543,7 @@ def http_text(url: str, data: dict | None = None, headers: dict | None = None, t
     for attempt in range(tries):
         try:
             req = urllib.request.Request(url, data=body, headers=h)
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with (opener.open(req, timeout=timeout) if opener else urllib.request.urlopen(req, timeout=timeout)) as r:
                 return (r.read(limit) if limit else r.read()).decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             last = e
@@ -1258,14 +1260,40 @@ _HOSTS_LOCK = threading.Lock()
 _JEV_SLOTS = threading.BoundedSemaphore(6)  # TypeSafe allows 40 requests a second
 
 
+def public_host(host: str) -> bool:
+    """True when every address the name resolves to is on the public internet. The
+    reader fetches URLs that third-party listings supply; one must not be able to
+    point this server at itself, its network, or a cloud metadata address."""
+    try:
+        addrs = {a[4][0] for a in socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)}
+    except (OSError, UnicodeError):
+        return False
+    return bool(addrs) and all(ipaddress.ip_address(a.split("%")[0]).is_global for a in addrs)
+
+
+class _PublicRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        u = urllib.parse.urlsplit(newurl)
+        if u.scheme != "https" or not public_host(u.hostname or ""):
+            raise urllib.error.HTTPError(newurl, 403, "redirect to a non-public address", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+PUBLIC = urllib.request.build_opener(_PublicRedirects)
+
+
 def host_get(url: str, as_json: bool = True, headers: dict | None = None):
-    """Three requests at a time per host at most: the boards are employers' sites."""
-    host = urllib.parse.urlsplit(url).netloc.lower()
+    """A posting fetch: https to a public host only, redirects included, and three
+    requests at a time per host at most (the boards are employers' sites)."""
+    u = urllib.parse.urlsplit(url)
+    if u.scheme != "https" or not public_host(u.hostname or ""):
+        raise RuntimeError(f"not a public https URL: {u.hostname}")
+    host = u.netloc.lower()
     with _HOSTS_LOCK:
         slot = _HOSTS.setdefault(host, threading.BoundedSemaphore(3))
     with slot:
         # A page is cut at 3 MB; an API answer is not (Ashby's boards run past it).
-        s = http_text(url, headers=headers, tries=2, timeout=30, limit=None if as_json else 3_000_000)
+        s = http_text(url, headers=headers, tries=2, timeout=30, limit=None if as_json else 3_000_000, opener=PUBLIC)
     return json.loads(s) if as_json else s
 
 
@@ -1350,7 +1378,7 @@ def _bamboohr_read(m) -> dict:
 def _workable_read(code: str) -> dict | None:
     """apply.workable.com/j/CODE redirects to /ACCOUNT/j/CODE; the job API wants the account."""
     req = urllib.request.Request(f"https://apply.workable.com/j/{code}", headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with PUBLIC.open(req, timeout=30) as r:
         m = re.search(r"apply\.workable\.com/([\w-]+)/j/", r.geturl())
     if not m:
         return None
