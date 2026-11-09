@@ -34,6 +34,7 @@ that fails keeps its last facts. Writes companies.json beside jobs.json.
 from __future__ import annotations
 
 import argparse
+import collections
 import hashlib
 import io
 import json
@@ -56,6 +57,7 @@ _SPLAT_OUT = os.environ.get("SPLAT_OUT")
 OUT = Path(os.environ.get("COMPANY_OUT") or (Path(_SPLAT_OUT).parent / "companies.json" if _SPLAT_OUT
                                               else HERE / "companies.json"))
 STATE_DIR = Path(os.environ.get("STATE_DIRECTORY") or HERE / ".state")
+JOBS = Path(os.environ.get("JOBS_JSON") or OUT.parent / "jobs.json")   # today's page: whose employers to check
 CACHE = STATE_DIR / "company-check.json"
 DATA = STATE_DIR / "company-data"
 NOW = datetime.now(timezone.utc)
@@ -72,6 +74,7 @@ COURT_GAP = 13
 COURT_RUN = 45
 COURT_PAGES = 2           # 20 dockets a page
 FY_COUNT = 3              # fiscal years of federal obligations shown
+AUTO_MAX = 800            # employers matched automatically, most postings first
 RUN_MINUTES = 50          # then every stage stops and the run writes what it has (the unit allows 60)
 BREAKER = 3               # failures in a row that stop a source for the day: the service is down
 SINCE = (TODAY - timedelta(days=365 * SINCE_YEARS)).isoformat()
@@ -554,24 +557,76 @@ def vt_parents(refresh: bool) -> dict[str, str]:
 
 
 def violations(e: dict, parents: dict[str, str]) -> dict:
-    slug = e.get("vt")
-    if slug is None:
+    vt = e.get("vt")
+    if vt is None and not (e.get("auto") and not legal_set(e)):
         # The employer's own names only: a subsidiary's legal name finds the
         # subsidiary's page (Synopsys's "ANSYS, Inc." found Ansys).
         for n in [norm_entity(x) for x in (e.get("names") or []) + (e.get("legal") or [])[:1]]:
             if n in parents:
-                slug = parents[n]
+                vt = parents[n]
                 break
-    if slug:
-        return {"link": f"{VT}/parent/{slug}", "kind": "parent"}
+    if vt:
+        return {"link": f"{VT}/parent/{vt}", "kind": "parent"}
     name = (e.get("legal") or e.get("names") or [""])[0]
     return {"link": f"{VT}/?" + urllib.parse.urlencode({"company_op": "starts", "company": re.sub(r"[,.]", "", name)}),
             "kind": "search"}
 
 
+# ── Employers the table does not cover: matched automatically ────────────────
+#
+# Every other employer on today's page is matched on the name its card shows,
+# and the page says so. A name several federal contractors share (two UEIs that
+# normalize to it) cannot be told apart, so it gets search links, as an
+# ambiguous reviewed name does. The weekly review moves the busiest of these
+# into company_names.json.
+
+def page_employers(path: Path) -> list[str]:
+    """Company names on today's page, most postings first."""
+    try:
+        jobs = json.loads(path.read_text(encoding="utf-8"))["jobs"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+    return [n for n, _ in collections.Counter(j.get("company") for j in jobs if j.get("company")).most_common()]
+
+
+def auto_name(card: str) -> str:
+    """The card's name as a legal-name guess, a note in parentheses dropped
+    ("Syms Strategic Group, LLC (SSG)")."""
+    return re.sub(r"\s*\([^)]*\)", "", card).strip(" ,") or card
+
+
+def slug(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", (s or "").lower()).strip("-")
+
+
+def discover(name: str) -> dict:
+    """USAspending recipients whose name equals the card's once normalized. One
+    UEI is taken as the employer's; two or more mean several registrations
+    share the name and the check cannot tell whose records are whose."""
+    key = norm_entity(auto_name(name))
+    rows = fetch_json(f"{USA}/recipient/", {"keyword": core_name(auto_name(name)), "award_type": "all", "limit": 50},
+                      timeout=30).get("results") or []
+    hits: dict[str, dict] = {}
+    for r in rows:
+        if r.get("uei") and key and norm_entity(r.get("name")) == key:
+            h = hits.setdefault(r["uei"], {"uei": r["uei"], "name": r.get("name"), "level": r.get("recipient_level")})
+            if r.get("recipient_level") == "P":
+                h["level"] = "P"
+    return {"key": key, "ueis": sorted(hits.values(), key=lambda h: h["uei"]), "ambiguous": len(hits) > 1}
+
+
+def auto_entry(name: str, found: dict) -> dict:
+    """A table-shaped entry for an employer matched automatically."""
+    legal = auto_name(name)
+    return {"id": "auto-" + slug(name), "names": [name], "legal": [legal],
+            "avoid": [legal] if found.get("ambiguous") else [],
+            "ueis": [] if found.get("ambiguous") else found.get("ueis") or [], "auto": True}
+
+
 # ── The run ──────────────────────────────────────────────────────────────────
 
 SOURCES = ("contracts", "labor", "courts", "pac", "violations")
+AUTO_SOURCES = ("contracts", "labor", "pac", "violations")   # courts' few daily searches go to reviewed employers
 
 
 def entry_key(e: dict) -> str:
@@ -608,7 +663,7 @@ def main() -> int:
             cache = json.loads(CACHE.read_text(encoding="utf-8"))
         except ValueError:
             cache = {}
-    stats = {s: {"updated": 0, "kept": 0, "failed": 0, "error": None} for s in SOURCES}
+    stats = {s: {"updated": 0, "kept": 0, "failed": 0, "error": None} for s in ("discover",) + SOURCES}
     as_of: dict = dict((cache.get("_as_of") or {}))
 
     def put(e: dict, src: str, facts):
@@ -623,24 +678,38 @@ def main() -> int:
     # taken out of every other employer's contract totals.
     owner = {u["uei"]: e["id"] for e in employers for u in e.get("ueis") or []}
     others = {e["id"]: frozenset(u for u, o in owner.items() if o != e["id"]) for e in employers}
-    keyed = {"contracts": lambda e: {**e, "_others": sorted(others[e["id"]])}}
+    reviewed = frozenset(owner)
+    keyed = {"contracts": lambda e: {**e, "_others": sorted(others.get(e["id"], reviewed))}}
 
-    def stage(src: str, setup, run):
+    # Employers on today's page that the table does not cover.
+    covered = {page_key(n) for e in employers for n in e.get("names") or []}
+    cards, seen_keys = [], set()
+    for n in page_employers(JOBS):
+        k = page_key(n)
+        if k and k not in covered and k not in seen_keys:
+            seen_keys.add(k)
+            cards.append(n)
+    cards = cards[:AUTO_MAX]
+    probes = [{"id": "auto-" + slug(n), "names": [n]} for n in cards]
+    autos: list[dict] = []
+
+    def stage(src: str, setup, run, pool: list[dict] | None = None):
         """One source over every due employer. A setup failure skips the source
         for today and keeps its cached facts; so does running out of time or
         budget, or BREAKER failures in a row. Saves when done, so a run the
         unit kills later keeps every stage that finished."""
         if src not in only:
             return
-        todo = [e for e in employers if args.refresh or due(cache, keyed.get(src, dict)(e), src)]
-        stats[src]["kept"] = len(employers) - len(todo)
+        pool = employers if pool is None else pool
+        todo = [e for e in pool if args.refresh or due(cache, keyed.get(src, dict)(e), src)]
+        stats[src]["kept"] = len(pool) - len(todo)
         if not todo:
             return
         try:
             ctx = setup()
         except Exception as err:  # noqa: BLE001
             fail(src, err)
-            stats[src]["kept"] = len(employers)
+            stats[src]["kept"] = len(pool)
             print(f"{src}: skipped today ({err})", file=sys.stderr)
             return
         streak = 0
@@ -667,10 +736,13 @@ def main() -> int:
 
     def build() -> dict:
         companies, aliases = {}, {}
-        for e in employers:
+        for e in autos + employers:   # a reviewed employer's name wins over an automatic one
             rec = {"id": e["id"], "legal": e.get("legal") or [], "matched": matched_names(e),
                    "search_name": core_name((e.get("legal") or e.get("names") or [""])[0]),
                    "confidence": e.get("confidence"), "names": e.get("names") or []}
+            if e.get("auto"):
+                found = ((cache.get(e["id"]) or {}).get("discover") or {}).get("facts") or {}
+                rec["auto"] = {"ambiguous": bool(found.get("ambiguous")), "ueis": len(found.get("ueis") or [])}
             for src in SOURCES:
                 got = (cache.get(e["id"]) or {}).get(src)
                 if got:
@@ -710,14 +782,25 @@ def main() -> int:
         as_of["pac"] = idx.get("as_of") or as_of.get("pac")
         return idx
 
-    stage("contracts", lambda: as_of.__setitem__("contracts", usaspending_as_of()),
-          lambda e, _: contracts(e, others[e["id"]]))
-    stage("labor", labor_setup, labor)
+    # Cheap stages first, then the slow network ones, so a short day still
+    # refreshes what it can: discovery, the local indexes, courts (paced, about
+    # ten minutes), then contracts with whatever time is left.
+    if only & set(AUTO_SOURCES):
+        only.add("discover")
+    stage("discover", lambda: None, lambda e, _: discover(e["names"][0]), probes)
+    for n in cards:
+        found = ((cache.get("auto-" + slug(n)) or {}).get("discover") or {}).get("facts")
+        if found is not None:
+            autos.append(auto_entry(n, found))
+    everyone = employers + autos
+    stage("labor", labor_setup, labor, everyone)
+    stage("pac", pac_setup, pac, everyone)
+    stage("violations", lambda: vt_parents(args.refresh), violations, everyone)
     token = os.environ.get("COURTLISTENER_TOKEN", "").strip()
     stage("courts", lambda: token or (_ for _ in ()).throw(RuntimeError("no COURTLISTENER_TOKEN")),
           lambda e, tok: courts(e, tok, budget))
-    stage("pac", pac_setup, pac)
-    stage("violations", lambda: vt_parents(args.refresh), violations)
+    stage("contracts", lambda: as_of.__setitem__("contracts", usaspending_as_of()),
+          lambda e, _: contracts(e, others.get(e["id"], reviewed)), everyone)
 
     page = build()
     print(json.dumps(stats, indent=1), file=sys.stderr)

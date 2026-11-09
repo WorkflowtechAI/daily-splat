@@ -156,17 +156,57 @@ python3 infra/test_splat.py
 | [FEC bulk files](https://www.fec.gov/data/browse-data/?tab=bulk-data) | What the employer's connected PAC gave federal candidates, by party | The PAC's connected organization equals a reviewed legal name |
 | [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search |
 
-Numbers show only for employers in `company_names.json`, a table a person
-reviewed that maps job-board names to legal names and UEIs, with an `avoid`
-list of look-alikes. Names are compared whole, after dropping case, punctuation
-and the corporate suffix; never as a substring. Any employer not in the table
-gets search links instead, because a loose match pins someone else's lawsuit or
-contract on an innocent employer. A charge or a lawsuit is an allegation, and
-the page says so.
+Two kinds of employer:
 
-To add an employer, add an entry to `company_names.json` (its job-board name
-exactly as the card shows it, legal names, UEIs from USAspending's recipient
-search) and run `python3 infra/test_company_check.py`.
+- **Reviewed**, in `company_names.json`: job-board names mapped to legal names
+  and UEIs, with an `avoid` list of look-alikes, checked against live
+  USAspending data. Names are compared whole, after dropping case, punctuation
+  and the corporate suffix; never as a substring.
+- **Matched automatically**: every other employer on today's page (`jobs.json`).
+  The card's name is the legal name, and USAspending is searched for it: one
+  UEI under exactly that name is taken as the employer's; two or more mean
+  several registrations share the name, and the panel shows search links
+  instead of numbers. The panel says the match is automatic and shows what it
+  matched. Court cases are not searched for these (CourtListener allows few
+  searches a day). A looked-up name is cached for a week.
+
+A charge or a lawsuit is an allegation, and the page says so.
+
+### The weekly review
+
+Once a week a scheduled Claude routine runs `python3 infra/company_gaps.py`,
+which lists the busiest employers on the live page that the table does not
+cover, maps about 15 of them into `company_names.json` by the rules below, has
+a second pass check each one, runs the tests and opens a PR that merges when CI
+is green. Nobody edits the table by hand; anyone can.
+
+An entry:
+
+```json
+{"id": "palantir-technologies", "names": ["Palantir Technologies"],
+ "kind": "public company", "legal": ["Palantir Technologies Inc.", "Palantir USG, Inc."],
+ "avoid": ["Palantir.net, Inc."], "avoid_notes": ["Palantir.net, Inc. (Evanston IL web agency, unrelated)"],
+ "ueis": [{"uei": "FSY4LVSBGWB7", "name": "PALANTIR TECHNOLOGIES INC.", "level": "P"},
+          {"uei": "HNN4F9JZWDY8", "name": "PALANTIR USG INC", "level": "C"}],
+ "exclude_ueis": [], "vt": null, "confidence": "high", "notes": "..."}
+```
+
+- `names`: the employer exactly as cards show it (every spelling in use).
+- `legal`: US legal entity names a labor charge, court caption or FEC filing
+  would use. Leave out one that equals a different company once the suffix is
+  dropped, and put that company in `avoid`.
+- `avoid`: bare entity names only; notes go in `avoid_notes`. An avoid name
+  equal to a legal name blocks that legal name (the panel then says the
+  records cannot be told apart).
+- `ueis`: confirmed by USAspending's `/api/v2/recipient/` lookup; parents (P)
+  plus self-parented records that hold contracts. No UEI already in the table.
+- `exclude_ueis`: joint ventures, sold units and other companies' units that a
+  search over `ueis` would count (find them with `spending_by_category/recipient`
+  over FY window). Only what they received inside the search comes off.
+- `unclear` (top level): job-board names reviewed and left out because the
+  employer could not be identified; `company_gaps.py` skips them.
+
+Then run `python3 infra/test_company_check.py`.
 
 On the server it needs `COURTLISTENER_TOKEN` in `/etc/daily-splat.env` (a free
 CourtListener account); without it the court source is skipped. Each source

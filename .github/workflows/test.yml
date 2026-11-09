@@ -41,7 +41,7 @@ jobs:
         run: python3 --version
 
       - name: Compile
-        run: python3 -m py_compile splat.py infra/test_splat.py infra/intake.py company_check.py infra/test_company_check.py
+        run: python3 -m py_compile splat.py infra/test_splat.py infra/intake.py company_check.py infra/test_company_check.py infra/company_gaps.py
 
       - name: Rules tests
         run: python3 infra/test_splat.py
