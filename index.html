@@ -139,6 +139,9 @@
   #help #help-status{margin:12px 0 0;font-weight:500}
   #help #help-status.ok{color:var(--moss)}
   #help #help-status.err{color:var(--copper-ink)}
+  #help #help-status span{display:block}
+  #help #help-status .reach{margin-top:8px;color:var(--ink);font-weight:400}
+  #help #help-status .quiet{margin-top:8px;color:var(--ink-soft);font-weight:400;font-size:.9rem}
   #help .trap{position:absolute;left:-9999px}
   @media (max-width:560px){
     #help .two{grid-template-columns:1fr}
@@ -213,7 +216,7 @@
 
   <main id="list"><p class="loading">Loading today's splat…</p></main>
 
-  <p class="meta-link">Come say hi at <a href="https://workflowtech.ai/show-and-tell">Show &amp; Tell</a>, the monthly community call.</p>
+  <p class="meta-link">Come say hi at <a href="https://workflowtech.ai/show-and-tell">Show &amp; Tell</a>, the monthly community call, or any day on <a href="https://discord.gg/D9pHEghG9C">Discord</a>.</p>
 
   <details id="help">
     <summary>Tell me what would help <span class="sum-note">Optional &middot; a few minutes &middot; goes only to David</span></summary>
@@ -666,6 +669,7 @@
 (() => {
   "use strict";
   const loaded = Date.now();
+  const DISCORD = "https://discord.gg/D9pHEghG9C";  // EGI - WorkflowTech.ai, #builders-square; never expires (2026-11-09)
   const help = document.getElementById("help"), form = document.getElementById("help-form");
   const status = document.getElementById("help-status");
   document.getElementById("ask").addEventListener("click", () => { help.open = true; help.scrollIntoView({ behavior: "smooth" }); });
@@ -679,7 +683,19 @@
       const r = await fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) throw new Error(d.error || "It did not send. Please try again in a bit.");
-      form.reset(); status.className = "ok"; status.textContent = "Sent. Thank you for taking the time. It means a lot.";
+      form.reset(); status.className = "ok";
+      // Without an email there is no way to write back, so say how to reach David
+      // instead (an urgent submission arrived with none, 2026-11-09). The last line
+      // shows to everyone, quietly.
+      const t = (s) => document.createTextNode(s);
+      const a = (href, s) => { const x = document.createElement("a"); x.href = href; x.textContent = s; return x; };
+      const line = (cls, ...kids) => { const x = document.createElement("span"); x.className = cls; x.append(...kids); return x; };
+      const noReply = !String(data.email || "").trim();
+      status.replaceChildren(
+        line("sent", t("Sent. Thank you for taking the time. It means a lot.")),
+        ...(noReply ? [line("reach", t("You left no email, so I can't write back. If you want a reply, find me on "),
+          a(DISCORD, "Discord"), t(" or write to "), a("mailto:dgb@workflowtech.ai", "dgb@workflowtech.ai"), t("."))] : []),
+        line("quiet", t("And if things are at the edge right now, 988 answers calls and texts at any hour (US).")));
     } catch (err) {
       status.className = "err"; status.textContent = err.message;
     } finally { btn.disabled = false; }
