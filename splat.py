@@ -39,7 +39,9 @@ pass is skipped and named in the run stats.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
+import http.client
 import ipaddress
 import json
 import os
@@ -65,6 +67,7 @@ STATE_DIR = Path(os.environ.get("STATE_DIRECTORY") or HERE / ".state")
 STATE = STATE_DIR / "state.json"
 
 NOW = datetime.now(timezone.utc)
+_T0 = time.monotonic()  # the run's start, for RUN_BUDGET
 TODAY = NOW.date().isoformat()
 MAX_AGE_DAYS = 30        # older than this drops, whatever the source says
 REMOTE_MAX_AGE_DAYS = 14  # remote-US is ~16k engineering postings a month; two weeks is plenty
@@ -533,37 +536,104 @@ def http_json(url: str, data: dict | None = None, headers: dict | None = None, t
     return json.loads(http_text(url, data, headers, tries, timeout))
 
 
+# A fetch with a deadline: every socket it opens (redirect hops too) is recorded
+# for this thread, and a timer shuts them all down when the deadline passes. That
+# bounds what a per-read timeout cannot: headers or chunk framing dripped a byte at
+# a time, which keeps each read under the socket timeout forever (review, 2026-11-09).
+_FETCH = threading.local()
+
+
+def _kill(sock) -> None:
+    try:
+        socket.socket.shutdown(sock, socket.SHUT_RDWR)  # the base call, under any TLS layer
+    except OSError:
+        pass
+
+
+@contextlib.contextmanager
+def fetch_deadline(seconds: float):
+    socks: list = []
+    killed = [False]
+    prev = getattr(_FETCH, "state", None)
+    _FETCH.state = (socks, killed)
+
+    def fire():
+        killed[0] = True
+        for s in list(socks):
+            _kill(s)
+
+    t = threading.Timer(seconds, fire)
+    t.daemon = True
+    t.start()
+    try:
+        yield killed
+    finally:
+        t.cancel()
+        _FETCH.state = prev
+
+
+def _track(sock) -> None:
+    state = getattr(_FETCH, "state", None)
+    if state:
+        state[0].append(sock)
+        if state[1][0]:
+            _kill(sock)
+
+
+class _TrackedHTTPS(http.client.HTTPSConnection):
+    def connect(self):
+        super().connect()
+        _track(self.sock)
+
+
+class _TrackedHTTP(http.client.HTTPConnection):  # host_get never uses http; the tests do
+    def connect(self):
+        super().connect()
+        _track(self.sock)
+
+
+class _TrackedHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_TrackedHTTPS, req, context=self._context)
+
+
+class _TrackedHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_TrackedHTTP, req)
+
+
 def http_text(url: str, data: dict | None = None, headers: dict | None = None, tries: int = 3, timeout: int = 40,
               limit: int | None = None, opener=None, deadline: float | None = None) -> str:
-    """deadline: seconds for the whole answer, read as it arrives (read1), so a
-    server that drips a byte at a time cannot hold the caller past it."""
+    """deadline: seconds for the whole request, from connecting to the last byte
+    (see fetch_deadline); the body is read as it arrives (read1)."""
     body = json.dumps(data).encode() if data is not None else None
     h = {"User-Agent": UA, "Accept": "application/json", **(headers or {})}
     if body is not None:
         h["Content-Type"] = "application/json"
     last: Exception | None = None
     for attempt in range(tries):
-        try:
-            req = urllib.request.Request(url, data=body, headers=h)
-            with (opener.open(req, timeout=timeout) if opener else urllib.request.urlopen(req, timeout=timeout)) as r:
-                if deadline is None:
-                    return (r.read(limit) if limit else r.read()).decode("utf-8", "replace")
-                end, buf, size = time.monotonic() + deadline, [], 0
-                while not limit or size < limit:
-                    if time.monotonic() > end:
+        with (fetch_deadline(deadline) if deadline else contextlib.nullcontext([False])) as killed:
+            try:
+                req = urllib.request.Request(url, data=body, headers=h)
+                with (opener.open(req, timeout=timeout) if opener else urllib.request.urlopen(req, timeout=timeout)) as r:
+                    if deadline is None:
+                        return (r.read(limit) if limit else r.read()).decode("utf-8", "replace")
+                    buf, size = [], 0
+                    while not limit or size < limit:
+                        chunk = r.read1(65536)
+                        if not chunk:
+                            break
+                        buf.append(chunk)
+                        size += len(chunk)
+                    if killed[0]:
                         raise TimeoutError(f"no complete answer in {deadline:.0f}s")
-                    chunk = r.read1(65536)
-                    if not chunk:
-                        break
-                    buf.append(chunk)
-                    size += len(chunk)
-                return b"".join(buf)[:limit].decode("utf-8", "replace")
-        except urllib.error.HTTPError as e:
-            last = e
-            if e.code in (404, 410, 401, 403, 422):
-                break  # retrying will not change the answer
-        except Exception as e:  # noqa: BLE001 - network flakiness of every shape
-            last = e
+                    return b"".join(buf)[:limit].decode("utf-8", "replace")
+            except urllib.error.HTTPError as e:
+                last = e
+                if e.code in (404, 410, 401, 403, 422):
+                    break  # retrying will not change the answer
+            except Exception as e:  # noqa: BLE001 - network flakiness of every shape
+                last = TimeoutError(f"no complete answer in {deadline:.0f}s") if killed[0] else e
         if attempt + 1 < tries:
             time.sleep(2 ** (attempt + 1))  # never after the last try: nothing follows it
     raise RuntimeError(f"{type(last).__name__}: {str(last)[:120]}")
@@ -1265,21 +1335,62 @@ def jev_key(p: dict) -> str:
     return hashlib.sha1(raw.encode()).hexdigest()[:16]
 
 
+# Jev down must not cost the run (review, 2026-11-09: retries held the slots and an
+# outage ran past the unit's 45 minutes). Every call goes through jev_call: four
+# at a time (six at ~150 ms each reached TypeSafe's 40 a second and drew 429s), two
+# tries with the pause outside the slot, and a breaker that, after JEV_BREAK failed
+# calls in a row, skips every later one without a request.
+JEV_BREAK = 10
+_JEV_FAILS = [0]
+_JEV_LOCK = threading.Lock()
+_JEV_SLOTS = threading.BoundedSemaphore(4)
+
+
+def jev_open() -> bool:
+    with _JEV_LOCK:
+        return _JEV_FAILS[0] >= JEV_BREAK
+
+
+def jev_call(state: dict, questions: dict, key: str, valid) -> dict | None:
+    """Jev's whole answer, when valid(answers) holds, or None. The breaker is checked
+    before and after waiting for a slot; once open, a late success does not close it."""
+    for attempt in range(2):
+        if jev_open():
+            return None
+        with _JEV_SLOTS:
+            if jev_open():
+                return None
+            try:
+                d = http_json("https://api.typesafe.ai/v1/systemone", {"state": state, "model": "jev-latest",
+                              "questions": questions}, headers={"Authorization": f"Bearer {key}"}, tries=1, timeout=30)
+            except (RuntimeError, ValueError):
+                d = None
+        if d is not None and valid(d.get("answers") or {}):
+            with _JEV_LOCK:
+                if _JEV_FAILS[0] < JEV_BREAK:
+                    _JEV_FAILS[0] = 0
+            return d
+        if attempt == 0:
+            time.sleep(1.5)
+    with _JEV_LOCK:
+        _JEV_FAILS[0] += 1
+    return None
+
+
+TRACKS = ("cyber", "eng", "pm", "neither")
+LEVELS = ("intern", "entry", "mid", "senior", "staff", "executive")
+
+
 def ask_jev(p: dict, key: str) -> dict | None:
     state = {"title": p["title"], "company": p["company"], "location": p["location"], "excerpt": p["desc"][:1500]}
-    try:
-        d = http_json("https://api.typesafe.ai/v1/systemone",
-                      {"state": state, "model": "jev-latest", "questions": JEV_QUESTIONS},
-                      headers={"Authorization": f"Bearer {key}"}, tries=2, timeout=60)
-    except RuntimeError as e:
-        return {"error": str(e).replace(key, "[key]")}
-    a = d.get("answers") or {}
-    track = (a.get("track") or {}).get("choice")
-    level = (a.get("level") or {}).get("choice")
+    d = jev_call(state, JEV_QUESTIONS, key, lambda a: (a.get("track") or {}).get("choice") in TRACKS
+                 and (a.get("level") or {}).get("choice") in LEVELS)
+    if d is None:
+        return {"error": "Jev did not answer" + (" (breaker open)" if jev_open() else "")}
+    a = d["answers"]
     clr = (a.get("clearance") or {}).get("noul")
-    if track not in ("cyber", "eng", "pm", "neither") or level not in ("intern", "entry", "mid", "senior", "staff", "executive"):
-        return {"error": "malformed answer"}
-    return {"track": track, "level": level, "clearance": isinstance(clr, (int, float)) and clr >= 0.6,
+    return {"track": a["track"]["choice"], "level": a["level"]["choice"],
+            "clearance": isinstance(clr, (int, float)) and clr >= 0.6,
             "tokens": (d.get("usage") or {}).get("input_tokens", 0)}
 
 
@@ -1296,7 +1407,6 @@ READ_MAX_PER_RUN = 2500
 READ_MIN = 600        # characters of text before a fact it lacks counts as "not stated"
 _HOSTS: dict[str, threading.BoundedSemaphore] = {}
 _HOSTS_LOCK = threading.Lock()
-_JEV_SLOTS = threading.BoundedSemaphore(6)  # TypeSafe allows 40 requests a second
 
 
 def public_host(host: str) -> bool:
@@ -1313,12 +1423,15 @@ def public_host(host: str) -> bool:
 class _PublicRedirects(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         u = urllib.parse.urlsplit(newurl)
-        if u.scheme != "https" or not public_host(u.hostname or ""):
+        if u.scheme != "https" or u.port not in (None, 443) or not public_host(u.hostname or ""):
             raise urllib.error.HTTPError(newurl, 403, "redirect to a non-public address", headers, fp)
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None:
+            fp.close()  # urllib would read the redirect's own body whole, with no cap (review, 2026-11-09)
+        return new
 
 
-PUBLIC = urllib.request.build_opener(_PublicRedirects)
+PUBLIC = urllib.request.build_opener(_PublicRedirects, _TrackedHTTPSHandler, _TrackedHTTPHandler)
 
 
 def host_get(url: str, as_json: bool = True, headers: dict | None = None):
@@ -1343,7 +1456,7 @@ def _gh_read(token: str, jid) -> dict:
     d = host_get(f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs/{jid}?pay_transparency=true")
     usd = [r for r in d.get("pay_input_ranges") or [] if (r.get("currency_type") or "USD") == "USD" and r.get("min_cents")]
     # Each range carries a title; an OTE or commission range is not base pay unless it is all there is.
-    base = [r for r in usd if not OTE.search(f"{r.get('title') or ''} {text(r.get('blurb'), 300)}")] or usd
+    base = [r for r in usd if not OTE.search(EXCEPT.sub("", f"{r.get('title') or ''} {text(r.get('blurb'), 300)}"))] or usd
     pay = structured_pay(min(r["min_cents"] for r in base) / 100, max(r.get("max_cents") or 0 for r in base) / 100) if base else None
     return {"body": body_text(d.get("content")), "pay": pay}
 
@@ -1422,7 +1535,7 @@ def _bamboohr_read(m) -> dict:
 def _workable_read(code: str) -> dict | None:
     """apply.workable.com/j/CODE redirects to /ACCOUNT/j/CODE; the job API wants the account."""
     req = urllib.request.Request(f"https://apply.workable.com/j/{code}", headers={"User-Agent": UA})
-    with PUBLIC.open(req, timeout=20) as r:  # only the redirect's address is wanted, not the page
+    with fetch_deadline(20), PUBLIC.open(req, timeout=20) as r:  # only the redirect's address is wanted
         m = re.search(r"^https://apply\.workable\.com/([\w-]+)/j/", r.geturl())
     if not m:
         return None
@@ -1566,13 +1679,31 @@ PAY_RANGES = [
     re.compile(r"(?<![\w$.,])" + _NUMC + r"()" + _TO + _NUMC + r"()(\s*(?:USD|annually|per year|a year)[^\n.;]{0,30})", re.I),
     re.compile(r"\bUSD\s*" + _NUMC + r"()" + _TO + _NUMC + r"()([^\n.;]{0,40})", re.I),
 ]
+# (?![\d,]|\.\d): the amount ends where its number ends, so "$120,000 - $150,000"
+# never reads as "$120" when the range itself was set aside (review, 2026-11-09).
 PAY_ONE = re.compile(r"\b(?:salary|base pay|pay rate|pay|compensation|wage)\b([^$\n]{0,40}?)(?:USD\s*)?\$\s?" + _NUM
-                     + r"[ \t]*([kK])?(?!\s*(?:-|–|—|to)\s*(?:USD\s*)?\$?\s?\d)([^\n.;]{0,30})", re.I)
+                     + r"(?![\d,]|\.\d)[ \t]*([kK])?(?!\s*(?:-|–|—|to)\s*(?:USD\s*)?\$?\s?\d)([^\n.;]{0,30})", re.I)
 OTE = re.compile(r"\bOTE\b|on-?target|target earnings|commission|total (?:target )?compensation", re.I)
 # Money that is not the salary: a sign-on bonus, equity, relocation (review, 2026-11-09).
-NOT_BASE = re.compile(r"sign-?on|signing|\bbonus|equity|\bRSUs?\b|\bstock\b|relocation|stipend", re.I)
-NOT_BASE_AFTER = re.compile(r"^\s*(?:USD\s*)?(?:in\s+)?(?:sign-?on|signing|bonus|equity|RSUs?|stock|relocation|stipend)", re.I)
-EXCEPT = re.compile(r"(?:not including|excluding|exclusive of|does not include)[^$:]{0,40}", re.I)
+NOT_BASE = re.compile(r"sign-?on|\bsigning\b|\bbonus|\bequity\b|\bRSUs?\b|\bstock\b|relocation|stipend", re.I)
+NOT_BASE_AFTER = re.compile(r"^\s*(?:USD\s*)?(?:in\s+)?(?:sign-?on|signing\b|bonus|equity\b|RSUs?\b|stock\b|relocation|stipend)",
+                            re.I)
+SALARY_WORD = re.compile(r"salary|\bbase\b|\bpay\b|compensation|\bwages?\b|\brange\b", re.I)
+EXCEPT = re.compile(r"(?:not including|excluding|exclusive of|does not include|\bplus\b)[^$:]{0,40}", re.I)
+
+
+def not_base(label: str, tail: str) -> bool:
+    """Is a range labeled as a bonus, equity or the like rather than pay? The label,
+    less its "plus ..." and "not including ..." asides, decides when its last such
+    word comes after its last salary word ("Sign-on bonus:" yes; "Base salary, plus
+    bonus and equity:" no); a word right after the range decides unless it opens a
+    new label ("... $150,000 Bonus: 10%")."""
+    label = EXCEPT.sub("", label)
+    nb = list(NOT_BASE.finditer(label))
+    sw = list(SALARY_WORD.finditer(label))
+    if nb and (not sw or nb[-1].start() > sw[-1].start()):
+        return True
+    return bool(NOT_BASE_AFTER.match(tail)) and not re.match(r"\s*[A-Za-z][\w -]{0,20}:", tail)
 
 
 def _pay_unit(lo: float, hi: float) -> str | None:
@@ -1592,20 +1723,21 @@ def pay_from_text(body: str) -> str | None:
             hi = float(m[3].replace(",", "")) * (1000 if m[4] else 1)
             if not lo or hi < lo or hi > lo * 4:
                 continue
-            before = body[max(0, m.start() - 80):m.start()]
+            before = body[max(0, m.start() - 120):m.start()]
             # The label is the clause just before the range ("Sign-on bonus: $20,000 -
-            # $30,000"), less any "not including bonus" aside, or a word right after it.
-            clause = EXCEPT.sub("", re.split(r"\n|[.!?]\s", before)[-1])
-            if NOT_BASE.search(clause) or NOT_BASE_AFTER.match(m[5]):
+            # $30,000"), or, when the range opens its line, the line above (a heading).
+            parts = re.split(r"\n|[.!?]\s", before)
+            label = parts[-1] if parts[-1].strip() or len(parts) < 2 else parts[-2]
+            if not_base(label, m[5]):
                 continue
             unit = _pay_unit(lo, hi)
             if unit:
-                found.append((lo, hi, unit, bool(OTE.search(before + m[5]))))
+                found.append((lo, hi, unit, bool(OTE.search(EXCEPT.sub("", label) + m[5]))))
     if not found:
         for m in PAY_ONE.finditer(body):
             gap, tail = m[1], m[4]
             # "Salary: up to $95,000" is a cap, and "pay ... a $30,000 sign-on bonus" is not pay.
-            if NOT_BASE.search(gap) or NOT_BASE_AFTER.match(tail) or re.search(r"\bup to\b|\bmax", gap, re.I):
+            if not_base(gap, tail) or re.search(r"\bup to\b|\bmax", gap, re.I):
                 continue
             v = float(m[2].replace(",", "")) * (1000 if m[3] else 1)
             unit = _pay_unit(v, v)
@@ -1648,11 +1780,13 @@ def years_from_text(body: str) -> int | None:
     return None
 
 
-WE = re.compile(r"\b(?:we|our|us|founded|history|since (?:19|20)\d\d)\b|^\W*with (?:over|more than)\b|"
+# About-us text: not a bullet, and it speaks as the company. Not "us" (it matched
+# the country, "US"), and requirement words always win (review, 2026-11-09).
+WE = re.compile(r"^\s*(?![-•*·])[^\n]*?\b(?:we|our|founded|history|since (?:19|20)\d\d)\b|^\W*with (?:over|more than)\b|"
                 r"\bis an? (?:leader|leading)\b|\bleading provider\b", re.I)
-YOU = re.compile(r"\b(?:you|your|candidates?|someone|required|requires|minimum|must|should|need|looking for|"
-                 r"seeking|ideal)\b", re.I)
-DEGREE_AFTER = re.compile(r"\s*(?:degree|college|program|apprenticeship)\b", re.I)
+YOU = re.compile(r"\b(?:you|your|candidates?|someone|require[sd]?|requirements?|qualifications?|expect(?:ed|s)?|"
+                 r"minimum|must|should|need|looking for|seeking|ideal)\b", re.I)
+DEGREE_AFTER = re.compile(r"\s*(?:degree|college|apprenticeship)\b", re.I)
 
 
 _DN = r"(one|two|three|four|five|[1-5])"
@@ -1665,15 +1799,22 @@ def office_days(body: str) -> int | None:
     """Days a week in the office, when a sentence about the office says so; for a
     range ("2-3 days") the low end."""
     for line in re.split(r"\n|(?<=[.!?])\s+", body or ""):
-        m = DAYS.search(line)
-        # "hybrid, remote up to 2 days a week" counts days at home, not in the office.
-        if m and OFFICE.search(line) and not AT_HOME.search(line[max(0, m.start() - 30):m.end() + 30]):
+        if not OFFICE.search(line):
+            continue
+        for m in DAYS.finditer(line):
+            # Judge the clause that holds the count: "remote up to 2 days a week" counts
+            # days at home; "3 days in office, 2 days remote" keeps its 3 (review, 2026-11-09).
+            starts = [c.end() for c in CLAUSE.finditer(line, 0, m.start())]
+            e = CLAUSE.search(line, m.end())
+            if AT_HOME.search(line[(starts[-1] if starts else 0):(e.start() if e else len(line))]):
+                continue
             w = (m[1] or m[2]).lower()
             return NUM_WORD.get(w) or int(w)
     return None
 
 
-AT_HOME = re.compile(r"remote|from home|\bwfh\b|telework|virtual", re.I)
+AT_HOME = re.compile(r"remote|from home|\bwfh\b|telework|\bvirtual(?:ly)?\b", re.I)
+CLAUSE = re.compile(r"[,;:()]|\b(?:and|with|but|while|plus)\b", re.I)
 
 
 def snippet(body: str, pattern: re.Pattern, n: int = 900) -> str:
@@ -1774,40 +1915,17 @@ MANAGER_Q = {"type": "noul", "instructions": "Does the person hired for this job
              "(have direct reports)?"}
 
 
-# Jev down must not cost the run: one try per question, no sleep inside a slot,
-# and after JEV_BREAK failures in a row every later question is skipped without a
-# call (review, 2026-11-09: retries held the slots and an outage ran past 45 min).
-JEV_BREAK = 10
-_JEV_FAILS = [0]
-_JEV_LOCK = threading.Lock()
-
-
-def jev_open() -> bool:
-    with _JEV_LOCK:
-        return _JEV_FAILS[0] >= JEV_BREAK
-
-
 def jev_ask(state: dict, questions: dict, key: str) -> dict | None:
-    """Answers to every question asked, each one valid, or None."""
-    if jev_open():
-        return None
-    d = None
-    with _JEV_SLOTS:
-        try:
-            d = http_json("https://api.typesafe.ai/v1/systemone", {"state": state, "model": "jev-latest",
-                          "questions": questions}, headers={"Authorization": f"Bearer {key}"}, tries=1, timeout=30)
-        except (RuntimeError, ValueError):
-            d = None
-    a = (d or {}).get("answers") or {}
-    ok = d is not None and all(
-        (a.get(n) or {}).get("choice") in q["criteria"] if q["type"] == "choice"
-        else isinstance((a.get(n) or {}).get("noul"), (int, float)) for n, q in questions.items())
-    with _JEV_LOCK:
-        _JEV_FAILS[0] = 0 if ok else _JEV_FAILS[0] + 1
-    return {"answers": a, "tokens": (d.get("usage") or {}).get("input_tokens", 0)} if ok else None
+    """Answers to every question asked, each one valid, or None (see jev_call)."""
+    def valid(a):
+        return all((a.get(n) or {}).get("choice") in q["criteria"] if q["type"] == "choice"
+                   else isinstance((a.get(n) or {}).get("noul"), (int, float)) for n, q in questions.items())
+    d = jev_call(state, questions, key, valid)
+    return {"answers": d["answers"], "tokens": (d.get("usage") or {}).get("input_tokens", 0)} if d else None
 
 
 READ_BUDGET = 15 * 60  # seconds for the read pass; what is left waits for tomorrow
+RUN_BUDGET = 40 * 60   # the unit allows 45 minutes; the read pass ends in time to write
 _READ_END = [float("inf")]
 _STUCK = [False]  # a read worker never finished: exit without waiting for it
 
@@ -1860,6 +1978,7 @@ def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
         r = jev_ask({**head, "text": state_text}, qs, key)
         if not r:
             failed = True
+            out["jev_failed"] = True  # whatever else went wrong, Jev still owes this posting answers
             out["error"] = out.get("error") or "jev"
             return None
         tokens += r["tokens"]
@@ -1924,7 +2043,7 @@ def read_key(k: str, url: str = "") -> str:
 
 # A fetch that will fail the same way tomorrow (403, 404, 410, a refused URL) is
 # cached as unread and tried again a week later; anything else, the next day.
-PERMANENT = re.compile(r"HTTP Error 4\d\d|not a public")
+PERMANENT = re.compile(r"HTTP Error (?:40[0-4]|410|422)|not a public")  # not 408 or 429: those pass
 RETRY_UNREAD_DAYS = 7
 
 
@@ -2090,10 +2209,11 @@ def main() -> int:
         bodies: dict = {}
         # The pass gets READ_BUDGET. A worker still stuck after it (a host that never
         # finishes, say) is left behind, not waited for: the run writes the page anyway.
-        _READ_END[0] = time.monotonic() + READ_BUDGET
+        budget = max(60.0, min(READ_BUDGET, RUN_BUDGET - (time.monotonic() - _T0) - 180))
+        _READ_END[0] = time.monotonic() + budget
         ex = ThreadPoolExecutor(16)
         futs = {ex.submit(read_facts, p, key, bool(args.dump_bodies)): (k, p) for k, p in todo}
-        done, pending = wait(futs, timeout=READ_BUDGET + 120)
+        done, pending = wait(futs, timeout=budget + 120)
         ex.shutdown(wait=False, cancel_futures=True)
         read_stats["abandoned"] = len(pending)
         _STUCK[0] = any(f.running() for f in pending)
@@ -2109,11 +2229,12 @@ def main() -> int:
                     "track": p["track"], "body": facts.pop("_body"), "facts": dict(facts)}
             read_stats["read" if facts["read"] else "unread"] += 1
             err = facts.pop("error", None)
+            jev_failed = facts.pop("jev_failed", False)
             run_facts[rk] = facts
             if err:
                 read_stats["failed"] += 1
                 read_stats["error"] = read_stats["error"] or err
-                if err in ("jev", "deadline") or (not facts["read"] and not PERMANENT.search(err)):
+                if jev_failed or err == "deadline" or (not facts["read"] and not PERMANENT.search(err)):
                     continue  # tried again tomorrow, not cached half-answered
             reads[rk] = {**facts, "seen": TODAY}
         if args.dump_bodies:
@@ -2138,7 +2259,7 @@ def main() -> int:
             if p.get(flag):
                 jobs[jid][flag] = True
         rk = read_key(k, p["url"])
-        f = reads.get(rk) or run_facts.get(rk)
+        f = run_facts.get(rk) or reads.get(rk)  # today's read, when there was one, over an older cached one
         if f:
             apply_read(jobs[jid], f)
         if rk in reads:
@@ -2209,11 +2330,17 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    rc = main()
-    if _STUCK[0]:
-        # A read worker is still blocked in a fetch. The files are written; exiting
-        # normally would wait for that thread, so leave without waiting.
-        sys.stdout.flush()
-        sys.stderr.flush()
-        os._exit(rc)
+    rc = 1
+    try:
+        rc = main()
+    except BaseException:  # noqa: BLE001 - reported, then the exit below still runs
+        import traceback
+        traceback.print_exc()
+    finally:
+        if _STUCK[0]:
+            # A read worker is still blocked in a fetch. Exiting normally (or on an
+            # exception) would wait for that thread, so leave without waiting.
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os._exit(rc)
     sys.exit(rc)

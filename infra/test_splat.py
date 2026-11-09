@@ -625,22 +625,63 @@ def check_reader() -> tuple[int, int]:
         splat.jsonld_posting(page)
         splat.body_text(page)
         eq(f"hostile page {page[:9]!r}… parsed fast", time.monotonic() - t0 < 2, True)
-    # Jev down: after JEV_BREAK failures in a row, no more calls are made.
+    # Jev down: two tries per question, and after JEV_BREAK failed questions no more calls.
     calls = []
 
     def down(*a, **k):
         calls.append(1)
         raise RuntimeError("HTTPError: HTTP Error 503")
 
-    real, splat.http_json = splat.http_json, down
+    real, real_sleep = splat.http_json, splat.time.sleep
+    splat.http_json, splat.time.sleep = down, (lambda s: None)
     try:
         for _ in range(splat.JEV_BREAK + 5):
             splat.jev_ask({"title": "x"}, {"manager": splat.MANAGER_Q}, "key")
-        eq("jev breaker: calls made while Jev is down", len(calls), splat.JEV_BREAK)
+        eq("jev breaker: calls made while Jev is down", len(calls), 2 * splat.JEV_BREAK)
+        eq("jev breaker: open", splat.jev_open(), True)
     finally:
-        splat.http_json = real
+        splat.http_json, splat.time.sleep = real, real_sleep
         splat._JEV_FAILS[0] = 0
+    # A server that drips its headers a byte at a time is cut off at the fetch deadline.
+    eq("fetch deadline on dripped headers", fetch_against_drip(), "TimeoutError")
     return bad, total
+
+
+def fetch_against_drip() -> str:
+    """http_text with a 2 s deadline against a local server that sends one header
+    byte every 0.5 s forever (each read stays under the socket timeout)."""
+    import socket
+    import threading
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    stop = threading.Event()
+
+    def serve():
+        conn, _ = srv.accept()
+        conn.recv(4096)
+        try:
+            conn.sendall(b"HTTP/1.1 200 OK\r\n")
+            while not stop.is_set():
+                conn.sendall(b"X")
+                time.sleep(0.5)
+        except OSError:
+            pass
+        finally:
+            conn.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    t0 = time.monotonic()
+    try:
+        splat.http_text(f"http://127.0.0.1:{srv.getsockname()[1]}/", tries=1, timeout=5, limit=1000,
+                        opener=splat.PUBLIC, deadline=2)
+        got = "answered"
+    except RuntimeError as e:
+        got = str(e).split(":")[0] if time.monotonic() - t0 < 4 else "too slow"
+    finally:
+        stop.set()
+        srv.close()
+    return got
 
 
 REVIEW_PAY = [
@@ -649,6 +690,14 @@ REVIEW_PAY = [
     ("Base pay (not including bonus or equity): $100,000 - $130,000", "$100K–$130K/yr"),
     ("In addition to base salary, this role includes a $30,000 sign-on bonus.", None),
     ("Salary: up to $95,000 DOE", None),
+    # The recheck, 2026-11-09: a set-aside range never turns into "$120/hr", and real base ranges stay.
+    ("Sign-on bonus: $20,000 - $30,000", None),
+    ("Salary Range: $120,000 - $150,000 plus bonus and equity", "$120K–$150K/yr"),
+    ("Base salary, plus bonus and equity: $150,000 - $200,000", "$150K–$200K/yr"),
+    ("Base salary $120,000 - $150,000\nBonus: 10% target", "$120K–$150K/yr"),
+    ("Our designing team pays $120,000 - $150,000", "$120K–$150K/yr"),
+    ("Sign-on bonus\n$30,000 - $50,000\nBase salary\n$120,000 - $150,000", "$120K–$150K/yr"),  # labels as headings
+    ("The base salary range is $96,000 - $184,000 (not including commission).", "$96K–$184K/yr"),
 ]
 STRUCTURED_PAY = [
     ((5000, 7000, "MONTH"), None),  # monthly is not shown as a year
@@ -663,11 +712,18 @@ REVIEW_YEARS = [
     ("Founded 12 years ago, we bring experience to every client.\n- 2+ years in a help desk role", 2),
     ("A 2 year degree and 3 years of experience in networking", 3),
     ("We are looking for someone with 5+ years of experience in cloud security", 5),
+    ("Requirements\n- 5+ years of experience supporting users across the US", 5),  # "US" is not "us"
+    ("We require 4+ years of experience with Windows Server", 4),
+    ("Qualifications\n- 5+ years program management in a technology organization\n- PMP preferred", 5),
 ]
 REVIEW_DAYS = [
     ("This position is hybrid with the flexibility to work remotely up to 2 days per week.", None),
     ("Hybrid: work from home 2 days a week.", None),
     ("Hybrid schedule: in the office 3 days a week.", 3),
+    ("Hybrid (3 days/week in office, 2 days remote)", 3),
+    ("This is a hybrid role: in the office 3 days a week and remote 2 days a week.", 3),
+    ("This role is not remote; on-site 5 days a week in Hillsboro.", 5),
+    ("Hybrid: on-site 3 days a week supporting VMware virtualization and storage", 3),
 ]
 
 
