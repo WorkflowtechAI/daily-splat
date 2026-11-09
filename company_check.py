@@ -13,8 +13,10 @@ it gathers:
   courts      CourtListener: federal employment civil-rights cases (nature of
               suit 442 and 445) with the employer as a party.
   pac         FEC bulk files: the PAC connected to the employer, and what it
-              gave federal candidates by party. Employee-funded: a company
-              cannot give to federal candidates itself.
+              gave federal candidates by party. Its money comes from the
+              company's executives, managers and shareholders who choose to
+              give (other employees may be asked twice a year); the company
+              runs it but cannot give to federal candidates itself.
   violations  Violation Tracker (Good Jobs First): a link to the parent page or
               a name search. Its terms allow linking, not copying the data.
 
@@ -702,6 +704,11 @@ def main() -> int:
             return
         pool = employers if pool is None else pool
         todo = [e for e in pool if args.refresh or due(cache, keyed.get(src, dict)(e), src)]
+        # Never checked first, then the longest unchecked. In table order, a
+        # source that cannot finish in a day (courts: 45 searches a run, about
+        # 390 for a full pass) never reached the employers at the end of the
+        # table, the ones added last (found 2026-11-09).
+        todo.sort(key=lambda e: ((cache.get(e["id"]) or {}).get(src) or {}).get("at") or "")
         stats[src]["kept"] = len(pool) - len(todo)
         if not todo:
             return
