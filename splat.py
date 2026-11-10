@@ -478,10 +478,10 @@ SE_SALES = re.compile(r"\bpre-?\s?sales|\bsales\b|\bpartners?\b|\bchannel\b|\bfi
 # the title or the board has to say technology.
 CUSTOMER_ENG = re.compile(r"\bcustomer\s+engineers?\b", re.I)
 # Titles Jev may move into se, from eng or cyber: the above, and the vendors'
-# own names for a sales engineer (Palo Alto and Fortinet hire "Systems Engineers",
-# Databricks "Field Engineers").
+# own names for a sales engineer (Palo Alto and Fortinet hire "Systems Engineers"
+# and Palo Alto's specialists are "Domain Consultants", Databricks "Field Engineers").
 SE_LOOSE = re.compile(SE_ROLE.pattern + r"|\bsolutions?\s+architect|\b(systems|field|channel|partner)\s+engineers?\b|"
-                      + CUSTOMER_ENG.pattern, re.I)
+                      r"\bdomain\s+consultants?\b|" + CUSTOMER_ENG.pattern, re.I)
 # Never a technology sales engineer, whatever else the title says.
 SE_HARD_NOT = re.compile(r"recruit|talent acquisition|\bsourcer\b|counsel|attorney|paralegal|\blegal\b|construction|"
                          r"facilit(y|ies)|\bhvac\b|plumbing|roofing|elevator|physical security|security guard|"
@@ -502,7 +502,9 @@ def se_track(title: str, sa_employer: bool = False, sec_topic: bool = False) -> 
     cust = CUSTOMER_ENG.search(title)
     if not (role or arch or cust) or SE_HARD_NOT.search(title):
         return False
-    tech = bool(PM_TECH.search(title))
+    # "Technical" in "Technical Sales Engineer" is the job's name, not what it sells
+    # ("Technical Sales Engineer - Industrial Valves", the branch review).
+    tech = bool(PM_TECH.search(re.sub(r"\btechnical\s+sales\b", " ", title, flags=re.I)))
     # The rest of NOT_ROLE (mechanical, industrial, manufacturing...) gives way to a
     # technology word, as for a PM: "Industrial Cybersecurity Sales Engineer" counts.
     # The sales words themselves are not the wrong job family here.
@@ -519,9 +521,10 @@ def level_text(title: str, track: str | None) -> str:
     """The title as the level rules should read it. In a PM title "Manager" is
     the job, not a grade: "Product Manager" is mid, "Senior Product Manager" senior.
     In an SE title "Architect" is the job too: AWS hires "Solutions Architects"
-    below its "Senior Solutions Architects"."""
+    below its "Senior Solutions Architects", and a "Pre-Sales Architect" is not
+    senior for the word."""
     if track == "se":
-        return SA_ABBR.sub(" ", SE_ARCH.sub(" ", title))
+        return SA_ABBR.sub(" ", re.sub(r"architect", " ", title, flags=re.I))
     if track != "pm":
         return title
     t = CLOCK.sub(" ", title)
@@ -559,6 +562,8 @@ def apply_jev(p: dict, ans: dict | None) -> bool:
     track = ans["track"]
     if (track == "pm" and not is_pm(p["title"])) or (track == "se" and not se_title(p["title"])):
         track = p["track"]
+    if track in CONFIRM and track != ans["track"]:
+        return False  # the rules' pm or se, which Jev did not confirm (it said the other one)
     # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
     p["level"] = settle_level(p["title"], p["track"], p["level"], track, ans["level"])
     p["track"] = track
@@ -2176,6 +2181,30 @@ def read_due(f: dict | None, p: dict) -> bool:
     return bool(p.get("jev") and f.get("track") and f["track"] != p["track"] and p["track"] in SUB_Q)
 
 
+def fold_read(reads: dict, rk: str, facts: dict, track: str, err: str | None, jev_failed: bool) -> dict | None:
+    """One posting's read into the cache. Returns the facts to show today, or None
+    to show the cached read.
+    A first read is cached unless it should be tried again tomorrow: Jev owed it
+    answers, the pass ran out of time, or the fetch failed in a way that may pass
+    (a 403, 404 or 410 is cached as unread and waits RETRY_UNREAD_DAYS).
+    A re-read for a new track (read_due) that fell short keeps the good read, on
+    today's page and in the cache; apply_read drops its old Kind (branch review,
+    2026-11-10: a failed re-read had shown a Secret job as "No clearance"). One
+    that may pass is tried again tomorrow; a refused or closed page, or one read
+    short, takes the new track and any Kind Jev gave onto the old read, so it is
+    not fetched every day."""
+    old = reads.get(rk) or {}
+    passing = jev_failed or err == "deadline" or bool(err and not PERMANENT.search(err))
+    if old.get("read") and (err or not facts.get("read")):
+        if not passing:
+            reads[rk] = {**{k: v for k, v in old.items() if k != "sub"},
+                         **{k: facts[k] for k in ("sub", "mgr") if k in facts}, "track": track}
+        return None
+    if not (err and (jev_failed or err == "deadline" or (not facts.get("read") and not PERMANENT.search(err)))):
+        reads[rk] = {**facts, "seen": TODAY}
+    return facts
+
+
 def apply_read(j: dict, f: dict) -> None:
     """A posting's read facts onto its page row. Where the text was read, its own
     words replace the guesses made from the title and the company's name."""
@@ -2357,13 +2386,12 @@ def main() -> int:
             read_stats["read" if facts["read"] else "unread"] += 1
             err = facts.pop("error", None)
             jev_failed = facts.pop("jev_failed", False)
-            run_facts[rk] = facts
             if err:
                 read_stats["failed"] += 1
                 read_stats["error"] = read_stats["error"] or err
-                if jev_failed or err == "deadline" or (not facts["read"] and not PERMANENT.search(err)):
-                    continue  # tried again tomorrow, not cached half-answered
-            reads[rk] = {**facts, "seen": TODAY}
+            shown = fold_read(reads, rk, facts, p["track"], err, jev_failed)
+            if shown is not None:
+                run_facts[rk] = shown
         if args.dump_bodies:
             Path(args.dump_bodies).write_text(json.dumps(bodies, ensure_ascii=False), encoding="utf-8")
 

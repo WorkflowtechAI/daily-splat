@@ -177,6 +177,9 @@
     .chip{font-size:12.5px;padding:7px 8px}
     .seg{display:flex;width:100%}
     .seg button{flex:1 1 auto;font-size:12.5px;padding:8px 6px;white-space:nowrap}
+    /* Five tracks since Sales Eng (2026-11-10): each count goes under its label so the row still fits. */
+    .seg[data-key=track] button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px}
+    .seg[data-key=track] .n{margin-left:0}
   }
 </style>
 </head>

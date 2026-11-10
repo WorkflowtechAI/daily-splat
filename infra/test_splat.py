@@ -381,6 +381,12 @@ TRACK_SE = [
     ("Sales Engineer, HVAC Systems", False, None),
     ("Inside Sales Engineer - Industrial Automation", False, None),
     ("Mechanical Sales Engineer", False, None),
+    # "Technical" in "Technical Sales" is the job's name, not a technology (branch review).
+    ("Technical Sales Engineer - Industrial Valves", False, None),
+    ("Technical Sales Specialist - Industrial Coatings", False, None),
+    ("Technical Sales Engineering Manager - Industrial", False, None),
+    ("Technical Sales Engineer - Industrial Cybersecurity", False, "se"),
+    ("Technical Sales Engineer", False, "se"),
     ("Sales Engineer - Physical Security", False, None),
     ("Recruiter, Sales Engineering", False, None),
     ("Technical Recruiter - Sales Engineering", True, None),
@@ -406,6 +412,39 @@ LEVEL_SE = [
     ("Sales Engineer I", "entry"),
     ("Sales Engineering Manager", "senior"),
     ("Director, Sales Engineering", None),
+    ("Pre-Sales Architect", "mid"),                       # any Architect in an SE title is the job
+    ("Technical Sales Architect II", "mid"),
+    ("Senior Pre-Sales Architect", "senior"),
+]
+
+# fold_read: a posting's read into the cache. (cached, today's facts, error, Jev
+# failed) -> (shown today: "new" or "cached", what the cache holds after).
+GOOD = {"read": True, "track": "cyber", "sub": "secops", "clr": "secret", "pay": "$150K–$180K/yr", "seen": "2026-11-09"}
+FOLD_READ = [
+    # A first read is cached and shown.
+    (None, {"read": True, "track": "se", "sub": "sesec"}, None, False,
+     ("new", {"read": True, "track": "se", "sub": "sesec", "seen": "TODAY"})),
+    # A first read Jev still owes answers: shown today, not cached.
+    (None, {"read": True, "track": "se"}, "jev", True, ("new", None)),
+    # A good re-read replaces the old read.
+    (GOOD, {"read": True, "track": "se", "sub": "sesec"}, None, False,
+     ("new", {"read": True, "track": "se", "sub": "sesec", "seen": "TODAY"})),
+    # A re-read that fails in a way that may pass: the good read stands, tried again tomorrow.
+    (GOOD, {"read": False, "track": "se"}, "HTTP Error 503: Service Unavailable", False, ("cached", GOOD)),
+    (GOOD, {"read": True, "track": "se"}, "jev", True, ("cached", GOOD)),
+    (GOOD, {"read": False, "track": "se"}, "deadline", False, ("cached", GOOD)),
+    # A refused or closed page: the good read takes the new track, without its old Kind.
+    (GOOD, {"read": False, "track": "se", "mgr": True}, "HTTP Error 404: Not Found", False,
+     ("cached", {"read": True, "track": "se", "clr": "secret", "pay": "$150K–$180K/yr", "seen": "2026-11-09",
+                 "mgr": True})),
+]
+
+# apply_jev guard for a non-PM se row (branch review): (title, rules track, Jev track) -> kept track or None.
+CROSS_CONFIRM = [
+    ("Solutions Consultant", "se", "pm", None),       # Jev said pm, not se: not published as se
+    ("Technical Program Manager", "pm", "se", None),
+    ("Domain Consultant - Cortex", "cyber", "se", "se"),  # Palo Alto's specialist sales engineers
+    ("Cloud Architect, Product Management", "eng", "pm", "eng"),
 ]
 
 # read_due: is a posting read today? (cached facts, row) -> expected.
@@ -877,6 +916,23 @@ def main() -> int:
         if got != want:
             bad += 1
             print(f"read_due({f!r}, {p!r}) = {got!r}, want {want!r}")
+    for old, facts, err, jf, want in FOLD_READ:
+        reads = {"k": dict(old)} if old else {}
+        shown = splat.fold_read(reads, "k", dict(facts), facts["track"], err, jf)
+        after = reads.get("k")
+        if after and after.get("seen") == splat.TODAY:
+            after = {**after, "seen": "TODAY"}
+        got = ("new" if shown is not None else "cached", after)
+        if got != want:
+            bad += 1
+            print(f"fold_read(old={old!r}, {facts!r}, err={err!r}) = {got!r}, want {want!r}")
+    for title, rt, jt, want in CROSS_CONFIRM:
+        p = {"title": title, "track": rt, "level": "mid", "clearance": False}
+        kept = splat.apply_jev(p, {"track": jt, "level": "mid", "clearance": False})
+        got = p["track"] if kept else None
+        if got != want:
+            bad += 1
+            print(f"apply_jev({title!r}, rules {rt}, jev {jt}) = {got!r}, want {want!r}")
     se_subs = [("Sales Engineer", True, "sesec"), ("Security Solutions Engineer", False, "sesec"),
                ("Solutions Architect", False, None)]
     for title, topic, want in se_subs:
@@ -908,7 +964,7 @@ def main() -> int:
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
              + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total
-             + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2)
+             + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 
