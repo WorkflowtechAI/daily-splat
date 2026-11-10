@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daily Splat · Cyber, IT &amp; Tech PM Jobs · Portland, PNW &amp; Remote</title>
+<title>Daily Splat · Cyber, IT, Tech PM &amp; Sales Engineering Jobs · Portland, PNW &amp; Remote</title>
 <link rel="canonical" href="https://iambraun.com/cv/job-sources/daily-splat/">
-<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them and the project, program and product managers of technology work, entry to principal level, in Portland, Oregon and the rest of the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
-<meta property="og:title" content="Daily Splat: cyber, IT and tech PM jobs in Portland, the PNW and remote">
-<meta property="og:description" content="Entry to principal cybersecurity, infrastructure, IT support and tech PM openings in Oregon, WA, ID or remote-US. Rebuilt daily.">
+<meta name="description" content="Cybersecurity openings, plus the cloud, network, sysadmin and IT support roles around them, the project, program and product managers of technology work, and the sales engineers who sell it, entry to principal level, in Portland, Oregon and the rest of the Pacific Northwest or remote from it. Rebuilt every morning from company job boards and open aggregators; removed postings drop off.">
+<meta property="og:title" content="Daily Splat: cyber, IT, tech PM and sales engineering jobs in Portland, the PNW and remote">
+<meta property="og:description" content="Entry to principal cybersecurity, infrastructure, IT support, tech PM and sales engineering openings in Oregon, WA, ID or remote-US. Rebuilt daily.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#F4F7F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14100c" media="(prefers-color-scheme: dark)">
@@ -19,7 +19,7 @@
   :root{
     --paper:#F4F7F2; --card:#ffffff; --ink:#1d241f; --ink-soft:#4a544c; --ink-faint:#78827a;
     --line:#dfe4dc; --copper:#a64f2a; --copper-ink:#8c3f20; --moss:#1E5C43; --moss-soft:#e3eee7;
-    --cyber:#5a3d8a; --cyber-soft:#ece6f5; --pm:#1f4e79; --pm-soft:#e4edf6;
+    --cyber:#5a3d8a; --cyber-soft:#ece6f5; --pm:#1f4e79; --pm-soft:#e4edf6; --se:#5f5410; --se-soft:#f0ecd5;
     --serif:"Fraunces",Georgia,"Times New Roman",serif;
     --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular","Consolas",monospace;
@@ -28,7 +28,7 @@
     :root{
       --paper:#14100c; --card:#1d1712; --ink:#f1e9df; --ink-soft:#b3a798; --ink-faint:#8d8277;
       --line:#332a22; --copper:#d98a5c; --copper-ink:#e3a077; --moss:#7cc4a0; --moss-soft:#1f2a22;
-      --cyber:#b9a2e6; --cyber-soft:#262033; --pm:#8fbbe6; --pm-soft:#1b2430;
+      --cyber:#b9a2e6; --cyber-soft:#262033; --pm:#8fbbe6; --pm-soft:#1b2430; --se:#d9c66b; --se-soft:#29261a;
     }
   }
   *{box-sizing:border-box}
@@ -81,6 +81,7 @@
   .tag.cyber{background:var(--cyber-soft);color:var(--cyber);border-color:transparent}
   .tag.eng{background:var(--moss-soft);color:var(--moss);border-color:transparent}
   .tag.pm{background:var(--pm-soft);color:var(--pm);border-color:transparent}
+  .tag.se{background:var(--se-soft);color:var(--se);border-color:transparent}
   .tag.new{background:var(--moss);color:var(--paper);border-color:transparent;font-weight:600}
   .tag.pay{color:var(--ink);white-space:normal;overflow-wrap:anywhere}  /* a long pay line wraps instead of widening a phone */
   .tag.warn{color:var(--copper-ink);border-color:var(--copper)}
@@ -184,14 +185,14 @@
   <header class="mast">
     <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v2.0</a></p>
     <h1>The Daily Splat</h1>
-    <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud) and tech PM jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
+    <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud), tech PM and sales engineering jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
     <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button></p>
   </header>
 
   <section aria-label="Filters">
   <div class="bar">
     <span class="lbl">Track</span><span class="seg" data-key="track">
-      <button data-v="all">All<span class="n"></span></button><button data-v="cyber">Cyber<span class="n"></span></button><button data-v="eng">Infra &amp; IT<span class="n"></span></button><button data-v="pm">Tech PM<span class="n"></span></button>
+      <button data-v="all">All<span class="n"></span></button><button data-v="cyber">Cyber<span class="n"></span></button><button data-v="eng">Infra &amp; IT<span class="n"></span></button><button data-v="pm">Tech PM<span class="n"></span></button><button data-v="se">Sales Eng<span class="n"></span></button>
     </span>
   </div>
   <div class="bar" id="subbar" hidden>
@@ -246,6 +247,7 @@
             <label><input type="checkbox" name="tracks" value="Cyber">Cyber</label>
             <label><input type="checkbox" name="tracks" value="Infra &amp; IT">Infra &amp; IT</label>
             <label><input type="checkbox" name="tracks" value="PM">PM</label>
+            <label><input type="checkbox" name="tracks" value="Sales Eng">Sales Eng</label>
           </div>
           <input type="text" name="other_tracks" maxlength="300" placeholder="Something else? Name the track you'd want here" aria-label="Another track"></fieldset>
         <div class="two">
@@ -339,7 +341,7 @@
   <details>
     <summary>How this works</summary>
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads, The Muse and Workable.</p>
-    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
+    <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), or as a sales engineer of technology: sales and solutions engineers and consultants, pre-sales roles, and the solutions architects and customer engineers of technology vendors (sales engineers of industrial, building or other non-technology products, account executives and support after the sale are left out); the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
     <p>Each new posting is also read once, the day it first appears, from the employer's own system where it can be: its pay range, any clearance it requires, days in the office, where a remote hire may live, the degree and years it asks for, the kind of work, and whether the job manages people. Pay, years and office days are taken from the text as written; the rest is the classifier's reading of the few sentences that say it, so check the posting before you rely on a tag. <span id="read-line"></span> A federal or defense contractor whose posting could not be read gets "Check clearance", since many of their roles need one the title never mentions.</p>
     <p>"Company check" under each card shows public records about the employer: its federal contracts by fiscal year from USAspending, with how much the Defense Department and Homeland Security (ICE and CBP among it) paid for; unfair-labor-practice charges filed against it at the National Labor Relations Board and how they closed; federal employment discrimination cases naming it, from CourtListener; what its PAC gave federal candidates, by party, from the FEC (a corporate PAC's money comes from the company's executives, managers and shareholders who choose to give; the company runs it but cannot give to candidates itself); and its page on Good Jobs First's Violation Tracker. For reviewed employers, records are matched on their checked legal names and federal contractor IDs. Every other employer is matched automatically on the name its card shows, and the panel says so and shows what it matched; when several companies are registered under that name, it shows search links instead of numbers. Each week the busiest unreviewed employers are reviewed and added. A charge or a lawsuit is an allegation, not a finding. The records refresh weekly.</p>
     <p>If your last visit on this device was before yesterday, "New" counts from that visit ("New since Thu") instead of from this morning. The visit date is kept only in this browser and never leaves it.</p>
@@ -361,7 +363,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const LEVEL = { entry: "Entry", mid: "Mid", senior: "Senior", staff: "Staff+" };
-  const TRACK = { cyber: "Cyber", eng: "Infra & IT", pm: "Tech PM" };
+  const TRACK = { cyber: "Cyber", eng: "Infra & IT", pm: "Tech PM", se: "Sales Eng" };
   const ZONE = { oregon: "Portland & OR", waid: "WA / ID", remote: "Remote US" };
   const FLAGS = ["new", "week", "pay", "noclr"];
   // Kinds of work within a track, read from each posting (see How this works).
@@ -379,6 +381,10 @@
            datacenter: ["Data center", "Data center technicians and hardware operations"] },
     pm: { project: ["Project & program", "Project, program and technical program managers, coordinators, PMO"],
           product: ["Product", "Product managers and product owners"] },
+    // What the sales engineer sells. Keys are unique across tracks (SUB below is keyed by them alone).
+    se: { sesec: ["Security", "Selling security products: endpoint, network and cloud security, identity, SIEM and SOC tools"],
+          seinfra: ["Cloud & infra", "Selling cloud, networking, storage, data center, AI infrastructure and IT products"],
+          seapps: ["Software & data", "Selling data, AI, developer and business software"] },
   };
   const SUB = Object.fromEntries(Object.entries(SUBS).flatMap(([t, m]) => Object.entries(m).map(([k, v]) => [k, { track: t, label: v[0], hint: v[1] }])));
   const CLR = { secret: ["Clearance: Secret", "warn"], top_secret: ["Clearance: Top Secret", "warn"],
@@ -393,6 +399,7 @@
     cyber: "Cyber: SOC, security engineering, AppSec, GRC and other security roles",
     eng: "Infra & IT: help desk, desktop support, sysadmin, networks, cloud, DevOps and SRE",
     pm: "Tech PM: project, program and product managers of technology, IT or security work",
+    se: "Sales Eng: sales and solutions engineers, pre-sales and solutions architects for security, cloud and other technology products",
     entry: "Entry: junior, associate, Engineer I / Analyst I, tier 1, new grad and apprentice titles, and roles asking about 0-2 years",
     staff: "Staff+: titles that say staff, principal, distinguished or fellow; Senior Manager titles are under Senior",
   };
@@ -402,6 +409,7 @@
     soc: ["soc", "security operations"], sre: ["sre", "site reliability"], helpdesk: ["help desk", "helpdesk", "service desk"],
     iam: ["iam", "identity"], grc: ["grc", "governance", "compliance"], appsec: ["appsec", "application security", "product security"],
     infosec: ["infosec", "information security"], tpm: ["tpm", "technical program"], pdx: ["portland"],
+    presales: ["presales", "pre-sales", "pre sales"], "pre-sales": ["presales", "pre-sales", "pre sales"],
   };
 
   // Filters live in the URL hash so a filtered view can be shared in the group
@@ -422,7 +430,7 @@
   }
   function readHash() {
     const h = new URLSearchParams(location.hash.slice(1));
-    st.track = ["cyber", "eng", "pm"].includes(h.get("track")) ? h.get("track") : "all";
+    st.track = Object.keys(TRACK).includes(h.get("track")) ? h.get("track") : "all";
     st.subs = new Set((h.get("sub") || "").split(",").filter((x) => SUB[x] && SUB[x].track === st.track));
     // "pnw" alone was "All PNW" (Oregon, WA and ID) before Where took more than one.
     const w = (h.get("where") || "").split(",").flatMap((x) => x === "pnw" ? ["oregon", "waid"] : [x]);
