@@ -599,6 +599,47 @@ EIGHTFOLD_POSITIONS = [
 ]
 
 
+# Two USAJOBS search results, cut to the fields usajobs_rows reads, shaped as the
+# Search API returned them on 2026-11-11 (Fields=Full).
+USAJOBS_ITEMS = [
+    {"MatchedObjectDescriptor": {
+        "PositionTitle": "IT Cybersecurity Specialist", "PositionURI": "https://www.usajobs.gov:443/job/892244600",
+        "OrganizationName": "Bonneville Power Administration", "DepartmentName": "Department of Energy",
+        "PositionLocation": [{"CityName": "Portland, Oregon", "CountrySubDivisionCode": "Oregon"}],
+        "PositionLocationDisplay": "Portland, Oregon",
+        "PositionRemuneration": [{"MinimumRange": "96000.0", "MaximumRange": "125000.0", "RateIntervalCode": "PA"}],
+        "JobGrade": [{"Code": "GS"}], "PublicationStartDate": "2026-11-05T00:00:00.0000",
+        "QualificationSummary": "One year of specialized experience at the GS-11 level.",
+        "UserArea": {"Details": {"JobSummary": "Protect BPA's grid control systems.", "LowGrade": "12",
+                                 "MajorDuties": ["Monitors security events."], "SecurityClearance": "Not Required",
+                                 "RemoteIndicator": False}}}},
+    {"MatchedObjectDescriptor": {
+        "PositionTitle": "Supervisory IT Specialist (OS)", "PositionURI": "https://www.usajobs.gov:443/job/891772600",
+        "OrganizationName": "Deputy Assistant Secretary for Information Technology Operations",
+        "DepartmentName": "Department of Veterans Affairs",
+        "PositionLocation": [{"CityName": "Seattle, Washington", "CountrySubDivisionCode": "Washington"}],
+        "PositionRemuneration": [{"MinimumRange": "107000", "MaximumRange": "140000", "RateIntervalCode": "Per Year"}],
+        "JobGrade": [{"Code": "GS"}], "PublicationStartDate": "2026-11-02",
+        "UserArea": {"Details": {"JobSummary": "Lead the server team.", "LowGrade": "13",
+                                 "SecurityClearance": "Top Secret", "RemoteIndicator": False}}}},
+]
+
+
+def check_usajobs() -> int:
+    rows = splat.usajobs_rows(USAJOBS_ITEMS)
+    got = [(r["title"], r["company"], r["url"], splat.where(r["location"], r["remote"]), r["salary"], r["hint"],
+            splat.rule_track(r["title"]), bool(splat.CLEARANCE.search(r["title"] + " " + r["desc"][:600])),
+            "Security clearance: Not Required" in r["body"]) for r in rows]
+    want = [("IT Cybersecurity Specialist", "Bonneville Power Administration", "https://www.usajobs.gov/job/892244600",
+             "oregon", "$96K–$125K/yr", "MI", "cyber", False, True),
+            ("Supervisory IT Specialist (OS)", "Department of Veterans Affairs", "https://www.usajobs.gov/job/891772600",
+             "pnw", "$107K–$140K/yr", "SE", "eng", True, False)]
+    if got != want:
+        print(f"usajobs_rows = {got!r}, want {want!r}")
+        return 1
+    return 0
+
+
 def check_eightfold() -> int:
     rows = splat.eightfold_rows(EIGHTFOLD_POSITIONS, "jobs.autodesk.com", "Autodesk")
     got = [(r["title"], r["url"], splat.where(r["location"], r["remote"]), r["remote"], r["posted"]) for r in rows]
@@ -860,7 +901,7 @@ REVIEW_DAYS = [
 
 def main() -> int:
     reader_bad, reader_total = check_reader()
-    bad = check_eightfold() + check_fold_remote_twins() + reader_bad
+    bad = check_eightfold() + check_usajobs() + check_fold_remote_twins() + reader_bad
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -981,7 +1022,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 2 + reader_total
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES) + len(NOT_REMOTE) + len(MIDDLEMAN_URLS))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0

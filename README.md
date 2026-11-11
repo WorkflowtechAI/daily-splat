@@ -27,7 +27,8 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   yesterday's postings, for "new today" and the failed-source grace, and the
   Jev answer cache, so each day only pays for its new postings.
 - **Keys:** `/etc/daily-splat.env`, root:root 0600, holding
-  `FOORILLA_API_KEY` and `TYPESAFE_API_KEY`. Kept on the server only. Neither is required; a missing one skips that
+  `FOORILLA_API_KEY`, `TYPESAFE_API_KEY`, and `USAJOBS_API_KEY` with `USAJOBS_EMAIL` (the address the
+  USAJOBS key was registered under; OPM wants it as the User-Agent). Kept on the server only. None is required; a missing one skips that
   source or pass and the run says so in `jobs.json` under `sources` / `jev`.
 
 ## Where the postings come from
@@ -35,6 +36,7 @@ live the next morning. Contributions are welcome: see **Contributing** below.
 | kind | sources | how removal works |
 |---|---|---|
 | Company boards | Greenhouse, Lever, Ashby, Workday tenants, Eightfold (Autodesk, Lam Research, Tektronix, Fortive), Amazon and Providence (Oracle HCM), listed in `splat.py`. The Portland-area governments on NEOGOV (City of Portland, TriMet, Port of Portland, Beaverton, Metro) were dropped 2026-11-11: NEOGOV's terms (effective 2025-09-02) forbid republishing content from the career pages it hosts, public or not, and its robots.txt disallows all but search engines. The page links to their job pages instead, and the reader never fetches governmentjobs.com (`NO_FETCH`) | the board stops returning the job |
+| Federal government | USAJOBS Search API (added 2026-11-11, `src_usajobs`): jobs open to the public in the IT series (2210, 0854, 1550, 0391) in OR, WA and ID, plus remote (none on 2026-11-11). Free with a key; OPM's terms allow republishing ("Prior OPM approval is not required"). Each row links to the official usajobs.gov posting, and the text, pay, grade (as a level hint) and clearance come with the list | the posting closes or is pulled |
 | Open aggregators | RemoteOK, Jobicy, Himalayas, Working Nomads, Workable search. Remotive was dropped 2026-11-04: its API returns the same ~11 jobs whatever is asked, and it asks that its jobs not be republished on third-party sites. The Muse was dropped 2026-11-10: since 2026-11-09 its public jobs API answers every script with a Cloudflare browser challenge (403/404) | the feed stops returning the job |
 | Foorilla (keyed) | PNW location queries over 30 days; remote-US over 14 days from its InfoSec & Privacy (102) and Cybersecurity (26) categories plus security and infra title queries | `expired` flag, or it ages out of the window |
 
