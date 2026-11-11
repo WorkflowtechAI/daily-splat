@@ -29,8 +29,9 @@ It fails closed: if fewer than half the sources answer, it assumes the box lost
 network, writes nothing, and exits non-zero. Yesterday's page stands.
 
 Keys come from the environment (EnvironmentFile in the unit), never from this
-file: FOORILLA_API_KEY, TYPESAFE_API_KEY. Either may be absent; that source or
-pass is skipped and named in the run stats.
+file: FOORILLA_API_KEY, TYPESAFE_API_KEY, USAJOBS_API_KEY with USAJOBS_EMAIL (the
+address the key was registered under). Any may be absent; that source or pass is
+skipped and named in the run stats.
 
     python3 splat.py                # full run, writes jobs.json beside itself (or to $SPLAT_OUT)
     python3 splat.py --dry-run      # everything except the write
@@ -1228,6 +1229,95 @@ def src_providence() -> list[dict]:
     return out
 
 
+# Federal jobs from USAJOBS (OPM's Search API, added 2026-11-11). Free with a key,
+# and its terms allow republishing: "Prior OPM approval is not required"
+# (developer.usajobs.gov/guides/terms-of-service). The key and the email it was
+# registered under (sent as the User-Agent, as OPM requires) live in the server's
+# environment, never here. Only jobs open to the public, in the IT series: 2210 IT
+# management (the federal cyber, sysadmin, network and help desk jobs), 0854
+# computer engineering, 1550 computer science, 0391 telecommunications.
+USAJOBS_SERIES = "2210;0854;1550;0391"
+USAJOBS_PLACES = ("Oregon", "Washington", "Idaho")
+# GS grade to the rules' level hint: GS-7 and under hire at entry, GS-13 and up senior.
+USAJOBS_PAY = {"PA": "/yr", "PER YEAR": "/yr", "PH": "/hr", "PER HOUR": "/hr"}
+
+
+def usajobs_rows(items: list) -> list[dict]:
+    """USAJOBS search results (SearchResultItems) to postings. The link is the
+    official posting on usajobs.gov, and the text comes with the list, so the
+    reader never fetches it."""
+    out = []
+    for it in items:
+        d = it.get("MatchedObjectDescriptor") or {}
+        det = (d.get("UserArea") or {}).get("Details") or {}
+        locs = []
+        for loc in d.get("PositionLocation") or []:
+            city, state = loc.get("CityName") or "", loc.get("CountrySubDivisionCode") or ""
+            locs.append(city if not state or state.lower() in city.lower() else f"{city}, {state}")
+        remote = bool(det.get("RemoteIndicator"))
+        location = "; ".join(x for x in locs if x) or d.get("PositionLocationDisplay") or ""
+        if remote:
+            location = f"{location} (remote) · United States"
+        pay = None
+        for r in d.get("PositionRemuneration") or []:
+            unit = USAJOBS_PAY.get(str(r.get("RateIntervalCode") or r.get("Description") or "").upper())
+            if unit:
+                pay = money(r.get("MinimumRange"), r.get("MaximumRange"), unit)
+                break
+        grade = str(det.get("LowGrade") or "")
+        plan = ((d.get("JobGrade") or [{}])[0].get("Code") or "").upper()
+        hint = "EX" if plan == "ES" else (("EN" if int(grade) <= 7 else "SE" if int(grade) >= 13 else "MI")
+                                          if grade.isdigit() else None)
+        clr = str(det.get("SecurityClearance") or "")
+        # "Not Required" must not reach CLEARANCE, which matches the word itself.
+        # Its values on 2026-11-11: Not Required, Other, Confidential, Secret, Top Secret,
+        # Sensitive Compartmented Information, L Access Authorization.
+        real_clr = clr if re.search(r"secret|confidential|\bsci\b|\bq\b|\bl\b|sensitive", clr, re.I) else ""
+        # The agency, unless the organization is an office inside it ("Deputy Assistant
+        # Secretary for Information Technology" is the VA).
+        org, dept = d.get("OrganizationName") or "", d.get("DepartmentName") or ""
+        company = dept if not org or re.search(r"secretary|office of|deputy|headquarters", org, re.I) else org
+        duties = det.get("MajorDuties") or []
+        body = body_text("<p>".join([str(det.get("JobSummary") or ""), *[str(x) for x in duties],
+                                     str(d.get("QualificationSummary") or ""), str(det.get("Requirements") or ""),
+                                     str(det.get("Education") or ""), f"Security clearance: {clr}" if clr else ""]))
+        url = re.sub(r"^(https://www\.usajobs\.gov):443", r"\1", d.get("PositionURI") or "")
+        out.append(posting(title=d.get("PositionTitle"), company=company,
+                           url=url, location=location, remote=remote, posted=iso(d.get("PublicationStartDate")),
+                           salary=pay, hint=hint,
+                           desc=(f"Clearance: {real_clr}. " if real_clr else "") + text(det.get("JobSummary")),
+                           body=body, mode="remote" if remote else None))
+    return out
+
+
+def src_usajobs() -> list[dict]:
+    key = os.environ.get("USAJOBS_API_KEY", "").strip()
+    email = os.environ.get("USAJOBS_EMAIL", "").strip()
+    if not key or not email:
+        raise RuntimeError("no USAJOBS_API_KEY or USAJOBS_EMAIL")
+    headers = {"Host": "data.usajobs.gov", "User-Agent": email, "Authorization-Key": key}
+    # Remote federal IT jobs: 0 of 159 open to the public on 2026-11-11 (104 allowed
+    # telework). The search is kept for when that changes.
+    queries = [{"LocationName": p} for p in USAJOBS_PLACES] + [{"RemoteIndicator": "True"}]
+    out, seen = [], set()
+    for q in queries:
+        page = 1
+        while page <= 20:  # 500 a page; the IT series in three states and remote is far less
+            params = {**q, "JobCategoryCode": USAJOBS_SERIES, "HiringPath": "public", "DatePosted": MAX_AGE_DAYS,
+                      "ResultsPerPage": 500, "Page": page, "Fields": "Full"}
+            d = http_json("https://data.usajobs.gov/api/search?" + urllib.parse.urlencode(params), headers=headers)
+            res = d.get("SearchResult") or {}
+            for p in usajobs_rows(res.get("SearchResultItems") or []):
+                if p["url"] and p["url"] not in seen:
+                    seen.add(p["url"])
+                    out.append(p)
+            if page >= int((res.get("UserArea") or {}).get("NumberOfPages") or 1):
+                break
+            page += 1
+            time.sleep(0.5)
+    return out
+
+
 # The Portland-area governments on NEOGOV (governmentjobs.com: City of Portland,
 # TriMet, Port of Portland, City of Beaverton, Oregon Metro) were dropped
 # 2026-11-11. NEOGOV's terms of use (effective 2025-09-02) forbid anyone to
@@ -1329,7 +1419,8 @@ def all_sources(only: set[str] | None):
          ("remoteok", "RemoteOK", src_remoteok, ()),
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
          ("workingnomads", "Working Nomads", src_workingnomads, ()),
-         ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ())]
+         ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ()),
+         ("usajobs", "USAJOBS", src_usajobs, ())]
     s += [(f"eightfold:{e[0]}", e[3], src_eightfold, e) for e in EIGHTFOLD]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
