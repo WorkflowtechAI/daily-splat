@@ -8,7 +8,7 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
 
   1. READS every source fresh. Company boards (Greenhouse, Lever, Ashby,
      Workday, Eightfold, Amazon) and the open aggregators (RemoteOK, Jobicy,
-     Himalayas, Working Nomads, The Muse) return what is open today; Foorilla
+     Himalayas, Working Nomads) return what is open today; Foorilla
      (keyed) returns the last FOORILLA_DAYS days with an `expired` flag.
   2. FILTERS with rules: a title that reads as security, infra engineering, a
      technology project, program or product manager, or a sales engineer, a level
@@ -1318,28 +1318,12 @@ def src_workingnomads() -> list[dict]:
             for j in d]
 
 
-def src_muse() -> list[dict]:
-    out = []
-    for loc in ("Portland, OR", "Beaverton, OR", "Hillsboro, OR", "Salem, OR", "Eugene, OR", "Bend, OR",
-                "Vancouver, WA", "Seattle, WA", "Bellevue, WA", "Redmond, WA", "Boise, ID", "Flexible / Remote"):
-        for page in range(0, 5):
-            params = [("page", page), ("location", loc), ("level", "Entry Level"), ("level", "Mid Level"),
-                      ("level", "Senior Level"),
-                      ("category", "Software Engineering"), ("category", "Computer and IT"),
-                      ("category", "Data and Analytics"), ("category", "IT"),
-                      # The PM track; both names checked against the API on 2026-11-03.
-                      ("category", "Project Management"), ("category", "Product Management")]
-            d = http_json("https://www.themuse.com/api/public/jobs?" + urllib.parse.urlencode(params))
-            for j in d.get("results", []):
-                locs = "; ".join(x.get("name", "") for x in j.get("locations") or [])
-                out.append(posting(title=j.get("name"), company=(j.get("company") or {}).get("name"),
-                                   url=(j.get("refs") or {}).get("landing_page"), location=locs,
-                                   remote="remote" in locs.lower(), posted=iso(j.get("publication_date")),
-                                   desc=text(j.get("contents")), origin="aggregator", body=body_text(j.get("contents"))))
-            if page + 1 >= (d.get("page_count") or 0):
-                break
-            time.sleep(0.4)
-    return out
+# The Muse was dropped 2026-11-10: from 2026-11-09 every call to its public jobs
+# API (https://www.themuse.com/api/public/jobs) answers 404 from this server and
+# 403 elsewhere, with Cloudflare's "Just a moment..." browser challenge, and its
+# developer pages sit behind the same challenge. A script cannot pass that, and
+# should not try. No notice of a replacement API was found. If it comes back,
+# the old reader is in git history (src_muse, before this commit).
 
 
 # Technology employers' own boards, for the PM track: a "Product Manager,
@@ -1366,7 +1350,7 @@ def all_sources(only: set[str] | None):
     s = [("foorilla", "Foorilla", src_foorilla, ()), ("amazon", "Amazon", src_amazon, ()),
          ("remoteok", "RemoteOK", src_remoteok, ()),
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
-         ("workingnomads", "Working Nomads", src_workingnomads, ()), ("muse", "The Muse", src_muse, ()),
+         ("workingnomads", "Working Nomads", src_workingnomads, ()),
          ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ())]
     s += [(f"neogov:{a}", n, src_neogov, (a, n)) for a, n in NEOGOV.items()]
     s += [(f"eightfold:{e[0]}", e[3], src_eightfold, e) for e in EIGHTFOLD]
