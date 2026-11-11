@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""The daily splat: cybersecurity, the infra and IT around it, and the project,
-program and product managers of technology work, entry to senior, in the Pacific
-Northwest or remote from it. Built for the job-hunt cabal.
+"""The daily splat: cybersecurity, the infra and IT around it, the project,
+program and product managers of technology work, and the sales engineers who sell
+it, entry to senior, in the Pacific Northwest or remote from it. Built for the
+job-hunt cabal.
 
 Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
 
@@ -9,8 +10,8 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
      Workday, Eightfold, Amazon) and the open aggregators (RemoteOK, Jobicy,
      Himalayas, Working Nomads, The Muse) return what is open today; Foorilla
      (keyed) returns the last FOORILLA_DAYS days with an `expired` flag.
-  2. FILTERS with rules: a title that reads as security, infra engineering or a
-     technology project, program or product manager, a level
+  2. FILTERS with rules: a title that reads as security, infra engineering, a
+     technology project, program or product manager, or a sales engineer, a level
      that is not intern/junior/director, and a location in WA/OR/ID or remote
      within the US.
   3. ASKS JEV (TypeSafe's typed classifier) what track and level each NEW
@@ -453,13 +454,85 @@ def pm_track(title: str, tech_employer: bool = False, sec_topic: bool = False) -
     return tech or sec_topic or tech_employer
 
 
+# The SE track (2026-11-10, David, for a laid-off infosec sales engineer in the
+# group): sales engineers and the other technical pre-sales roles, when what they
+# sell is technology. Before it, "Sales Engineer" matched no rule and no source
+# searched for it; the few solutions engineers and architects that got in were
+# filed under Cyber or Infra & IT.
+# As with the PM track, the rules only propose an se row and Jev confirms it:
+# "Sales Engineer" is as often valves, HVAC or trucks as software, and the title
+# rarely says which.
+SE_ROLE = re.compile(r"\bsales\s+engineer(s|ing)?\b|\bpre-?\s?sales\b|\bsolutions?\s+(engineer(s|ing)?|consultants?)\b|"
+                     r"\btechnical\s+sales\s+(engineer|specialist|consultant|architect|lead)s?\b|"
+                     r"\b(value|demo)\s+engineers?\b", re.I)
+# A solutions architect sells at a technology vendor (AWS, NVIDIA, Microsoft), and
+# designs the employer's own systems elsewhere ("Enterprise Solutions Architect"
+# at a bank), so it is an se row only on a vendor's own board, under Foorilla's
+# infosec topics, or when the title names the sale. AWS writes "SA" too
+# ("Senior Networking SA"); case-sensitive.
+SE_ARCH = re.compile(r"\bsolutions?\s+architect", re.I)
+SA_ABBR = re.compile(r"\bSAs?\b")
+SE_SALES = re.compile(r"\bpre-?\s?sales|\bsales\b|\bpartners?\b|\bchannel\b|\bfield\b|\bcustomers?\b|\baccounts?\b|"
+                      r"\bclients?\b|\bspecialist\b", re.I)
+# Google's title for its sales engineers. Elsewhere it is often field service, so
+# the title or the board has to say technology.
+CUSTOMER_ENG = re.compile(r"\bcustomer\s+engineers?\b", re.I)
+# Titles Jev may move into se, from eng or cyber: the above, and the vendors'
+# own names for a sales engineer (Palo Alto and Fortinet hire "Systems Engineers"
+# and Palo Alto's specialists are "Domain Consultants", Databricks "Field Engineers").
+SE_LOOSE = re.compile(SE_ROLE.pattern + r"|\bsolutions?\s+architect|\b(systems|field|channel|partner)\s+engineers?\b|"
+                      r"\bdomain\s+consultants?\b|" + CUSTOMER_ENG.pattern, re.I)
+# Never a technology sales engineer, whatever else the title says.
+SE_HARD_NOT = re.compile(r"recruit|talent acquisition|\bsourcer\b|counsel|attorney|paralegal|\blegal\b|construction|"
+                         r"facilit(y|ies)|\bhvac\b|plumbing|roofing|elevator|physical security|security guard|"
+                         r"fire (alarm|protection)|\bcctv\b", re.I)
+
+
+def se_title(title: str) -> bool:
+    """A title Jev may file as a sales engineer (see SE_LOOSE)."""
+    return bool(SE_LOOSE.search(title) or SA_ABBR.search(title))
+
+
+def se_track(title: str, sa_employer: bool = False, sec_topic: bool = False) -> bool:
+    """A sales engineer, solutions engineer or consultant, pre-sales role, or a
+    vendor's solutions architect or customer engineer, of technology. sa_employer:
+    the posting is on a board whose solutions architects sell (a technology
+    employer's own, or Amazon's: AWS). Jev has the final say on every se row."""
+    role, arch = SE_ROLE.search(title), SE_ARCH.search(title) or SA_ABBR.search(title)
+    cust = CUSTOMER_ENG.search(title)
+    if not (role or arch or cust) or SE_HARD_NOT.search(title):
+        return False
+    # "Technical" in "Technical Sales Engineer" is the job's name, not what it sells
+    # ("Technical Sales Engineer - Industrial Valves", the branch review).
+    tech = bool(PM_TECH.search(re.sub(r"\btechnical\s+sales\b", " ", title, flags=re.I)))
+    # The rest of NOT_ROLE (mechanical, industrial, manufacturing...) gives way to a
+    # technology word, as for a PM: "Industrial Cybersecurity Sales Engineer" counts.
+    # The sales words themselves are not the wrong job family here.
+    if NOT_ROLE.search(SE_ROLE.sub(" ", title)) and not tech:
+        return False
+    if role:
+        return True
+    if arch:
+        return sa_employer or sec_topic or bool(SE_SALES.search(SE_ARCH.sub(" ", title)))
+    return tech or sa_employer or sec_topic
+
+
 def level_text(title: str, track: str | None) -> str:
     """The title as the level rules should read it. In a PM title "Manager" is
-    the job, not a grade: "Product Manager" is mid, "Senior Product Manager" senior."""
+    the job, not a grade: "Product Manager" is mid, "Senior Product Manager" senior.
+    In an SE title "Architect" is the job too: AWS hires "Solutions Architects"
+    below its "Senior Solutions Architects", and a "Pre-Sales Architect" is not
+    senior for the word."""
+    if track == "se":
+        return SA_ABBR.sub(" ", re.sub(r"architect", " ", title, flags=re.I))
     if track != "pm":
         return title
     t = CLOCK.sub(" ", title)
     return PM_ABBR.sub(" ", PM_TEAM.sub(" ", PM_ROLE.sub(" ", t)))
+
+
+# Rows the rules only propose and Jev must confirm before they are published.
+CONFIRM = ("pm", "se")
 
 
 def settle_level(title: str, rule_track_: str, rule_level_: str, jev_track: str, jev_level: str) -> str:
@@ -467,24 +540,30 @@ def settle_level(title: str, rule_track_: str, rule_level_: str, jev_track: str,
     level depends on the job: if the rules or Jev call it a PM, "Manager" is the
     job, so a "Technical Program Manager" the rules filed pm/mid and Jev calls
     eng/senior is senior, and a "Product Manager" filed cyber/senior that Jev
-    calls pm/mid is mid."""
-    lt = level_text(title, "pm" if "pm" in (rule_track_, jev_track) else rule_track_)
+    calls pm/mid is mid. "Solutions Architect" likewise, when either calls it se."""
+    pair = (rule_track_, jev_track)
+    lt = level_text(title, "pm" if "pm" in pair else "se" if "se" in pair else rule_track_)
     return rule_level_ if (STAFF.search(lt) or SENIOR.search(lt) or ENTRY.search(lt)) else jev_level
 
 
 def apply_jev(p: dict, ans: dict | None) -> bool:
     """Fold Jev's answer (None: none yet) into a candidate. False: not for the page
-    today, because Jev says so, or because it is a pm row Jev has not confirmed
-    (see PM_ROLE); that row is asked again tomorrow."""
+    today, because Jev says so, or because it is a pm or se row Jev has not
+    confirmed (see PM_ROLE and SE_ROLE); that row is asked again tomorrow."""
     p["jev"] = ans is not None
     if ans is None:
-        return p["track"] != "pm"
+        return p["track"] not in CONFIRM
     if ans["track"] == "neither" or ans["level"] in ("intern", "executive"):
         return False
     # Jev may move a row into pm only when the title is a PM job: in the audit of
     # 2026-11-03 it filed "Cloud Architect, Product Management" and "Robotics
-    # Systems Engineer III" there. Otherwise the rules' track stands.
-    track = ans["track"] if ans["track"] != "pm" or is_pm(p["title"]) else p["track"]
+    # Systems Engineer III" there. Into se, likewise, only a sales-engineer title.
+    # Otherwise the rules' track stands.
+    track = ans["track"]
+    if (track == "pm" and not is_pm(p["title"])) or (track == "se" and not se_title(p["title"])):
+        track = p["track"]
+    if track in CONFIRM and track != ans["track"]:
+        return False  # the rules' pm or se, which Jev did not confirm (it said the other one)
     # A title that says its level ("Senior", "Staff", "Junior") keeps it; Jev settles the rest.
     p["level"] = settle_level(p["title"], p["track"], p["level"], track, ans["level"])
     p["track"] = track
@@ -492,15 +571,21 @@ def apply_jev(p: dict, ans: dict | None) -> bool:
     return True
 
 
-def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False) -> str | None:
+def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False,
+               sa_employer: bool | None = None, se: bool = True) -> str | None:
     """sec_topic: the source already filed it under infosec (Foorilla topics 102/26).
-    Then a role-shaped title is enough ("Principal Solutions Engineer" at a
-    security vendor), and Jev has the final say. tech_employer: the posting is on
-    a technology company's own board, so a PM there is tech work (see tech_source).
+    Then a role-shaped title is enough ("Security Engineer III" at a security
+    vendor), and Jev has the final say. tech_employer: the posting is on a
+    technology company's own board, so a PM there is tech work (see tech_source).
     A PM title that is not technology work is out, as every PM title was before
-    the PM track."""
+    the PM track. sa_employer (default: tech_employer): its solutions architects
+    sell (see se_track); a sales engineer comes before the wrong-family words,
+    which name sales. se=False: the track the title would have without the SE
+    track, for a row whose posting says it is not pre-sales (not_presales)."""
     if is_pm(title):
         return "pm" if pm_track(title, tech_employer, sec_topic) else None
+    if se and se_track(title, tech_employer if sa_employer is None else sa_employer, sec_topic):
+        return "se"
     if IS_DEPT.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
         return "cyber" if CYBER.search(title) else "eng"
     if NOT_ROLE.search(title):
@@ -871,7 +956,9 @@ def _wd_days(s: str) -> str | None:
 WD_QUERIES = ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
               "support", "administrator", "help desk",
               # The PM track (2026-11-03). 'local' and 'all_oregon' tenants read every job and need no keyword.
-              "project manager", "program manager", "product manager")
+              "project manager", "program manager", "product manager",
+              # The SE track (2026-11-10): CrowdStrike, F5, Acronis and Pax8 among these tenants.
+              "sales engineer", "solutions engineer", "solutions architect")
 
 
 def src_workday(tenant: str, host: str, site: str, name: str, mode: str = "search") -> list[dict]:
@@ -928,7 +1015,11 @@ def src_amazon() -> list[dict]:
                   # The PM track. Not plain "program manager": Amazon's are mostly
                   # operations and logistics, thousands of them in Washington alone.
                   "technical program manager", "product manager technical", "security program manager",
-                  "it project manager"):
+                  "it project manager",
+                  # The SE track: AWS's sales engineers are its solutions architects
+                  # (about 80 in Washington on 2026-11-10; the search also returns
+                  # consultants and TAMs, which the rules drop).
+                  "solutions architect", "solutions engineer"):
             offset = 0
             while offset < 1000:
                 params = {"base_query": q, "normalized_country_code[]": "USA", "normalized_state_name[]": state,
@@ -980,7 +1071,10 @@ def src_foorilla() -> list[dict]:
               "data center technician",
               # The PM track (2026-11-03).
               "technical program manager", "security program manager", "it project manager", "project manager",
-              "program manager", "product manager", "product owner"):
+              "program manager", "product manager", "product owner",
+              # The SE track (2026-11-10).
+              "sales engineer", "solutions engineer", "solutions architect", "solutions consultant", "presales",
+              "pre-sales", "customer engineer"):
         queries.append({"country": 238, "has_remote": "true", "title": t, "published_after": remote_since})
     out, seen = [], set()
     for q in queries:
@@ -1032,7 +1126,8 @@ def src_workable() -> list[dict]:
     for loc in ("Portland, Oregon", "Salem, Oregon", "Eugene, Oregon", "Bend, Oregon", "Seattle, Washington"):
         for q in ("security", "cyber", "systems administrator", "network engineer", "cloud engineer", "devops",
                   "help desk", "IT support", "infrastructure", "IT specialist",
-                  "project manager", "program manager", "product manager"):
+                  "project manager", "program manager", "product manager",
+                  "sales engineer", "solutions engineer"):
             token = None
             for _ in range(5):
                 params = {"query": q, "location": loc, **({"pageToken": token} if token else {})}
@@ -1300,10 +1395,19 @@ JEV_QUESTIONS = {
               "program and technical program managers (TPM), security program managers, project coordinators "
               "and PMO roles on technology projects, and product managers or product owners of software, "
               "platform, data or security products.",
+        "se": "Sales engineering of technology: sales engineers, solutions engineers and consultants, pre-sales "
+              "engineers and architects, and a vendor's solutions architects or customer engineers, who work "
+              "with its sales team to win customers for software, cloud, security, networking, data or IT "
+              "products (discovery, demos, proofs of concept, solution design). Not engineers who build or run "
+              "the employer's own systems, support or professional-services delivery after the sale, or "
+              "technical account managers.",
         "neither": "Anything else, including general application or product software development (frontend, "
                    "backend, full-stack, mobile, ML, data, games) whose main job is not infrastructure or security; "
                    "customer service or call-center support that is not technical; "
-                   "sales, marketing, recruiting, analysts who do not engineer, "
+                   "sales roles without technical pre-sales work (account executives, sales representatives); "
+                   "sales engineers of industrial, mechanical, electrical, HVAC, building, vehicle, medical-device "
+                   "or semiconductor-equipment products; "
+                   "marketing, recruiting, analysts who do not engineer, "
                    "physical security, hardware, mechanical, civil, manufacturing or chip-design engineering; "
                    "project, program or product managers whose work is not technology (construction, facilities, "
                    "data center construction or build-out, water or energy programs, clinical care, marketing, "
@@ -1315,7 +1419,7 @@ JEV_QUESTIONS = {
         "entry": "Entry level: new grad, junior, associate, apprentice, tier 1, level I, or about 0-2 years asked.",
         "mid": "Mid-level: a few years of experience, level II, no senior title.",
         "senior": "Senior, lead, level III, or a people manager of a team. A project, program or product "
-                  "manager title alone is not senior.",
+                  "manager title alone is not senior, nor is a sales engineer's \"Solutions Architect\".",
         "staff": "Staff, principal, distinguished, or senior architect.",
         "executive": "Director, VP, head of, or C-level."}},
     "clearance": {"type": "noul", "instructions": "Does this role require a US government security clearance?"},
@@ -1326,8 +1430,9 @@ JEV_QUESTIONS = {
 # questions are not read as answers to the new ones. v2 (2026-10-03): "eng"
 # narrowed from all engineering to infrastructure next to security. v3
 # (2026-10-04): "eng" takes IT support and help desk; level has "intern". v4
-# (2026-11-03): track has "pm"; "neither" no longer covers technology PMs.
-JEV_VERSION = "v4"
+# (2026-11-03): track has "pm"; "neither" no longer covers technology PMs. v5
+# (2026-11-10): track has "se"; "neither" names the sales engineers who are out.
+JEV_VERSION = "v5"
 
 
 def jev_key(p: dict) -> str:
@@ -1377,7 +1482,7 @@ def jev_call(state: dict, questions: dict, key: str, valid) -> dict | None:
     return None
 
 
-TRACKS = ("cyber", "eng", "pm", "neither")
+TRACKS = ("cyber", "eng", "pm", "se", "neither")
 LEVELS = ("intern", "entry", "mid", "senior", "staff", "executive")
 
 
@@ -1848,7 +1953,10 @@ EDU_WORDS = re.compile(r"degree|bachelor|master'?s|ph\.?d|diploma|\bGED\b|\bB\.?
 SUB_LABEL = {"secops": "SecOps", "appsec": "AppSec", "cloudsec": "Cloud & infra security", "iam": "IAM",
              "grc": "GRC", "offensive": "Offensive", "support": "Help desk & support", "systems": "Systems",
              "network": "Network", "cloud": "Cloud & DevOps", "datacenter": "Data center",
-             "project": "Project & program", "product": "Product"}
+             "project": "Project & program", "product": "Product",
+             # The SE track's kinds: what the sales engineer sells. Keys are unique
+             # across tracks, since the page looks a Kind up by its key alone.
+             "sesec": "Security", "seinfra": "Cloud & infra", "seapps": "Software & data"}
 READ_Q = {
     "clearance": {"type": "choice", "instructions": "This is from a US job posting. What US government security "
                   "clearance must the person hired hold?", "criteria": {
@@ -1910,9 +2018,37 @@ SUB_Q = {
         "datacenter": "Data center operations: data center technicians, server hardware, racking and cabling.",
         "other": "Work that fits none of these, including software development, engineering management of "
                  "product software, and enterprise application or platform ownership (ServiceNow, ERP)."}},
+    "se": {"type": "choice", "instructions": "What does this sales engineer mainly sell?", "criteria": {
+        "sesec": "Security products: endpoint, network, cloud, email or application security, software "
+                 "supply-chain and container security, identity and access, SIEM, SOC and threat-detection "
+                 "tools (Splunk security too), vulnerability management, data security.",
+        "seinfra": "Cloud, infrastructure or IT products: cloud platforms, networking, wireless and telecom "
+                   "services, storage and backup systems, servers, data center, AI infrastructure, "
+                   "observability, IT service management and IT operations tools.",
+        "seapps": "Software and data products: data platforms, databases, analytics, AI and developer tools, "
+                  "fintech and payments, business and industry applications (CRM, ERP, fleet, field "
+                  "operations).",
+        "other": "Something that fits none of these, or several equally."}},
 }
 MANAGER_Q = {"type": "noul", "instructions": "Does the person hired for this job manage other employees "
              "(have direct reports)?"}
+# The SE track's second check, on the posting's own words. Jev's track answer sees
+# a title, a company and, from most boards, no text; the audit of the dry run
+# (2026-11-10) found 43 of 210 se rows were not sales engineering: professional
+# services and deployment after the sale ("First Time Deployment" solutions
+# architects, "Job Function: Professional Services"), support, customer success,
+# or an employer's own systems ("Solutions Architect, Global Tax Data").
+PRESALES_Q = {"type": "noul", "instructions": "Is this a pre-sales job: working with a sales team before the sale "
+              "to win new customers or deals (discovery, demos, proofs of concept, solution design for "
+              "prospects)? Answer no for professional services, implementation, deployment or migration "
+              "delivery after the sale, customer success or adoption, technical support, and for building or "
+              "running the employer's own internal systems."}
+PRESALES_WORDS = re.compile(
+    r"pre-?\s?sales|post-?\s?sales|\bsales\b|account (executive|team|manager)s?|\bdemo|proofs? of (concept|value)|"
+    r"\bpo[cv]s?\b|technical win|win rate|\bdeals?\b|pipeline|quota|opportunit|prospect|"
+    r"professional services|implementation|deploy|migration|go-live|onboard|customer success|adoption|"
+    r"\bsupport\b|escalation|statement of work|\bsow\b|utilization|billable|internal|our own|job function|"
+    r"department|reports? (in)?to", re.I)
 
 
 def jev_ask(state: dict, questions: dict, key: str) -> dict | None:
@@ -2025,6 +2161,13 @@ def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
         mgr = (a.get("manager") or {}).get("noul")
         if isinstance(mgr, (int, float)) and mgr >= 0.6:
             out["mgr"] = True
+    if track == "se" and read:
+        # The sentences that say where the job sits; the title too, since "Customer
+        # Success Solutions Architect" says it there.
+        s = snippet(f"{p['title']}\n{body}", PRESALES_WORDS, 1500)
+        v = ((ask(s or body[:1500], {"presales": PRESALES_Q}) or {}).get("presales") or {}).get("noul")
+        if isinstance(v, (int, float)):
+            out["presales"] = v >= 0.5
     out["tokens"] = tokens
     if keep_body:
         out["_body"] = body
@@ -2033,6 +2176,24 @@ def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
 
 def pm_sub(title: str) -> str:
     return "product" if PRODUCT.search(title) else "project"
+
+
+def not_presales(p: dict, f: dict | None, tech_employer: bool) -> str | None:
+    """An se row whose posting says it is not pre-sales (PRESALES_Q, read under
+    se): "drop", or the track its title has without the SE track when that is
+    cyber or eng ("Senior Solutions Architect, First Time Deployment Networking"
+    is NVIDIA infrastructure delivery). None: it stays se. Jev chose se, not pm,
+    so a PM title is dropped rather than published unconfirmed."""
+    if p.get("track") != "se" or not f or f.get("track") != "se" or f.get("presales") is not False:
+        return None
+    alt = rule_track(p["title"], p.get("sec_topic", False), tech_employer, se=False)
+    return alt if alt in ("cyber", "eng") else "drop"
+
+
+def se_sub(title: str, sec_topic: bool = False) -> str | None:
+    """The SE Kind from the title alone, for a row the reader has not answered:
+    security when the title or Foorilla's infosec topic says so, else unknown."""
+    return "sesec" if sec_topic or CYBER.search(title) else None
 
 
 def read_key(k: str, url: str = "") -> str:
@@ -2045,6 +2206,43 @@ def read_key(k: str, url: str = "") -> str:
 # cached as unread and tried again a week later; anything else, the next day.
 PERMANENT = re.compile(r"HTTP Error (?:40[0-4]|410|422)|not a public")  # not 408 or 429: those pass
 RETRY_UNREAD_DAYS = 7
+
+
+def read_due(f: dict | None, p: dict) -> bool:
+    """Read the posting today? When it was never read; when it could not be read a
+    week ago; or when Jev has since filed it under a track whose Kind the reader
+    asks (the SE track took rows read as cyber or eng, 2026-11-10): a Kind belongs
+    to the track it was read under. Only on Jev's word, so a day Jev is down and
+    the rules decide does not set off a re-read."""
+    if f is None:
+        return True
+    if not f.get("read") and (age_days(f.get("seen")) or 0) >= RETRY_UNREAD_DAYS:
+        return True
+    return bool(p.get("jev") and f.get("track") and f["track"] != p["track"] and p["track"] in SUB_Q)
+
+
+def fold_read(reads: dict, rk: str, facts: dict, track: str, err: str | None, jev_failed: bool) -> dict | None:
+    """One posting's read into the cache. Returns the facts to show today, or None
+    to show the cached read.
+    A first read is cached unless it should be tried again tomorrow: Jev owed it
+    answers, the pass ran out of time, or the fetch failed in a way that may pass
+    (a 403, 404 or 410 is cached as unread and waits RETRY_UNREAD_DAYS).
+    A re-read for a new track (read_due) that fell short keeps the good read, on
+    today's page and in the cache; apply_read drops its old Kind (branch review,
+    2026-11-10: a failed re-read had shown a Secret job as "No clearance"). One
+    that may pass is tried again tomorrow; a refused or closed page, or one read
+    short, takes the new track and any Kind Jev gave onto the old read, so it is
+    not fetched every day."""
+    old = reads.get(rk) or {}
+    passing = jev_failed or err == "deadline" or bool(err and not PERMANENT.search(err))
+    if old.get("read") and (err or not facts.get("read")):
+        if not passing:
+            reads[rk] = {**{k: v for k, v in old.items() if k != "sub"},
+                         **{k: facts[k] for k in ("sub", "mgr") if k in facts}, "track": track}
+        return None
+    if not (err and (jev_failed or err == "deadline" or (not facts.get("read") and not PERMANENT.search(err)))):
+        reads[rk] = {**facts, "seen": TODAY}
+    return facts
 
 
 def apply_read(j: dict, f: dict) -> None:
@@ -2149,7 +2347,7 @@ def main() -> int:
         a = age_days(p["posted"])
         if a is not None and a > (REMOTE_MAX_AGE_DAYS if w == "remote" else MAX_AGE_DAYS):
             continue
-        track = rule_track(p["title"], p["sec_topic"], tech_source(sid))
+        track = rule_track(p["title"], p["sec_topic"], tech_source(sid), tech_source(sid) or sid == "amazon")
         level = rule_level(p["title"], p["hint"], track)
         if not track or not level:
             continue
@@ -2166,7 +2364,8 @@ def main() -> int:
     folded = fold_remote_twins(cands)
 
     # Jev refines track and level on postings it has not seen.
-    jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "tokens": 0, "error": None}
+    jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "se_unconfirmed": 0,
+                 "tokens": 0, "error": None}
     key = os.environ.get("TYPESAFE_API_KEY", "").strip()
     if args.no_jev or not key:
         jev_stats["error"] = "skipped" if args.no_jev else "no TYPESAFE_API_KEY"
@@ -2187,13 +2386,13 @@ def main() -> int:
         ans = jev_cache.get(jev_key(p))
         if not apply_jev(p, ans):
             del cands[k]
-            jev_stats["dropped" if ans else "pm_unconfirmed"] += 1
+            jev_stats["dropped" if ans else f"{p['track']}_unconfirmed"] += 1
 
     # Read each posting once: pay, clearance, office days, degree, years, sub-track.
     reads: dict = prev.get("read", {})
     run_facts: dict = {}  # today's answers, shown today even when not cached
     read_stats = {"asked": 0, "read": 0, "unread": 0, "failed": 0, "cached": 0, "abandoned": 0, "tokens": 0,
-                  "error": None}
+                  "not_presales": 0, "error": None}
     if args.no_jev or args.no_read or not key:
         read_stats["error"] = "skipped" if key else "no TYPESAFE_API_KEY"
     else:
@@ -2201,10 +2400,7 @@ def main() -> int:
             with _JEV_LOCK:
                 _JEV_FAILS[0] = JEV_BREAK  # Jev is down today: read without it, cache nothing it owed
 
-        def due(f: dict | None) -> bool:
-            return f is None or (not f.get("read") and (age_days(f.get("seen")) or 0) >= RETRY_UNREAD_DAYS)
-
-        todo = [(k, p) for k, p in cands.items() if due(reads.get(read_key(k, p["url"])))][:READ_MAX_PER_RUN]
+        todo = [(k, p) for k, p in cands.items() if read_due(reads.get(read_key(k, p["url"])), p)][:READ_MAX_PER_RUN]
         read_stats["cached"] = len(cands) - len(todo)
         bodies: dict = {}
         # The pass gets READ_BUDGET. A worker still stuck after it (a host that never
@@ -2230,13 +2426,12 @@ def main() -> int:
             read_stats["read" if facts["read"] else "unread"] += 1
             err = facts.pop("error", None)
             jev_failed = facts.pop("jev_failed", False)
-            run_facts[rk] = facts
             if err:
                 read_stats["failed"] += 1
                 read_stats["error"] = read_stats["error"] or err
-                if jev_failed or err == "deadline" or (not facts["read"] and not PERMANENT.search(err)):
-                    continue  # tried again tomorrow, not cached half-answered
-            reads[rk] = {**facts, "seen": TODAY}
+            shown = fold_read(reads, rk, facts, p["track"], err, jev_failed)
+            if shown is not None:
+                run_facts[rk] = shown
         if args.dump_bodies:
             Path(args.dump_bodies).write_text(json.dumps(bodies, ensure_ascii=False), encoding="utf-8")
 
@@ -2247,6 +2442,16 @@ def main() -> int:
     for k, p in cands.items():
         jid = hashlib.sha1(k.encode()).hexdigest()[:12]
         old = prev_jobs.get(jid, {})
+        rk = read_key(k, p["url"])
+        f = run_facts.get(rk) or reads.get(rk)  # today's read, when there was one, over an older cached one
+        if rk in reads:
+            keep_read.add(rk)
+        keep_jev.add(jev_key(p))
+        if alt := not_presales(p, f, tech_source(p["source"])):
+            read_stats["not_presales"] += 1
+            if alt == "drop":
+                continue
+            p["track"] = alt
         jobs[jid] = {
             "id": jid, "title": p["title"], "company": p["company"], "url": p["url"],
             "location": p["location"][:160], "where": p["where"], "track": p["track"], "level": p["level"],
@@ -2258,15 +2463,12 @@ def main() -> int:
         for flag in ("clearance_check", "also_remote"):
             if p.get(flag):
                 jobs[jid][flag] = True
-        rk = read_key(k, p["url"])
-        f = run_facts.get(rk) or reads.get(rk)  # today's read, when there was one, over an older cached one
         if f:
             apply_read(jobs[jid], f)
-        if rk in reads:
-            keep_read.add(rk)
         if p["track"] == "pm" and not jobs[jid].get("sub"):
             jobs[jid]["sub"] = pm_sub(p["title"])  # from the title, whatever the reader managed
-        keep_jev.add(jev_key(p))
+        if p["track"] == "se" and not jobs[jid].get("sub") and (s := se_sub(p["title"], p["sec_topic"])):
+            jobs[jid]["sub"] = s
         stats[p["source"]]["kept"] += 1
     carried = 0
     for jid, j in prev_jobs.items():
@@ -2298,6 +2500,7 @@ def main() -> int:
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
                    "pm": sum(1 for j in rows if j["track"] == "pm"),
+                   "se": sum(1 for j in rows if j["track"] == "se"),
                    # "pnw" stays all three states so old counts and links mean what they did.
                    "pnw": sum(1 for j in rows if j["where"] in ("oregon", "pnw")),
                    "oregon": sum(1 for j in rows if j["where"] == "oregon"),

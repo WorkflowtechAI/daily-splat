@@ -21,7 +21,8 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   "New" is new since this morning, or since the device's last visit when that
   was before yesterday ("New since Thu"); the visit date stays in the browser
   (localStorage `splat-visit`). Cards posted over 21 days ago say "Open 3+ weeks".
-  With a track chosen, a Kind row narrows it (`sub=secops,grc`).
+  With a track chosen, a Kind row narrows it (`sub=secops,grc`;
+  `#track=se&sub=sesec` is security sales engineering).
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
   yesterday's postings, for "new today" and the failed-source grace, and the
   Jev answer cache, so each day only pays for its new postings.
@@ -87,8 +88,39 @@ a wrong token shows up as a failed source, it does not break the run.
    rounds showed no word list separates a technology PM from a public-works,
    utility or care PM ("engineering", "systems", "infrastructure" and
    "security" mean both); Jev's track question names the PMs that are out.
+   The SE track (added 2026-11-10, for a laid-off infosec sales engineer in
+   the group): sales engineers and the other technical pre-sales roles, when
+   what they sell is technology (`se_track`). A sales or solutions engineer,
+   solutions consultant or pre-sales title is proposed whatever the employer;
+   a solutions architect only on a vendor's own board (`tech_source`, plus
+   Amazon, whose solutions architects are AWS's sales engineers, "SA" in its
+   titles too), under Foorilla's infosec topics, or when the title names the
+   sale ("Partner Solutions Architect"); elsewhere a solutions architect
+   designs the employer's own systems and reads as before. Google's
+   "Customer Engineer" counts when the title or board says technology.
+   Recruiting, legal, construction, HVAC and physical-security titles are
+   always out (`SE_HARD_NOT`); the rest of the excluded words give way to a
+   technology word, as for PMs. In an SE title "Architect" is the job, not
+   the grade: "Solutions Architect" is mid. **Jev confirms every se row**
+   (held back as `jev.se_unconfirmed` until it does): "Sales Engineer" is as
+   often valves, trucks or HVAC as software, and the title rarely says
+   which. Jev may also move a vendor's other names for a sales engineer
+   ("Systems Engineer" at Palo Alto, "Field Engineer" at Databricks) into
+   se, but no other title. **Then the posting itself decides**: Jev's track
+   answer sees a title and, from most boards, no text, and an audit of the
+   first dry run (2026-11-10) found 43 of 210 se rows were not sales
+   engineering (professional services and deployment after the sale,
+   support, customer success, an employer's own systems). So the reader
+   asks one more question of an se posting's own sentences
+   (`PRESALES_Q`), and a "no" sends the row back to the track its title had
+   before the SE track, cyber or eng, or off the page (`not_presales`).
+   Against the audit: 30 of 39 caught, 5 of 150 real sales engineers lost,
+   93% of the track right (was 80%). The Kind is what the engineer sells:
+   security, cloud and infra, or software and data. Sources search for the titles:
+   Foorilla (remote), Workable, the Workday search tenants, Amazon; every
+   whole-board source needed nothing.
 2. **Jev** (TypeSafe's typed classifier).
-   Three typed questions per new posting: track (cyber / eng / pm / neither), level
+   Three typed questions per new posting: track (cyber / eng / pm / se / neither), level
    (intern / entry / mid / senior / staff / executive), clearance required. "Neither",
    "intern" and "executive" drop the posting. A title that states its level
    keeps the rule's level. About 800 input tokens per posting at $0.042 per
@@ -125,7 +157,10 @@ a wrong token shows up as a failed source, it does not break the run.
      sure; wrong ones fell from 14 to 2 in 60.
    - A posting that could not be fetched is not cached and is tried again
      the next day; a 403, 404 or 410, or a refused URL, waits a week. A
-     posting Jev still owes answers to is never cached. `jobs.json` reports
+     posting Jev still owes answers to is never cached. A posting Jev has
+     since moved to another track with a Kind (cyber, eng, se) is read
+     again, since a Kind belongs to the track it was read under
+     (`read_due`). `jobs.json` reports
      the pass under `reader` and `counts.read`.
    - The run still lands when a source or Jev misbehaves. Posting URLs come
      from listings, so only public https hosts on port 443 are fetched, each

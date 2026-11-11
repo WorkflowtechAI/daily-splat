@@ -215,7 +215,11 @@ TRACK = [
 # Titles Foorilla filed under its infosec topics, where the title alone is not
 # enough. The rule lets a role-shaped title through; Jev makes the real call.
 TRACK_SEC_TOPIC = [
-    ("Principal Solutions Engineer", "cyber"),
+    # A security vendor's sales engineers are the SE track since 2026-11-10.
+    ("Principal Solutions Engineer", "se"),
+    ("Sr Solution Architect- Sec", "se"),                 # CDW, cyber until 2026-11-10
+    ("Solutions Architect", "se"),
+    ("Security Engineer III", "cyber"),
     ("Mid-Level Data Engineer", "cyber"),
     ("Account Executive", None),
     # A PM under the infosec topics is a security PM (2026-11-03), not cyber.
@@ -346,6 +350,131 @@ TRACK_PM = [
     ("Senior Program Manager, Business Operations, Customer Logistics Security (CLS)", False, None),
 ]
 
+# The SE track (2026-11-10): (title, sa employer, expected). sa employer: a
+# technology employer's own board or Amazon's, where a solutions architect sells.
+# Jev confirms every se row; these are what the rules propose.
+TRACK_SE = [
+    ("Sales Engineer", False, "se"),                      # whatever it sells; Jev decides
+    ("Senior Sales Engineer - Enterprise", False, "se"),
+    ("Channel Sales Engineer", False, "se"),
+    ("Sales Engineer I", False, "se"),
+    ("Pre-Sales Solutions Architect", False, "se"),
+    ("Presales Solutions Engineer - SecOps/SIEM", False, "se"),
+    ("Solutions Engineer", False, "se"),
+    ("Associate Solutions Engineer", False, "se"),
+    ("Solution Consultant - Marketing Cloud", False, "se"),   # "marketing" gives way to "cloud"
+    ("Sales Engineering Manager, West", False, "se"),
+    ("Industrial Cybersecurity Sales Engineer", False, "se"),
+    ("Customer Engineer, Security, Google Cloud", False, "se"),
+    # Solutions architects sell on a vendor's board or when the title names the sale.
+    ("Solutions Architect", True, "se"),
+    ("Partner Solutions Architect, Global Partner Development", True, "se"),
+    ("Senior Networking SA, AWS Security & Networking - North America", True, "se"),
+    ("Sr. Manager, Solutions Architecture - Communication Developer Services", True, "se"),
+    ("Senior Solutions Architect, AI Infrastructure", True, "se"),           # NVIDIA, Infra & IT until 2026-11-10
+    ("Partner Solutions Architect", False, "se"),
+    ("Solutions Architect", False, None),                 # a bank's or an agency's own systems: as before
+    ("Enterprise Solutions Architect", False, None),
+    ("Cloud Solutions Architect", False, "eng"),          # as before
+    ("Principal Infrastructure Solutions Architect", False, "eng"),
+    # Not technology sales engineers, or not sales engineers.
+    ("Sales Engineer, HVAC Systems", False, None),
+    ("Inside Sales Engineer - Industrial Automation", False, None),
+    ("Mechanical Sales Engineer", False, None),
+    # "Technical" in "Technical Sales" is the job's name, not a technology (branch review).
+    ("Technical Sales Engineer - Industrial Valves", False, None),
+    ("Technical Sales Specialist - Industrial Coatings", False, None),
+    ("Technical Sales Engineering Manager - Industrial", False, None),
+    ("Technical Sales Engineer - Industrial Cybersecurity", False, "se"),
+    ("Technical Sales Engineer", False, "se"),
+    ("Sales Engineer - Physical Security", False, None),
+    ("Recruiter, Sales Engineering", False, None),
+    ("Technical Recruiter - Sales Engineering", True, None),
+    ("Account Executive, Security", False, None),
+    ("Customer Engineer", False, None),
+    ("Customer Engineer - Field Service", False, None),
+    ("Delivery Consultant - Application Modernization, AWS Professional Services", True, None),
+    ("Sr. Technical Account Manager, Sr. TAM", True, None),
+    ("SAS Programmer", True, None),
+    ("Solutions Engineering Program Manager", False, "pm"),   # a PM first
+    # The vendors' other names for a sales engineer read as before; Jev may move them (APPLY_JEV).
+    ("Systems Engineer - Enterprise", True, "eng"),
+    ("Principal Security Field Engineer", True, "cyber"),
+]
+
+# In an SE title "Architect" is the job, not the grade.
+LEVEL_SE = [
+    ("Solutions Architect", "mid"),
+    ("Senior Solutions Architect", "senior"),
+    ("Principal Solutions Architect, Strategic Accounts", "staff"),
+    ("Senior Account SA, AGS Tech", "senior"),
+    ("Sales Engineer", "mid"),
+    ("Sales Engineer I", "entry"),
+    ("Sales Engineering Manager", "senior"),
+    ("Director, Sales Engineering", None),
+    ("Pre-Sales Architect", "mid"),                       # any Architect in an SE title is the job
+    ("Technical Sales Architect II", "mid"),
+    ("Senior Pre-Sales Architect", "senior"),
+]
+
+# fold_read: a posting's read into the cache. (cached, today's facts, error, Jev
+# failed) -> (shown today: "new" or "cached", what the cache holds after).
+GOOD = {"read": True, "track": "cyber", "sub": "secops", "clr": "secret", "pay": "$150K–$180K/yr", "seen": "2026-11-09"}
+FOLD_READ = [
+    # A first read is cached and shown.
+    (None, {"read": True, "track": "se", "sub": "sesec"}, None, False,
+     ("new", {"read": True, "track": "se", "sub": "sesec", "seen": "TODAY"})),
+    # A first read Jev still owes answers: shown today, not cached.
+    (None, {"read": True, "track": "se"}, "jev", True, ("new", None)),
+    # A good re-read replaces the old read.
+    (GOOD, {"read": True, "track": "se", "sub": "sesec"}, None, False,
+     ("new", {"read": True, "track": "se", "sub": "sesec", "seen": "TODAY"})),
+    # A re-read that fails in a way that may pass: the good read stands, tried again tomorrow.
+    (GOOD, {"read": False, "track": "se"}, "HTTP Error 503: Service Unavailable", False, ("cached", GOOD)),
+    (GOOD, {"read": True, "track": "se"}, "jev", True, ("cached", GOOD)),
+    (GOOD, {"read": False, "track": "se"}, "deadline", False, ("cached", GOOD)),
+    # A refused or closed page: the good read takes the new track, without its old Kind.
+    (GOOD, {"read": False, "track": "se", "mgr": True}, "HTTP Error 404: Not Found", False,
+     ("cached", {"read": True, "track": "se", "clr": "secret", "pay": "$150K–$180K/yr", "seen": "2026-11-09",
+                 "mgr": True})),
+]
+
+# not_presales: an se row whose posting says it is not pre-sales goes back to the
+# track its title had before the SE track, or off the page. (title, track now,
+# cached facts, tech employer) -> expected.
+NO_PRE = {"track": "se", "presales": False, "read": True}
+NOT_PRESALES = [
+    ("Senior Solutions Architect, First Time Deployment Networking InfiniBand - NVIS", "se", NO_PRE, True, "eng"),
+    ("Global Solutions Architect - AI Security", "se", NO_PRE, True, "cyber"),
+    ("Solution Architect/Senior Solution Architect - Data 360", "se", NO_PRE, True, "drop"),
+    ("Sales Engineer", "se", NO_PRE, True, "drop"),
+    ("Sales Engineer", "se", {**NO_PRE, "presales": True}, True, None),
+    ("Sales Engineer", "se", {"track": "se", "read": True}, True, None),          # not asked (Jev down): stays
+    ("Sales Engineer", "se", None, True, None),                                    # not read yet
+    ("Sales Engineer", "se", {**NO_PRE, "track": "cyber"}, True, None),            # read under another track
+    ("Security Engineer", "cyber", NO_PRE, True, None),
+]
+
+# apply_jev guard for a non-PM se row (branch review): (title, rules track, Jev track) -> kept track or None.
+CROSS_CONFIRM = [
+    ("Solutions Consultant", "se", "pm", None),       # Jev said pm, not se: not published as se
+    ("Technical Program Manager", "pm", "se", None),
+    ("Domain Consultant - Cortex", "cyber", "se", "se"),  # Palo Alto's specialist sales engineers
+    ("Cloud Architect, Product Management", "eng", "pm", "eng"),
+]
+
+# read_due: is a posting read today? (cached facts, row) -> expected.
+READ_DUE = [
+    (None, {"track": "se", "jev": True}, True),                                          # never read
+    ({"read": True, "track": "se", "seen": "2026-11-09"}, {"track": "se", "jev": True}, False),
+    # Jev moved it into se since it was read as cyber: its Kind is asked again.
+    ({"read": True, "track": "cyber", "seen": "2026-11-09"}, {"track": "se", "jev": True}, True),
+    # Not on the rules' word alone (Jev down that day).
+    ({"read": True, "track": "cyber", "seen": "2026-11-09"}, {"track": "eng", "jev": False}, False),
+    # The PM Kind comes from the title, so a move into pm needs no read.
+    ({"read": True, "track": "eng", "seen": "2026-11-09"}, {"track": "pm", "jev": True}, False),
+]
+
 # apply_jev: what main() does with Jev's answer. (rules' track, rules' level,
 # Jev's track, Jev's level, title) -> (final track, final level), or None when
 # Jev drops the row. A title that states its level keeps it; whether "Manager"
@@ -362,9 +491,24 @@ APPLY_JEV = [
     # Jev cannot make a non-PM title a PM (the 2026-11-03 audit); the rules' track stands.
     ("Cloud Architect, Product Management", "eng", "senior", "pm", "senior", ("eng", "senior")),
     ("RAI Industry Specialist, Amazon Privacy", "cyber", "mid", "pm", "senior", ("cyber", "senior")),
-    # No answer from Jev yet: a pm row waits, cyber and eng rows publish on the rules.
+    # No answer from Jev yet: a pm or se row waits, cyber and eng rows publish on the rules.
     ("Food Systems Program Manager", "pm", "mid", None, None, None),
+    ("Sales Engineer", "se", "mid", None, None, None),
     ("SOC Analyst II", "cyber", "mid", None, None, ("cyber", "mid")),
+    # The SE track (2026-11-10). Jev confirms, moves out, or drops a non-technology one.
+    ("Sales Engineer", "se", "mid", "se", "senior", ("se", "senior")),
+    ("Sales Engineer", "se", "mid", "neither", "mid", None),                  # valves, say
+    ("Technical Solutions Engineer", "se", "mid", "eng", "mid", ("eng", "mid")),  # support after the sale
+    ("Information Security Solutions Engineer II", "se", "mid", "cyber", "mid", ("cyber", "mid")),
+    # Into se only from a sales-engineer title: Palo Alto's "Systems Engineer" yes,
+    # a security engineer no.
+    ("Systems Engineer - Enterprise", "eng", "mid", "se", "mid", ("se", "mid")),
+    ("Principal Security Field Engineer", "cyber", "staff", "se", "senior", ("se", "staff")),
+    ("Senior Security Engineer", "cyber", "senior", "se", "senior", ("cyber", "senior")),
+    # "Solutions Architect" is the job once either side calls it se: Jev's level stands.
+    ("Solutions Architect", "se", "mid", "se", "senior", ("se", "senior")),
+    ("Cloud Solutions Architect", "eng", "senior", "se", "mid", ("se", "mid")),
+    ("Senior Solutions Architect", "se", "senior", "se", "mid", ("se", "senior")),
 ]
 
 # Only technology employers' own boards are tech sources (not Amazon, the
@@ -773,6 +917,57 @@ def main() -> int:
         if got != want:
             bad += 1
             print(f"rule_level({title!r}, track='pm') = {got!r}, want {want!r}")
+    for title, sa, want in TRACK_SE:
+        got = splat.rule_track(title, tech_employer=sa, sa_employer=sa)
+        if got != want:
+            bad += 1
+            print(f"rule_track({title!r}, sa_employer={sa}) = {got!r}, want {want!r}")
+    for title, want in LEVEL_SE:
+        got = splat.rule_level(title, None, "se")
+        if got != want:
+            bad += 1
+            print(f"rule_level({title!r}, track='se') = {got!r}, want {want!r}")
+    for f, p, want in READ_DUE:
+        got = splat.read_due(f, p)
+        if got != want:
+            bad += 1
+            print(f"read_due({f!r}, {p!r}) = {got!r}, want {want!r}")
+    for old, facts, err, jf, want in FOLD_READ:
+        reads = {"k": dict(old)} if old else {}
+        shown = splat.fold_read(reads, "k", dict(facts), facts["track"], err, jf)
+        after = reads.get("k")
+        if after and after.get("seen") == splat.TODAY:
+            after = {**after, "seen": "TODAY"}
+        got = ("new" if shown is not None else "cached", after)
+        if got != want:
+            bad += 1
+            print(f"fold_read(old={old!r}, {facts!r}, err={err!r}) = {got!r}, want {want!r}")
+    for title, track, f, tech, want in NOT_PRESALES:
+        got = splat.not_presales({"title": title, "track": track, "sec_topic": False}, f, tech)
+        if got != want:
+            bad += 1
+            print(f"not_presales({title!r}, {track}, {f!r}) = {got!r}, want {want!r}")
+    for title, rt, jt, want in CROSS_CONFIRM:
+        p = {"title": title, "track": rt, "level": "mid", "clearance": False}
+        kept = splat.apply_jev(p, {"track": jt, "level": "mid", "clearance": False})
+        got = p["track"] if kept else None
+        if got != want:
+            bad += 1
+            print(f"apply_jev({title!r}, rules {rt}, jev {jt}) = {got!r}, want {want!r}")
+    se_subs = [("Sales Engineer", True, "sesec"), ("Security Solutions Engineer", False, "sesec"),
+               ("Solutions Architect", False, None)]
+    for title, topic, want in se_subs:
+        if splat.se_sub(title, topic) != want:
+            bad += 1
+            print(f"se_sub({title!r}, {topic}) = {splat.se_sub(title, topic)!r}, want {want!r}")
+    # Every Kind key is unique across tracks: the page looks a Kind up by its key alone.
+    keys = [k for q in splat.SUB_Q.values() for k in q["criteria"] if k != "other"]
+    if len(keys) != len(set(keys)) or not set(keys) <= set(splat.SUB_LABEL):
+        bad += 1
+        print(f"SUB_Q keys not unique or not all labelled: {keys}")
+    if not set(splat.CONFIRM) < set(splat.TRACKS) or set(splat.JEV_QUESTIONS["track"]["criteria"]) != set(splat.TRACKS):
+        bad += 1
+        print("CONFIRM, TRACKS and Jev's track choices disagree")
     for sid, want in TECH_SOURCE:
         if splat.tech_source(sid) != want:
             bad += 1
@@ -789,7 +984,8 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total)
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total
+             + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 
