@@ -1290,6 +1290,88 @@ def usajobs_rows(items: list) -> list[dict]:
     return out
 
 
+# Jobs members share (added 2026-11-11): the "Share a job" form on the page posts to
+# infra/intake.py, which appends each one to TIPS beside the state file and emails
+# David a signed link to remove it. For jobs only on LinkedIn or Indeed, which the
+# Splat never copies (their terms forbid it): a member pointing at one job is not
+# copying their database. Every tip still goes through the rules and Jev.
+# - A LinkedIn or Indeed link (`gate`): the Splat looks for the employer's own
+#   posting on its Greenhouse, Lever or Ashby board and links there when it finds
+#   it; otherwise the row says "LinkedIn only" and stays TIP_GATED_DAYS. Those pages
+#   are never fetched (NO_FETCH): the member typed the title, company and place.
+# - Any other link is published only once the reader has read a real posting
+#   there (see not_verified), so a junk or phishing link never reaches the page.
+TIPS = STATE_DIR / "tips.json"
+TIP_GATED_DAYS = 14
+GATE_HOST = re.compile(r"^https://(?:[\w-]+\.)*(linkedin|indeed)\.com/", re.I)
+
+
+def tip_slugs(company: str) -> list[str]:
+    """Board names a company might use: "Hilgers PLLC" -> hilgers, hilgerspllc."""
+    words = re.sub(r"[^a-z0-9 ]+", "", re.sub(r"&", " and ", (company or "").lower())).split()
+    core = [w for w in words if w not in ("inc", "llc", "pllc", "ltd", "corp", "corporation", "co", "company", "the")]
+    out = []
+    for ws in (core, words):
+        for s in ("".join(ws), "-".join(ws)):
+            if len(s) >= 3 and s not in out:
+                out.append(s)
+    return out[:4]
+
+
+def find_source(company: str, title: str) -> str | None:
+    """The employer's own posting of a job a member found on LinkedIn or Indeed:
+    its Greenhouse, Lever or Ashby board under a name guessed from the company,
+    with a title that matches. None when there is none."""
+    want = norm(title)
+    for slug in tip_slugs(company):
+        for url, rows, link in (
+                (f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs", lambda d: d.get("jobs") or [],
+                 lambda j: j.get("absolute_url")),
+                (f"https://api.lever.co/v0/postings/{slug}?mode=json", lambda d: d if isinstance(d, list) else [],
+                 lambda j: j.get("hostedUrl")),
+                (f"https://api.ashbyhq.com/posting-api/job-board/{slug}", lambda d: d.get("jobs") or [],
+                 lambda j: j.get("jobUrl"))):
+            try:
+                d = host_get(url)
+            except Exception:  # noqa: BLE001 - no board under that name
+                continue
+            for j in rows(d):
+                if norm(j.get("title") or j.get("text") or "") == want and (u := link(j)):
+                    return u
+    return None
+
+
+def src_tips() -> list[dict]:
+    if not TIPS.exists():
+        return []
+    tips = json.loads(TIPS.read_text(encoding="utf-8"))
+    out = []
+    for t in tips if isinstance(tips, list) else []:
+        age = age_days(t.get("shared"))
+        url = t.get("url") or ""
+        gate = GATE_HOST.match(url)
+        if t.get("status") == "removed" or age is None or age > (TIP_GATED_DAYS if gate else MAX_AGE_DAYS):
+            continue
+        p = posting(title=t.get("title"), company=t.get("company"), url=url, location=t.get("location") or "",
+                    remote=bool(REMOTE.search(t.get("location") or "")), posted=t.get("shared"), origin="member",
+                    desc=str(t.get("note") or "")[:500])
+        if gate:
+            src = find_source(p["company"], p["title"])
+            if src:
+                p["url"] = src
+            else:
+                p["gate"] = "LinkedIn" if gate[1].lower() == "linkedin" else "Indeed"
+        out.append(p)
+    return out
+
+
+def not_verified(p: dict, f: dict | None) -> bool:
+    """A member's tip that is not on LinkedIn or Indeed is published only once the
+    reader has read a real posting at its link: a link anyone can type must not put
+    a junk or phishing page on the Splat."""
+    return p.get("origin") == "member" and not p.get("gate") and not (f and f.get("read"))
+
+
 def src_usajobs() -> list[dict]:
     key = os.environ.get("USAJOBS_API_KEY", "").strip()
     email = os.environ.get("USAJOBS_EMAIL", "").strip()
@@ -1420,7 +1502,7 @@ def all_sources(only: set[str] | None):
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
          ("workingnomads", "Working Nomads", src_workingnomads, ()),
          ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ()),
-         ("usajobs", "USAJOBS", src_usajobs, ())]
+         ("usajobs", "USAJOBS", src_usajobs, ()), ("tips", "Shared by members", src_tips, ())]
     s += [(f"eightfold:{e[0]}", e[3], src_eightfold, e) for e in EIGHTFOLD]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
@@ -1764,7 +1846,9 @@ WD_URL = re.compile(r"^https://([\w-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}
 EF_URL = re.compile(r"^https://([\w.-]+)/careers/(?:job/(\d+)|[^#]{0,200}?\bpid=\D{0,40}(\d+))", re.I)
 # Hosts the reader never fetches, a redirect included: their terms or robots.txt
 # say no to automated access (governmentjobs.com, see the NEOGOV note above).
-NO_FETCH = re.compile(r"^https?://(?:[\w-]+\.)*governmentjobs\.com(?::\d+)?(?:[/?#]|$)", re.I)
+# LinkedIn and Indeed too: members may share their job links (see src_tips), and
+# their terms forbid scraping, so the Splat links to them and never reads them.
+NO_FETCH = re.compile(r"^https?://(?:[\w-]+\.)*(?:governmentjobs\.com|linkedin\.com|indeed\.com)(?::\d+)?(?:[/?#]|$)", re.I)
 ORACLE_URL = re.compile(r"^(https://[\w-]+\.fa\.[\w-]+\.oraclecloud\.com)/hcmUI/CandidateExperience/[\w-]+/sites/([\w-]+)/job/(\d+)", re.I)
 RIPPLING_URL = re.compile(r"^https://ats\.rippling\.com/([\w-]+)/jobs/([0-9a-f-]{36})", re.I)
 SMARTR_URL = re.compile(r"^https://jobs\.smartrecruiters\.com/([\w-]+)/(\d+)", re.I)
@@ -2394,7 +2478,7 @@ def main() -> int:
     cands: dict[str, dict] = {}
     for sid, p in raw:
         if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
-                or MIDDLEMAN.search(p["url"])):
+                or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
             continue
         w = where(p["location"], p["remote"])
         if not w:
@@ -2447,7 +2531,7 @@ def main() -> int:
     reads: dict = prev.get("read", {})
     run_facts: dict = {}  # today's answers, shown today even when not cached
     read_stats = {"asked": 0, "read": 0, "unread": 0, "failed": 0, "cached": 0, "abandoned": 0, "tokens": 0,
-                  "not_presales": 0, "not_remote": 0, "error": None}
+                  "not_presales": 0, "not_remote": 0, "tip_unverified": 0, "error": None}
     if args.no_jev or args.no_read or not key:
         read_stats["error"] = "skipped" if key else "no TYPESAFE_API_KEY"
     else:
@@ -2510,6 +2594,9 @@ def main() -> int:
         if not_remote(p, f):
             read_stats["not_remote"] += 1
             continue
+        if not_verified(p, f):
+            read_stats["tip_unverified"] += 1
+            continue
         jobs[jid] = {
             "id": jid, "title": p["title"], "company": p["company"], "url": p["url"],
             "location": p["location"][:160], "where": p["where"], "track": p["track"], "level": p["level"],
@@ -2518,6 +2605,8 @@ def main() -> int:
             "via": p["origin"], "clearance": p["clearance"], "checked": p["jev"],
         }
         # Only when true, so a day-old page and this one read the same.
+        if p.get("gate"):
+            jobs[jid]["gate"] = p["gate"]  # a member's tip only on LinkedIn or Indeed
         for flag in ("clearance_check", "also_remote"):
             if p.get(flag):
                 jobs[jid][flag] = True

@@ -43,10 +43,14 @@ jobs:
         run: python3 --version
 
       - name: Compile
-        run: python3 -m py_compile splat.py infra/test_splat.py infra/intake.py company_check.py infra/test_company_check.py infra/company_gaps.py
+        run: python3 -m py_compile splat.py infra/test_splat.py infra/intake.py infra/test_intake.py company_check.py infra/test_company_check.py infra/company_gaps.py
 
       - name: Rules tests
         run: python3 infra/test_splat.py
+
+      # The "Share a job" path in the form service (links, storage, the signed remove link).
+      - name: Intake tests
+        run: python3 infra/test_intake.py
 
       # company_check.py and the reviewed name table it reads (company_names.json).
       - name: Company check tests

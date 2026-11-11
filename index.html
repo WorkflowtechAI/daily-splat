@@ -102,64 +102,64 @@
   summary{cursor:pointer;font-weight:600}
   .meta-link{margin:34px 0 0;font-size:.95rem;color:var(--ink-soft)}
   /* The intake form ("Tell me what would help"). */
-  #help{padding:0;margin-top:34px;border-radius:6px}
-  #help>summary{list-style:none;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-family:var(--serif);font-size:1.3rem}
-  #help>summary::-webkit-details-marker{display:none}
-  #help>summary::before{content:"+";font-family:var(--mono);font-size:1rem;color:var(--copper);width:1ch}
-  #help[open]>summary::before{content:"\2212"}
-  #help .sum-note{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
-  #help .help-body{padding:0 18px 22px;border-top:1px solid var(--line)}
-  #help p{color:var(--ink-soft);font-size:.95rem}
-  #help .help-intro{max-width:64ch;font-size:1rem;margin:18px 0 0}
-  #help form{max-width:780px}
-  #help .step{padding:22px 0 4px;border-top:1px solid var(--line);margin-top:18px}
-  #help .step:first-child{border-top:0;margin-top:0}
-  #help h3{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:0 0 14px;display:flex;gap:10px;align-items:center}
-  #help .num{display:inline-grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font:600 11.5px var(--mono)}
-  #help .field{display:grid;gap:6px;margin:0 0 16px}
-  #help .field>span,#help .q{font-weight:600;font-size:.93rem;color:var(--ink)}
-  #help .q{margin:0 0 8px}
-  #help fieldset{border:0;padding:0;margin:0 0 18px;min-width:0}
-  #help .two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
-  #help input[type=text],#help input[type=email],#help select,#help textarea{width:100%;font:15px var(--sans);padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
-  #help input:focus,#help select:focus,#help textarea:focus{outline:2px solid var(--copper);outline-offset:1px;border-color:transparent}
-  #help textarea{min-height:110px;resize:vertical;line-height:1.45}
-  #help .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
-  #help .chips label{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink-soft);font-size:.92rem;line-height:1.3;cursor:pointer;user-select:none;transition:border-color .12s,background-color .12s,color .12s}
-  #help .chips label:hover{border-color:color-mix(in srgb,var(--copper) 50%,var(--line));color:var(--ink)}
-  #help .chips input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
-  #help .chips label:has(input:checked){border-color:var(--copper);background:color-mix(in srgb,var(--copper) 12%,var(--card));color:var(--copper-ink);font-weight:500}
-  #help .chips label:has(input:checked)::before{content:"\2713";font-weight:600}
-  #help .chips label:has(input:focus-visible){outline:2px solid var(--copper);outline-offset:2px}
-  #help .pitch{background:color-mix(in srgb,var(--moss) 7%,var(--card));border:1px solid color-mix(in srgb,var(--moss) 28%,var(--line));border-radius:6px;padding:18px;margin:0 0 22px}
-  #help .pitch .lede{color:var(--ink);font-size:1rem;margin:0 0 16px;max-width:62ch}
-  #help ol.flow{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;counter-reset:flow}
-  #help ol.flow li{counter-increment:flow;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:12px 13px}
-  #help ol.flow li::before{content:counter(flow);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--moss);color:var(--paper);font:600 11px var(--mono);margin-bottom:8px}
-  #help ol.flow b{display:block;font-size:.95rem;line-height:1.3;margin-bottom:4px;color:var(--ink)}
-  #help ol.flow span{display:block;font-size:.87rem;line-height:1.45;color:var(--ink-soft)}
-  #help .free{display:flex;gap:8px;align-items:baseline;color:var(--ink);font-size:.95rem;margin:0 0 6px}
-  #help .free::before{content:"\2713";color:var(--moss);font-weight:700}
-  #help .costnote{font-size:.9rem;margin:0 0 12px;max-width:64ch}
-  #help .example{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.93rem}
-  #help .send-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-top:20px;margin-top:6px;border-top:1px solid var(--line)}
-  #help .send{font:600 15px var(--sans);padding:11px 20px;border:0;border-radius:4px;background:var(--ink);color:var(--paper);cursor:pointer}
-  #help .send:hover{background:var(--copper-ink)}
-  #help .send:disabled{opacity:.6;cursor:wait}
-  #help .send-note{font-size:.85rem;color:var(--ink-faint);margin:0}
-  #help #help-status{margin:12px 0 0;font-weight:500}
-  #help #help-status.ok{color:var(--moss)}
-  #help #help-status.err{color:var(--copper-ink)}
-  #help #help-status span{display:block}
-  #help #help-status .reach{margin-top:8px;color:var(--ink);font-weight:400}
-  #help #help-status .quiet{margin-top:8px;color:var(--ink-soft);font-weight:400;font-size:.9rem}
-  #help .trap{position:absolute;left:-9999px}
+  :is(#help,#share){padding:0;margin-top:34px;border-radius:6px}
+  :is(#help,#share)>summary{list-style:none;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-family:var(--serif);font-size:1.3rem}
+  :is(#help,#share)>summary::-webkit-details-marker{display:none}
+  :is(#help,#share)>summary::before{content:"+";font-family:var(--mono);font-size:1rem;color:var(--copper);width:1ch}
+  :is(#help,#share)[open]>summary::before{content:"\2212"}
+  :is(#help,#share) .sum-note{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+  :is(#help,#share) .help-body{padding:0 18px 22px;border-top:1px solid var(--line)}
+  :is(#help,#share) p{color:var(--ink-soft);font-size:.95rem}
+  :is(#help,#share) .help-intro{max-width:64ch;font-size:1rem;margin:18px 0 0}
+  :is(#help,#share) form{max-width:780px}
+  :is(#help,#share) .step{padding:22px 0 4px;border-top:1px solid var(--line);margin-top:18px}
+  :is(#help,#share) .step:first-child{border-top:0;margin-top:0}
+  :is(#help,#share) h3{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:0 0 14px;display:flex;gap:10px;align-items:center}
+  :is(#help,#share) .num{display:inline-grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font:600 11.5px var(--mono)}
+  :is(#help,#share) .field{display:grid;gap:6px;margin:0 0 16px}
+  :is(#help,#share) .field>span,:is(#help,#share) .q{font-weight:600;font-size:.93rem;color:var(--ink)}
+  :is(#help,#share) .q{margin:0 0 8px}
+  :is(#help,#share) fieldset{border:0;padding:0;margin:0 0 18px;min-width:0}
+  :is(#help,#share) .two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  :is(#help,#share) input[type=text],:is(#help,#share) input[type=email],:is(#help,#share) select,:is(#help,#share) textarea{width:100%;font:15px var(--sans);padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
+  :is(#help,#share) input:focus,:is(#help,#share) select:focus,:is(#help,#share) textarea:focus{outline:2px solid var(--copper);outline-offset:1px;border-color:transparent}
+  :is(#help,#share) textarea{min-height:110px;resize:vertical;line-height:1.45}
+  :is(#help,#share) .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+  :is(#help,#share) .chips label{position:relative;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink-soft);font-size:.92rem;line-height:1.3;cursor:pointer;user-select:none;transition:border-color .12s,background-color .12s,color .12s}
+  :is(#help,#share) .chips label:hover{border-color:color-mix(in srgb,var(--copper) 50%,var(--line));color:var(--ink)}
+  :is(#help,#share) .chips input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+  :is(#help,#share) .chips label:has(input:checked){border-color:var(--copper);background:color-mix(in srgb,var(--copper) 12%,var(--card));color:var(--copper-ink);font-weight:500}
+  :is(#help,#share) .chips label:has(input:checked)::before{content:"\2713";font-weight:600}
+  :is(#help,#share) .chips label:has(input:focus-visible){outline:2px solid var(--copper);outline-offset:2px}
+  :is(#help,#share) .pitch{background:color-mix(in srgb,var(--moss) 7%,var(--card));border:1px solid color-mix(in srgb,var(--moss) 28%,var(--line));border-radius:6px;padding:18px;margin:0 0 22px}
+  :is(#help,#share) .pitch .lede{color:var(--ink);font-size:1rem;margin:0 0 16px;max-width:62ch}
+  :is(#help,#share) ol.flow{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;counter-reset:flow}
+  :is(#help,#share) ol.flow li{counter-increment:flow;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:12px 13px}
+  :is(#help,#share) ol.flow li::before{content:counter(flow);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--moss);color:var(--paper);font:600 11px var(--mono);margin-bottom:8px}
+  :is(#help,#share) ol.flow b{display:block;font-size:.95rem;line-height:1.3;margin-bottom:4px;color:var(--ink)}
+  :is(#help,#share) ol.flow span{display:block;font-size:.87rem;line-height:1.45;color:var(--ink-soft)}
+  :is(#help,#share) .free{display:flex;gap:8px;align-items:baseline;color:var(--ink);font-size:.95rem;margin:0 0 6px}
+  :is(#help,#share) .free::before{content:"\2713";color:var(--moss);font-weight:700}
+  :is(#help,#share) .costnote{font-size:.9rem;margin:0 0 12px;max-width:64ch}
+  :is(#help,#share) .example{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.93rem}
+  :is(#help,#share) .send-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-top:20px;margin-top:6px;border-top:1px solid var(--line)}
+  :is(#help,#share) .send{font:600 15px var(--sans);padding:11px 20px;border:0;border-radius:4px;background:var(--ink);color:var(--paper);cursor:pointer}
+  :is(#help,#share) .send:hover{background:var(--copper-ink)}
+  :is(#help,#share) .send:disabled{opacity:.6;cursor:wait}
+  :is(#help,#share) .send-note{font-size:.85rem;color:var(--ink-faint);margin:0}
+  :is(#help,#share) :is(#help-status,#share-status){margin:12px 0 0;font-weight:500}
+  :is(#help,#share) :is(#help-status,#share-status).ok{color:var(--moss)}
+  :is(#help,#share) :is(#help-status,#share-status).err{color:var(--copper-ink)}
+  :is(#help,#share) :is(#help-status,#share-status) span{display:block}
+  :is(#help,#share) :is(#help-status,#share-status) .reach{margin-top:8px;color:var(--ink);font-weight:400}
+  :is(#help,#share) :is(#help-status,#share-status) .quiet{margin-top:8px;color:var(--ink-soft);font-weight:400;font-size:.9rem}
+  :is(#help,#share) .trap{position:absolute;left:-9999px}
   @media (max-width:560px){
-    #help .two{grid-template-columns:1fr}
-    #help .help-body{padding:0 14px 18px}
-    #help>summary{padding:14px}
+    :is(#help,#share) .two{grid-template-columns:1fr}
+    :is(#help,#share) .help-body{padding:0 14px 18px}
+    :is(#help,#share)>summary{padding:14px}
   }
-  @media (prefers-reduced-motion:reduce){#help .chips label{transition:none}}
+  @media (prefers-reduced-motion:reduce){:is(#help,#share) .chips label{transition:none}}
   details p,details li{color:var(--ink-soft);font-size:.93rem}
   .srcs{columns:3 200px;font-family:var(--mono);font-size:11px;padding:0;list-style:none;margin:10px 0 0}
   .srcs li{break-inside:avoid;padding:1px 0}
@@ -189,7 +189,7 @@
     <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v2.3</a></p>
     <h1>The Daily Splat</h1>
     <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud), tech PM and sales engineering jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
-    <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button></p>
+    <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button><button type="button" class="linkbtn" id="share-open">Share a job</button></p>
   </header>
 
   <section aria-label="Filters">
@@ -231,6 +231,28 @@
   <main id="list"><p class="loading">Loading today's splat…</p></main>
 
   <p class="meta-link">Come say hi at <a href="https://workflowtech.ai/show-and-tell">Show &amp; Tell</a>, the monthly community call, or any day on <a href="https://discord.gg/D9pHEghG9C">Discord</a>.</p>
+
+  <details id="share">
+    <summary>Share a job <span class="sum-note">Found one that isn't here? &middot; goes on the public page</span></summary>
+    <div class="help-body">
+    <p class="help-intro">Found a job the Splat doesn't have? Share it, and it shows up after the next morning's run if it fits the tracks. The employer's own posting is best. A LinkedIn or Indeed link works too: the Splat looks for the employer's own posting first, and if there isn't one, the card says "LinkedIn only" and links there. Nothing about you is kept.</p>
+    <form id="share-form" novalidate>
+      <label class="field"><span>Link to the job</span><input type="text" name="url" inputmode="url" maxlength="500" placeholder="https://..." autocomplete="off"></label>
+      <div class="two">
+        <label class="field"><span>Job title</span><input type="text" name="title" maxlength="160" autocomplete="off"></label>
+        <label class="field"><span>Employer</span><input type="text" name="company" maxlength="120" autocomplete="off"></label>
+      </div>
+      <label class="field"><span>Where</span><input type="text" name="location" maxlength="120" placeholder="Portland, OR · Seattle, WA · Remote US" autocomplete="off"></label>
+      <label class="field"><span>Anything to know about it (optional, not shown on the page)</span><textarea name="note" maxlength="500"></textarea></label>
+      <input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="send-row">
+        <button class="send" type="submit">Share it</button>
+        <p class="send-note">Recruiter reposts and jobs outside the tracks won't show up.</p>
+      </div>
+      <p id="share-status" aria-live="polite"></p>
+    </form>
+    </div>
+  </details>
 
   <details id="help">
     <summary>Tell me what would help <span class="sum-note">Optional &middot; a few minutes &middot; goes only to David</span></summary>
@@ -579,7 +601,10 @@
     if (EDU[j.edu]) tags.append(el("span", { class: "tag", text: EDU[j.edu] }));
     if (j.mgr) tags.append(el("span", { class: "tag", text: "Manages people" }));
     if (j.carried) tags.append(el("span", { class: "tag warn", text: "Source down today" }));
-    tags.append(el("span", { class: "tag", text: j.via === "company" ? "Employer's own board" : `Listed on ${j.source}` }));
+    // A member's tip: "Shared by a member", and, when the job is only on LinkedIn or
+    // Indeed (the Splat never copies those sites), a plain warning that the link goes there.
+    if (j.gate) tags.append(el("span", { class: "tag warn", text: `${j.gate} only`, title: `Only posted on ${j.gate} as far as we can find; the link goes there. Check the employer's own site before you apply.` }));
+    tags.append(el("span", { class: "tag", text: j.via === "company" ? "Employer's own board" : j.via === "member" ? "Shared by a member" : `Listed on ${j.source}` }));
     const posted = daysAgo(j.posted);
     const check = el("button", { class: "linkbtn cc-btn", type: "button", "aria-expanded": "false", text: "Company check" });
     check.addEventListener("click", () => companyCheck(check, j.company));
@@ -877,6 +902,42 @@
       status.className = "err"; status.textContent = err.message;
     } finally { btn.disabled = false; }
   });
+
+  // "Share a job": the same endpoint, kind "tip" (infra/intake.py stores it for
+  // splat.py's src_tips and emails David a signed link to remove it).
+  const share = document.getElementById("share"), shareForm = document.getElementById("share-form");
+  const shareStatus = document.getElementById("share-status");
+  document.getElementById("share-open").addEventListener("click", () => { share.open = true; share.scrollIntoView({ behavior: "smooth" }); });
+  shareForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = { t: loaded, kind: "tip" };
+    for (const [k, v] of new FormData(shareForm)) data[k] = v;
+    const btn = shareForm.querySelector("button[type=submit]");
+    btn.disabled = true; shareStatus.className = ""; shareStatus.textContent = "Sending...";
+    try {
+      const r = await fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) throw new Error(d.error || "It did not send. Please try again in a bit.");
+      shareForm.reset(); shareStatus.className = "ok";
+      shareStatus.textContent = d.new === false ? "Someone already shared that one. Thank you anyway."
+        : "Shared. Thank you. It shows up after the next morning's run if it fits the tracks.";
+    } catch (err) {
+      shareStatus.className = "err"; shareStatus.textContent = err.message;
+    } finally { btn.disabled = false; }
+  });
+
+  // David's remove link from the tip email: #tip-review=ID.SIGNATURE. The signature
+  // is checked on the server; this only asks before sending it.
+  const review = /^#tip-review=([0-9a-f]{16})\.([0-9a-f]{32})$/.exec(location.hash);
+  if (review) {
+    history.replaceState(null, "", location.pathname + location.search);
+    if (confirm("Remove this shared job from the Splat? It drops off at the next morning's run.")) {
+      fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "tip_review", id: review[1], sig: review[2] }) })
+        .then((r) => r.json()).then((d) => alert(d.ok ? "Removed." : (d.error || "That did not work.")))
+        .catch(() => alert("That did not work. Try the link again in a bit."));
+    }
+  }
 })();
 </script>
 </body>
