@@ -386,7 +386,7 @@
           product: ["Product", "Product managers and product owners"] },
     // What the sales engineer sells. Keys are unique across tracks (SUB below is keyed by them alone).
     se: { sesec: ["Security", "Selling security products: endpoint, network and cloud security, identity, SIEM and SOC tools"],
-          seinfra: ["Cloud & infra", "Selling cloud, networking, storage, data center, AI infrastructure and IT products"],
+          seinfra: ["Cloud & infra", "Selling cloud, networking, telecom, storage, data center, AI infrastructure and IT products"],
           seapps: ["Software & data", "Selling data, AI, developer and business software"] },
   };
   const SUB = Object.fromEntries(Object.entries(SUBS).flatMap(([t, m]) => Object.entries(m).map(([k, v]) => [k, { track: t, label: v[0], hint: v[1] }])));

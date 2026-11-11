@@ -572,7 +572,7 @@ def apply_jev(p: dict, ans: dict | None) -> bool:
 
 
 def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False,
-               sa_employer: bool | None = None) -> str | None:
+               sa_employer: bool | None = None, se: bool = True) -> str | None:
     """sec_topic: the source already filed it under infosec (Foorilla topics 102/26).
     Then a role-shaped title is enough ("Security Engineer III" at a security
     vendor), and Jev has the final say. tech_employer: the posting is on a
@@ -580,10 +580,11 @@ def rule_track(title: str, sec_topic: bool = False, tech_employer: bool = False,
     A PM title that is not technology work is out, as every PM title was before
     the PM track. sa_employer (default: tech_employer): its solutions architects
     sell (see se_track); a sales engineer comes before the wrong-family words,
-    which name sales."""
+    which name sales. se=False: the track the title would have without the SE
+    track, for a row whose posting says it is not pre-sales (not_presales)."""
     if is_pm(title):
         return "pm" if pm_track(title, tech_employer, sec_topic) else None
-    if se_track(title, tech_employer if sa_employer is None else sa_employer, sec_topic):
+    if se and se_track(title, tech_employer if sa_employer is None else sa_employer, sec_topic):
         return "se"
     if IS_DEPT.search(title) and ENG_ROLE.search(title) and not DATA_ML.search(title):
         return "cyber" if CYBER.search(title) else "eng"
@@ -2018,16 +2019,36 @@ SUB_Q = {
         "other": "Work that fits none of these, including software development, engineering management of "
                  "product software, and enterprise application or platform ownership (ServiceNow, ERP)."}},
     "se": {"type": "choice", "instructions": "What does this sales engineer mainly sell?", "criteria": {
-        "sesec": "Security products: endpoint, network, cloud, email or application security, identity and "
-                 "access, SIEM, SOC and threat-detection tools, vulnerability management, data protection.",
-        "seinfra": "Cloud, infrastructure or IT products: cloud platforms, networking, storage, servers, "
-                   "data center, AI infrastructure, observability, IT operations and management tools.",
+        "sesec": "Security products: endpoint, network, cloud, email or application security, software "
+                 "supply-chain and container security, identity and access, SIEM, SOC and threat-detection "
+                 "tools (Splunk security too), vulnerability management, data security.",
+        "seinfra": "Cloud, infrastructure or IT products: cloud platforms, networking, wireless and telecom "
+                   "services, storage and backup systems, servers, data center, AI infrastructure, "
+                   "observability, IT service management and IT operations tools.",
         "seapps": "Software and data products: data platforms, databases, analytics, AI and developer tools, "
-                  "business and industry applications.",
+                  "fintech and payments, business and industry applications (CRM, ERP, fleet, field "
+                  "operations).",
         "other": "Something that fits none of these, or several equally."}},
 }
 MANAGER_Q = {"type": "noul", "instructions": "Does the person hired for this job manage other employees "
              "(have direct reports)?"}
+# The SE track's second check, on the posting's own words. Jev's track answer sees
+# a title, a company and, from most boards, no text; the audit of the dry run
+# (2026-11-10) found 43 of 210 se rows were not sales engineering: professional
+# services and deployment after the sale ("First Time Deployment" solutions
+# architects, "Job Function: Professional Services"), support, customer success,
+# or an employer's own systems ("Solutions Architect, Global Tax Data").
+PRESALES_Q = {"type": "noul", "instructions": "Is this a pre-sales job: working with a sales team before the sale "
+              "to win new customers or deals (discovery, demos, proofs of concept, solution design for "
+              "prospects)? Answer no for professional services, implementation, deployment or migration "
+              "delivery after the sale, customer success or adoption, technical support, and for building or "
+              "running the employer's own internal systems."}
+PRESALES_WORDS = re.compile(
+    r"pre-?\s?sales|post-?\s?sales|\bsales\b|account (executive|team|manager)s?|\bdemo|proofs? of (concept|value)|"
+    r"\bpo[cv]s?\b|technical win|win rate|\bdeals?\b|pipeline|quota|opportunit|prospect|"
+    r"professional services|implementation|deploy|migration|go-live|onboard|customer success|adoption|"
+    r"\bsupport\b|escalation|statement of work|\bsow\b|utilization|billable|internal|our own|job function|"
+    r"department|reports? (in)?to", re.I)
 
 
 def jev_ask(state: dict, questions: dict, key: str) -> dict | None:
@@ -2140,6 +2161,13 @@ def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
         mgr = (a.get("manager") or {}).get("noul")
         if isinstance(mgr, (int, float)) and mgr >= 0.6:
             out["mgr"] = True
+    if track == "se" and read:
+        # The sentences that say where the job sits; the title too, since "Customer
+        # Success Solutions Architect" says it there.
+        s = snippet(f"{p['title']}\n{body}", PRESALES_WORDS, 1500)
+        v = ((ask(s or body[:1500], {"presales": PRESALES_Q}) or {}).get("presales") or {}).get("noul")
+        if isinstance(v, (int, float)):
+            out["presales"] = v >= 0.5
     out["tokens"] = tokens
     if keep_body:
         out["_body"] = body
@@ -2148,6 +2176,18 @@ def _read_facts(p: dict, key: str, keep_body: bool, out: dict) -> dict:
 
 def pm_sub(title: str) -> str:
     return "product" if PRODUCT.search(title) else "project"
+
+
+def not_presales(p: dict, f: dict | None, tech_employer: bool) -> str | None:
+    """An se row whose posting says it is not pre-sales (PRESALES_Q, read under
+    se): "drop", or the track its title has without the SE track when that is
+    cyber or eng ("Senior Solutions Architect, First Time Deployment Networking"
+    is NVIDIA infrastructure delivery). None: it stays se. Jev chose se, not pm,
+    so a PM title is dropped rather than published unconfirmed."""
+    if p.get("track") != "se" or not f or f.get("track") != "se" or f.get("presales") is not False:
+        return None
+    alt = rule_track(p["title"], p.get("sec_topic", False), tech_employer, se=False)
+    return alt if alt in ("cyber", "eng") else "drop"
 
 
 def se_sub(title: str, sec_topic: bool = False) -> str | None:
@@ -2352,7 +2392,7 @@ def main() -> int:
     reads: dict = prev.get("read", {})
     run_facts: dict = {}  # today's answers, shown today even when not cached
     read_stats = {"asked": 0, "read": 0, "unread": 0, "failed": 0, "cached": 0, "abandoned": 0, "tokens": 0,
-                  "error": None}
+                  "not_presales": 0, "error": None}
     if args.no_jev or args.no_read or not key:
         read_stats["error"] = "skipped" if key else "no TYPESAFE_API_KEY"
     else:
@@ -2402,6 +2442,16 @@ def main() -> int:
     for k, p in cands.items():
         jid = hashlib.sha1(k.encode()).hexdigest()[:12]
         old = prev_jobs.get(jid, {})
+        rk = read_key(k, p["url"])
+        f = run_facts.get(rk) or reads.get(rk)  # today's read, when there was one, over an older cached one
+        if rk in reads:
+            keep_read.add(rk)
+        keep_jev.add(jev_key(p))
+        if alt := not_presales(p, f, tech_source(p["source"])):
+            read_stats["not_presales"] += 1
+            if alt == "drop":
+                continue
+            p["track"] = alt
         jobs[jid] = {
             "id": jid, "title": p["title"], "company": p["company"], "url": p["url"],
             "location": p["location"][:160], "where": p["where"], "track": p["track"], "level": p["level"],
@@ -2413,17 +2463,12 @@ def main() -> int:
         for flag in ("clearance_check", "also_remote"):
             if p.get(flag):
                 jobs[jid][flag] = True
-        rk = read_key(k, p["url"])
-        f = run_facts.get(rk) or reads.get(rk)  # today's read, when there was one, over an older cached one
         if f:
             apply_read(jobs[jid], f)
-        if rk in reads:
-            keep_read.add(rk)
         if p["track"] == "pm" and not jobs[jid].get("sub"):
             jobs[jid]["sub"] = pm_sub(p["title"])  # from the title, whatever the reader managed
         if p["track"] == "se" and not jobs[jid].get("sub") and (s := se_sub(p["title"], p["sec_topic"])):
             jobs[jid]["sub"] = s
-        keep_jev.add(jev_key(p))
         stats[p["source"]]["kept"] += 1
     carried = 0
     for jid, j in prev_jobs.items():

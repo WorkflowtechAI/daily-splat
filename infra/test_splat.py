@@ -439,6 +439,22 @@ FOLD_READ = [
                  "mgr": True})),
 ]
 
+# not_presales: an se row whose posting says it is not pre-sales goes back to the
+# track its title had before the SE track, or off the page. (title, track now,
+# cached facts, tech employer) -> expected.
+NO_PRE = {"track": "se", "presales": False, "read": True}
+NOT_PRESALES = [
+    ("Senior Solutions Architect, First Time Deployment Networking InfiniBand - NVIS", "se", NO_PRE, True, "eng"),
+    ("Global Solutions Architect - AI Security", "se", NO_PRE, True, "cyber"),
+    ("Solution Architect/Senior Solution Architect - Data 360", "se", NO_PRE, True, "drop"),
+    ("Sales Engineer", "se", NO_PRE, True, "drop"),
+    ("Sales Engineer", "se", {**NO_PRE, "presales": True}, True, None),
+    ("Sales Engineer", "se", {"track": "se", "read": True}, True, None),          # not asked (Jev down): stays
+    ("Sales Engineer", "se", None, True, None),                                    # not read yet
+    ("Sales Engineer", "se", {**NO_PRE, "track": "cyber"}, True, None),            # read under another track
+    ("Security Engineer", "cyber", NO_PRE, True, None),
+]
+
 # apply_jev guard for a non-PM se row (branch review): (title, rules track, Jev track) -> kept track or None.
 CROSS_CONFIRM = [
     ("Solutions Consultant", "se", "pm", None),       # Jev said pm, not se: not published as se
@@ -926,6 +942,11 @@ def main() -> int:
         if got != want:
             bad += 1
             print(f"fold_read(old={old!r}, {facts!r}, err={err!r}) = {got!r}, want {want!r}")
+    for title, track, f, tech, want in NOT_PRESALES:
+        got = splat.not_presales({"title": title, "track": track, "sec_topic": False}, f, tech)
+        if got != want:
+            bad += 1
+            print(f"not_presales({title!r}, {track}, {f!r}) = {got!r}, want {want!r}")
     for title, rt, jt, want in CROSS_CONFIRM:
         p = {"title": title, "track": rt, "level": "mid", "clearance": False}
         kept = splat.apply_jev(p, {"track": jt, "level": "mid", "clearance": False})
@@ -964,7 +985,7 @@ def main() -> int:
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
              + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total
-             + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM))
+             + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
 

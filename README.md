@@ -106,8 +106,17 @@ a wrong token shows up as a failed source, it does not break the run.
    often valves, trucks or HVAC as software, and the title rarely says
    which. Jev may also move a vendor's other names for a sales engineer
    ("Systems Engineer" at Palo Alto, "Field Engineer" at Databricks) into
-   se, but no other title. The Kind is what the engineer sells: security,
-   cloud and infra, or software and data. Sources search for the titles:
+   se, but no other title. **Then the posting itself decides**: Jev's track
+   answer sees a title and, from most boards, no text, and an audit of the
+   first dry run (2026-11-10) found 43 of 210 se rows were not sales
+   engineering (professional services and deployment after the sale,
+   support, customer success, an employer's own systems). So the reader
+   asks one more question of an se posting's own sentences
+   (`PRESALES_Q`), and a "no" sends the row back to the track its title had
+   before the SE track, cyber or eng, or off the page (`not_presales`).
+   Against the audit: 30 of 39 caught, 5 of 150 real sales engineers lost,
+   93% of the track right (was 80%). The Kind is what the engineer sells:
+   security, cloud and infra, or software and data. Sources search for the titles:
    Foorilla (remote), Workable, the Workday search tenants, Amazon; every
    whole-board source needed nothing.
 2. **Jev** (TypeSafe's typed classifier).
