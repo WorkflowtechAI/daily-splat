@@ -822,6 +822,17 @@ AGENCY = re.compile(r"recruit|staffing|talent|\bsearch\b|headhunt|mercor|remote 
                     r"\bmodis\b|beacon hill|kelly services|\bvaco\b|jobot|mindlance|diverse lynx|infojini|"
                     r"\byoh\b|system one|ascendion|\bhays\b|harnham|genesis10|signature consultants|"
                     r"matlen silver|calance|pyramid consulting|cynet systems|intelliswift|net2source", re.I)
+# Job sites that stand between a job seeker and the employer: an email gate, a
+# sign-up, or a hop to another such site before the real posting (2026-11-11, a
+# LinkedIn post David shared: Haystack's "remote" IT manager asked for an email,
+# sent to Dice, which asked again, then to a CACI job that was not remote). A row
+# whose link goes to one of these is dropped; the page links to the source. None
+# on 2026-11-11 (1,406 of 1,755 links were the employer's ATS, 301 its own site).
+MIDDLEMAN = re.compile(r"^https?://(?:[\w-]+\.)*(?:dice\.com|haystackapp\.io|haystack\.\w+|lensa\.com|jooble\.org|"
+                       r"ziprecruiter\.com|linkedin\.com|indeed\.com|talent\.com|jobs2careers\.com|simplyhired\.com|"
+                       r"glassdoor\.com|monster\.com|careerbuilder\.com|jobgether\.com|theladders\.com|getwork\.com|"
+                       r"jobright\.ai|adzuna\.com|neuvoo\.\w+|joblist\.com|jobilize\.com|learn4good\.com)(?::\d+)?(?:[/?#]|$)",
+                       re.I)
 
 
 def fold_remote_twins(cands: dict) -> int:
@@ -2131,6 +2142,17 @@ def not_presales(p: dict, f: dict | None, tech_employer: bool) -> str | None:
     return alt if alt in ("cyber", "eng") else "drop"
 
 
+def not_remote(p: dict, f: dict | None) -> bool:
+    """A row on the page only as remote whose own posting says it is not: the
+    employer's text or ATS field says hybrid or onsite (the reader's `mode`; an
+    aggregator's own remote label never sets hybrid or onsite). That job is in an
+    office somewhere outside the PNW, so it is not for this page. On 2026-11-11, 53
+    of 984 remote rows, 46 of them Foorilla's remote flag ("Analyst I, Falcon
+    Complete GovCloud (Hybrid)" listed as "USA - Remote"). A PNW row stays: it is
+    local whatever its mode."""
+    return p.get("where") == "remote" and bool(f) and f.get("mode") in ("hybrid", "onsite")
+
+
 def se_sub(title: str, sec_topic: bool = False) -> str | None:
     """The SE Kind from the title alone, for a row the reader has not answered:
     security when the title or Foorilla's infosec topic says so, else unknown."""
@@ -2280,7 +2302,8 @@ def main() -> int:
     # Rules first: cheap, and they decide everything Jev does not.
     cands: dict[str, dict] = {}
     for sid, p in raw:
-        if not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"]):
+        if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
+                or MIDDLEMAN.search(p["url"])):
             continue
         w = where(p["location"], p["remote"])
         if not w:
@@ -2333,7 +2356,7 @@ def main() -> int:
     reads: dict = prev.get("read", {})
     run_facts: dict = {}  # today's answers, shown today even when not cached
     read_stats = {"asked": 0, "read": 0, "unread": 0, "failed": 0, "cached": 0, "abandoned": 0, "tokens": 0,
-                  "not_presales": 0, "error": None}
+                  "not_presales": 0, "not_remote": 0, "error": None}
     if args.no_jev or args.no_read or not key:
         read_stats["error"] = "skipped" if key else "no TYPESAFE_API_KEY"
     else:
@@ -2393,6 +2416,9 @@ def main() -> int:
             if alt == "drop":
                 continue
             p["track"] = alt
+        if not_remote(p, f):
+            read_stats["not_remote"] += 1
+            continue
         jobs[jid] = {
             "id": jid, "title": p["title"], "company": p["company"], "url": p["url"],
             "location": p["location"][:160], "where": p["where"], "track": p["track"], "level": p["level"],

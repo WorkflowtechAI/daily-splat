@@ -58,6 +58,16 @@ a wrong token shows up as a failed source, it does not break the run.
    engineer title and the group's verdict was "mostly SWE roles, not infosec".
    Sales, recruiting, hardware, mechanical, civil and the like are out. Level: entry (junior, associate, `Engineer I`, tier 1, new grad, apprentice) through staff/principal; internships and director/VP/head-of/C-level are out. The entry lane and the IT-support titles were added 2026-10-04 for a member looking for entry sysadmin, cyber and support-engineer roles.
    Recruiter and staffing reposts are dropped: the page lists employers.
+   **Go to the source** (2026-11-11): a row whose link goes through a job
+   site that stands between the job seeker and the employer (an email gate,
+   a sign-up, a hop to another site: Dice, Haystack, LinkedIn, Indeed,
+   ZipRecruiter, Lensa... in `MIDDLEMAN`) is dropped. A remote row whose own
+   posting says hybrid or onsite (the reader's `mode`, from the employer's
+   text or ATS field) is dropped too (`not_remote`, counted in
+   `reader.not_remote`): that job is in an office outside the PNW. On
+   2026-11-11 97% of links already went to the employer, and 53 of 984
+   remote rows said otherwise in their own posting, 46 of them Foorilla's
+   remote flag.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
    and owners, when the work is technology, IT or security (`pm_track`). The
