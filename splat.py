@@ -1217,48 +1217,15 @@ def src_providence() -> list[dict]:
     return out
 
 
-# Portland-area public employers on NEOGOV (governmentjobs.com). No JSON: the
-# careers page's XHR answer is an HTML fragment, ten postings a page.
-NEOGOV = {"portlandor": "City of Portland", "trimet": "TriMet", "portofportland": "Port of Portland",
-          "beaverton": "City of Beaverton", "oregonmetro": "Oregon Metro"}
-NEOGOV_ITEM = re.compile(r'<li class="list-item" data-job-id="\d+">(.*?)(?=<li class="list-item"|<div class="pager-container"|$)', re.S)
-NEOGOV_LINK = re.compile(r'class="item-details-link"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', re.S)
-NEOGOV_META = re.compile(r'<ul class="list-meta">\s*<li>(.*?)</li>', re.S)
-NEOGOV_POSTED = re.compile(r'class="list-entry-starts"><span>(.*?)</span>', re.S)
-
-
-def neogov_rows(fragment: str, name: str) -> list[dict]:
-    out = []
-    for item in NEOGOV_ITEM.findall(fragment):
-        link = NEOGOV_LINK.search(item)
-        if not link:
-            continue
-        meta = NEOGOV_META.search(item)
-        loc = text(meta.group(1)) if meta else ""
-        # Every row is a Portland-area agency; "Commissioners' Office, OR" is a place only to them.
-        if where(loc) != "oregon":
-            loc = f"{loc}; Portland, OR" if loc else "Portland, OR"
-        posted = NEOGOV_POSTED.search(item)
-        out.append(posting(title=text(link.group(2)), company=name,
-                           url="https://www.governmentjobs.com" + unescape(link.group(1)), location=loc,
-                           posted=_wd_days(text(posted.group(1))) if posted else None))
-    return out
-
-
-def src_neogov(agency: str, name: str) -> list[dict]:
-    out, seen = [], set()
-    for page in range(1, 31):
-        url = f"https://www.governmentjobs.com/careers/home/index?agency={agency}&page={page}"
-        rows = neogov_rows(http_text(url, headers={"Accept": "text/html", "X-Requested-With": "XMLHttpRequest"}), name)
-        # Past its last page the site serves earlier pages again (City of Portland,
-        # 2026-10-21), so a page with nothing new is the end.
-        new = [r for r in rows if r["url"] not in seen]
-        seen.update(r["url"] for r in new)
-        out += new
-        if len(rows) < 10 or not new:
-            break
-        time.sleep(0.4)
-    return out
+# The Portland-area governments on NEOGOV (governmentjobs.com: City of Portland,
+# TriMet, Port of Portland, City of Beaverton, Oregon Metro) were dropped
+# 2026-11-11. NEOGOV's terms of use (effective 2025-09-02) forbid anyone to
+# "reproduce, distribute, ... publicly display, ... republish" content on the
+# career pages it hosts, "regardless of whether such content is public or viewable
+# without a login", and its robots.txt disallows every crawler but the search
+# engines. The page links to those agencies' own job pages instead, and the reader
+# fetches nothing from governmentjobs.com (NO_FETCH). The old reader is in git
+# history (src_neogov, before this commit).
 
 
 # Remotive was dropped 2026-11-04: its API returns the same ~11 newest jobs
@@ -1352,7 +1319,6 @@ def all_sources(only: set[str] | None):
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
          ("workingnomads", "Working Nomads", src_workingnomads, ()),
          ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ())]
-    s += [(f"neogov:{a}", n, src_neogov, (a, n)) for a, n in NEOGOV.items()]
     s += [(f"eightfold:{e[0]}", e[3], src_eightfold, e) for e in EIGHTFOLD]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
@@ -1514,6 +1480,8 @@ class _PublicRedirects(urllib.request.HTTPRedirectHandler):
         u = urllib.parse.urlsplit(newurl)
         if u.scheme != "https" or u.port not in (None, 443) or not public_host(u.hostname or ""):
             raise urllib.error.HTTPError(newurl, 403, "redirect to a non-public address", headers, fp)
+        if NO_FETCH.search(newurl):
+            raise urllib.error.HTTPError(newurl, 403, "redirect to a host that bars automated access", headers, fp)
         new = super().redirect_request(req, fp, code, msg, headers, newurl)
         if new is not None:
             fp.close()  # urllib would read the redirect's own body whole, with no cap (review, 2026-11-09)
@@ -1532,6 +1500,8 @@ def host_get(url: str, as_json: bool = True, headers: dict | None = None):
     u = urllib.parse.urlsplit(url)
     if u.scheme != "https" or u.port not in (None, 443) or not public_host(u.hostname or ""):
         raise RuntimeError(f"not a public https URL: {u.hostname}")
+    if NO_FETCH.search(url):
+        raise RuntimeError(f"not a public https URL for automated access: {u.hostname}")  # PERMANENT: waits a week
     host = u.netloc.lower()
     with _HOSTS_LOCK:
         slot = _HOSTS.setdefault(host, threading.BoundedSemaphore(3))
@@ -1635,21 +1605,6 @@ def _workable_read(code: str) -> dict | None:
             "pay": pay, "mode": {"remote": "remote", "hybrid": "hybrid", "on_site": "onsite"}.get(d.get("workplace"))}
 
 
-def _neogov_read(url: str) -> dict:
-    """The job page's details block, and the salary line in its header. Found with
-    str.find, not a lazy regex over the whole page."""
-    page = host_get(url, as_json=False, headers={"Accept": "text/html"})
-    body, pay = "", None
-    i = page.find('id="details-info"')
-    if i >= 0:
-        ends = [j for j in (page.find(t, i) for t in ('id="benefits-info"', 'id="questions-info"', "<footer")) if j > 0]
-        body = body_text(page[i:min(ends) if ends else i + 100_000])
-    s = re.search(r">\s{0,20}Salary\s{0,20}<", page)
-    if s:
-        pay = pay_from_text(text(page[s.end():s.end() + 600], 300))
-    return {"body": body, "pay": pay}
-
-
 def _ld_nodes(x):
     if isinstance(x, dict):
         yield x
@@ -1705,7 +1660,9 @@ ASHBY_URL = re.compile(r"^https://jobs\.ashbyhq\.com/([^/?#]+)/([0-9a-f-]{36})",
 WD_URL = re.compile(r"^https://([\w-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}-[A-Z]{2}/)?([\w-]+)/(job/[^?#]+)", re.I)
 # Eightfold: /careers/job/ID, or Microsoft's /careers/apply?pid=/careers/job/ID.
 EF_URL = re.compile(r"^https://([\w.-]+)/careers/(?:job/(\d+)|[^#]{0,200}?\bpid=\D{0,40}(\d+))", re.I)
-NEOGOV_URL = re.compile(r"^https://www\.governmentjobs\.com/careers/[\w-]+/jobs/\d+", re.I)
+# Hosts the reader never fetches, a redirect included: their terms or robots.txt
+# say no to automated access (governmentjobs.com, see the NEOGOV note above).
+NO_FETCH = re.compile(r"^https?://(?:[\w-]+\.)*governmentjobs\.com(?::\d+)?(?:[/?#]|$)", re.I)
 ORACLE_URL = re.compile(r"^(https://[\w-]+\.fa\.[\w-]+\.oraclecloud\.com)/hcmUI/CandidateExperience/[\w-]+/sites/([\w-]+)/job/(\d+)", re.I)
 RIPPLING_URL = re.compile(r"^https://ats\.rippling\.com/([\w-]+)/jobs/([0-9a-f-]{36})", re.I)
 SMARTR_URL = re.compile(r"^https://jobs\.smartrecruiters\.com/([\w-]+)/(\d+)", re.I)
@@ -1743,8 +1700,8 @@ def fetch_posting(p: dict) -> dict | None:
         return _bamboohr_read(m)
     if m := WORKABLE_URL.search(url):
         return _workable_read(m[1])
-    if NEOGOV_URL.search(url):
-        return _neogov_read(url)
+    if NO_FETCH.search(url):
+        return None
     if url.startswith("https://"):
         return jsonld_posting(host_get(url, as_json=False, headers={"Accept": "text/html"}))
     return None

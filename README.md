@@ -34,7 +34,7 @@ live the next morning. Contributions are welcome: see **Contributing** below.
 
 | kind | sources | how removal works |
 |---|---|---|
-| Company boards | Greenhouse, Lever, Ashby, Workday tenants, Eightfold (Autodesk, Lam Research, Tektronix, Fortive), Amazon, Providence (Oracle HCM) and the Portland-area governments on NEOGOV (City of Portland, TriMet, Port of Portland, Beaverton, Metro), listed in `splat.py` | the board stops returning the job |
+| Company boards | Greenhouse, Lever, Ashby, Workday tenants, Eightfold (Autodesk, Lam Research, Tektronix, Fortive), Amazon and Providence (Oracle HCM), listed in `splat.py`. The Portland-area governments on NEOGOV (City of Portland, TriMet, Port of Portland, Beaverton, Metro) were dropped 2026-11-11: NEOGOV's terms (effective 2025-09-02) forbid republishing content from the career pages it hosts, public or not, and its robots.txt disallows all but search engines. The page links to their job pages instead, and the reader never fetches governmentjobs.com (`NO_FETCH`) | the board stops returning the job |
 | Open aggregators | RemoteOK, Jobicy, Himalayas, Working Nomads, Workable search. Remotive was dropped 2026-11-04: its API returns the same ~11 jobs whatever is asked, and it asks that its jobs not be republished on third-party sites. The Muse was dropped 2026-11-10: since 2026-11-09 its public jobs API answers every script with a Cloudflare browser challenge (403/404) | the feed stops returning the job |
 | Foorilla (keyed) | PNW location queries over 30 days; remote-US over 14 days from its InfoSec & Privacy (102) and Cybersecurity (26) categories plus security and infra title queries | `expired` flag, or it ages out of the window |
 
@@ -133,8 +133,9 @@ a wrong token shows up as a failed source, it does not break the run.
    (Lever, Ashby, Amazon, Workable, the aggregators), else from the
    employer's own system by URL: the Greenhouse, Lever, Ashby, Workday,
    Eightfold (Microsoft too), Oracle HCM, Rippling, SmartRecruiters,
-   BambooHR and Workable job APIs, the NEOGOV page, and otherwise the
-   page's schema.org `JobPosting` data. ADP, Dayforce, UKG and SAP pages
+   BambooHR and Workable job APIs, and otherwise the page's schema.org
+   `JobPosting` data. Hosts that bar automated access are never fetched,
+   a redirect included (`NO_FETCH`: governmentjobs.com). ADP, Dayforce, UKG and SAP pages
    render in the browser and stay unread.
    - Code takes what code can: the pay range (`pay_from_text`: two dollar
      amounts, annual 25K-1.5M or hourly 10-400, pay zones give the widest

@@ -516,7 +516,7 @@ APPLY_JEV = [
 TECH_SOURCE = [
     ("greenhouse:stripe", True), ("workday:nvidia", True), ("workday:nike", False), ("workday:tmobile", False),
     ("eightfold:autodesk", True), ("eightfold:lamresearch", True), ("eightfold:fortive", False),
-    ("providence", False), ("neogov:portlandor", False), ("amazon", False), ("himalayas", False),
+    ("providence", False), ("amazon", False), ("himalayas", False),
     ("foorilla", False), ("workable", False),
 ]
 
@@ -562,38 +562,6 @@ LEVEL = [
 ]
 
 
-# A governmentjobs.com fragment as the City of Portland served it on 2026-10-21,
-# cut to two postings and their markup.
-NEOGOV_FRAGMENT = """
-<ul class="unstyled search-results-listing-container job-listing-container ">
-  <li class="list-item" data-job-id="5468381">
-    <h3 class="job-item-link-container">
-      <a aria-label="x" class="item-details-link" data-department-name="BTS" href="/careers/portlandor/jobs/5468381/it-security-analyst" rel="">Information Technology Security Analyst</a>
-    </h3>
-    <ul class="list-meta">
-      <li>Commissioners&#39; Office, OR</li>
-      <li>Full-Time</li>
-    </ul>
-    <div class="list-published">
-      <span class="list-entry-starts"><span>Posted 3 days ago</span></span>
-    </div>
-  </li>
-  <li class="list-item" data-job-id="5430025">
-    <h3 class="job-item-link-container">
-      <a aria-label="x" class="item-details-link" href="/careers/portlandor/jobs/5430025/water-operator" rel="">Water Operator &amp; Mechanic</a>
-    </h3>
-    <ul class="list-meta">
-      <li>Portland, OR</li>
-    </ul>
-    <div class="list-published">
-      <span class="list-entry-starts"><span>Posted more than 30 days ago</span></span>
-    </div>
-  </li>
-</ul>
-<div class="pager-container"></div>
-"""
-
-
 # Two positions as Eightfold's /api/pcsx/search returned them for Autodesk on
 # 2026-11-04, cut to the fields eightfold_rows reads.
 EIGHTFOLD_POSITIONS = [
@@ -615,19 +583,6 @@ def check_eightfold() -> int:
              "oregon", False, "2026-11-01")]
     if got != want:
         print(f"eightfold_rows = {got!r}, want {want!r}")
-        return 1
-    return 0
-
-
-def check_neogov() -> int:
-    rows = splat.neogov_rows(NEOGOV_FRAGMENT, "City of Portland")
-    got = [(r["title"], r["url"], splat.where(r["location"]), splat.age_days(r["posted"])) for r in rows]
-    want = [("Information Technology Security Analyst",
-             "https://www.governmentjobs.com/careers/portlandor/jobs/5468381/it-security-analyst", "oregon", 3),
-            ("Water Operator & Mechanic",
-             "https://www.governmentjobs.com/careers/portlandor/jobs/5430025/water-operator", "oregon", 30)]
-    if got != want:
-        print(f"neogov_rows = {got!r}, want {want!r}")
         return 1
     return 0
 
@@ -752,8 +707,15 @@ def check_reader() -> tuple[int, int]:
         eq(f"years_from_text({s!r})", splat.years_from_text(s), want)
     for s, want in REVIEW_DAYS:
         eq(f"office_days({s!r})", splat.office_days(s), want)
-    eq("NEOGOV_URL on another host", bool(splat.NEOGOV_URL.search("https://evil.example/governmentjobs.com/careers/a/jobs/1")),
+    # governmentjobs.com bars automated access (NEOGOV, 2026-11-11): never fetched, a subdomain
+    # included; the name in another host's path is not that host.
+    eq("NO_FETCH governmentjobs.com", bool(splat.NO_FETCH.search("https://www.governmentjobs.com/careers/portlandor/jobs/1")), True)
+    eq("NO_FETCH bare host", bool(splat.NO_FETCH.search("https://governmentjobs.com")), True)
+    eq("NO_FETCH on another host", bool(splat.NO_FETCH.search("https://evil.example/governmentjobs.com/careers/a/jobs/1")),
        False)
+    eq("NO_FETCH lookalike host", bool(splat.NO_FETCH.search("https://notgovernmentjobs.com/x")), False)
+    eq("fetch_posting skips governmentjobs.com", splat.fetch_posting({"url": "https://www.governmentjobs.com/careers/x/jobs/1"}),
+       None)
     j = {"clearance": False}
     splat.apply_read(j, {"read": False, "clr": "top_secret"})
     eq("apply_read(unread, top secret)", j, {"clearance": True, "clr": "top_secret"})
@@ -873,7 +835,7 @@ REVIEW_DAYS = [
 
 def main() -> int:
     reader_bad, reader_total = check_reader()
-    bad = check_neogov() + check_eightfold() + check_fold_remote_twins() + reader_bad
+    bad = check_eightfold() + check_fold_remote_twins() + reader_bad
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -984,7 +946,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 2 + reader_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
