@@ -25,7 +25,11 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   `#track=se&sub=sesec` is security sales engineering).
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
   yesterday's postings, for "new today" and the failed-source grace, and the
-  Jev answer cache, so each day only pays for its new postings.
+  Jev answer cache, so each day only pays for its new postings. Beside it,
+  `boards.json`: the Company check's census of the employers' own Ashby,
+  Greenhouse and Lever boards (see "Company check"), which `splat.py` reads,
+  never writes, for the employer's own posting dates. A missing or corrupt
+  one is an empty ledger for both scripts.
 - **Keys:** `/etc/daily-splat.env`, root:root 0600, holding
   `FOORILLA_API_KEY`, `TYPESAFE_API_KEY`, and `USAJOBS_API_KEY` with `USAJOBS_EMAIL` (the address the
   USAJOBS key was registered under; OPM wants it as the User-Agent). Kept on the server only. None is required; a missing one skips that
@@ -71,6 +75,20 @@ a wrong token shows up as a failed source, it does not break the run.
    2026-11-11 97% of links already went to the employer, and 53 of 984
    remote rows said otherwise in their own posting, 46 of them Foorilla's
    remote flag.
+   **The employer's own date** (2026-11-12): an aggregator's date can move
+   while the employer's posting keeps its own (Foorilla had Vultr's
+   "Technical Support Specialist" posted 2026-11-06; Ashby's `publishedAt`
+   for the same posting was 2026-03-31), so a months-old role passed the age
+   rule and read "posted 6 days ago". When the Company check's census
+   (`boards.json`) has the board an aggregator row links to, the card takes
+   the board's date for that posting if it is older (never a later one), and
+   the age rule runs again on it, before Jev and the reader so a dropped row
+   costs neither (`apply_board_dates`). A row then too old drops and is
+   counted in `counts.older_by_board`. The employer's own board rows already
+   carry the board's date, and members' tips keep their own 30-day life; both
+   are left alone. The census is from the day before (the check runs after the
+   splat); a posting's date does not change, and a board new today dates its
+   cards from tomorrow.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
    and owners, when the work is technology, IT or security (`pm_track`). The
@@ -218,7 +236,43 @@ none.
 | NLRB, via [labordata/nlrb-data](https://github.com/labordata/nlrb-data) | Unfair-labor-practice charges against it since five years ago, and how they closed | Respondent name equals a reviewed legal name |
 | [CourtListener](https://www.courtlistener.com/help/api/) | Federal employment civil-rights cases (nature of suit 442 and 445) | A docket party equals a reviewed legal name |
 | [FEC bulk files](https://www.fec.gov/data/browse-data/?tab=bulk-data) | What the employer's connected PAC gave federal candidates, by party | The PAC's connected organization equals a reviewed legal name |
-| [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search |
+| [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search (the first legal name its `avoid` list leaves) |
+| The employer's own job board (`hiring`): the public, keyless board APIs of [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api), [Greenhouse](https://docs.greenhouse.io/job-board.html) and [Lever](https://github.com/lever/postings-api) | Open listings today, across all teams and places; their ages by the board's own date (under 30 days, 30 to 89, 90 or more, the oldest, the median); after 90 days of watching, roles taken down and listed again under a new listing; Greenhouse prospect posts counted apart | By URL, not by name: the board the employer's Splat cards link to, with `splat.py`'s posting patterns. Cards on two or more boards give no numbers; cards on none (Workday, LinkedIn, an employer's own site) say so |
+
+The hiring source, added 2026-11-12 after the group argued whether Vultr's
+~62 open roles on its Ashby board were hiring:
+
+- **The census.** Every run (daily, not weekly), each board found on today's
+  cards is read once (400 a run, 15 minutes at most; three failures in a row
+  stop that vendor for the day). Dates: Ashby's `publishedAt` (Ashby documents
+  it as when the job was last published), Greenhouse's `first_published`
+  (never `updated_at`, the last edit), Lever's `createdAt`; a listing without
+  one counts as undated. Ashby's unlisted jobs are left out. A Greenhouse
+  "prospect post" (a general-interest post with `internal_job_id` null, per
+  Greenhouse's docs) is counted apart, not as a listing. Greenhouse's EU
+  boards answer on its one API host; Lever's EU boards are their own.
+- **The ledger**, `boards.json` in the state directory (not `company-data`,
+  which holds downloads that can be fetched again): per board, the first and
+  last day it was read, and per listing its title, place, board date, and the
+  first and last day the census saw it. No descriptions. A listing not seen
+  for 180 days, and a board not read for 180 days, are pruned. A board that
+  fails leaves its ledger as it was and its employers keep their last facts;
+  a dry run writes no ledger.
+- **Taken down and listed again** shows only after the board has been watched
+  90 days. A role counts when a listing first seen in the last 90 days (after
+  the first census) has the same title and place as a different listing on the
+  same board whose last day seen came before the new one's first. Two listings
+  up at once are several openings, not this; a listing that leaves and comes
+  back under the same id is the same listing; two boards never match.
+- **Wording**, for the page and anything written about it: counts and the
+  board's own dates, each number linked to the board, and no verdict. Never
+  "ghost", "fake", "stale", "suspicious", "red flag", "real", "placeholder",
+  scores, colors or ranks, and never the bare word "repost" (the page uses
+  "reposts" for recruiter copies); say "listing", "listed", "taken down and
+  listed again", and never imply why. A long-listed role can be hard to fill,
+  one listing for several hires, or republished by the board, and the panel
+  says the numbers don't tell which. `infra/test_company_check.py` checks
+  the page for those words.
 
 Two kinds of employer:
 
@@ -232,7 +286,9 @@ Two kinds of employer:
   several registrations share the name, and the panel shows search links
   instead of numbers. The panel says the match is automatic and shows what it
   matched. Court cases are not searched for these (CourtListener allows few
-  searches a day). A looked-up name is cached for a week.
+  searches a day). A looked-up name is cached for a week. The hiring source
+  is matched by the cards' links, not the name, so these get it the same way
+  as reviewed employers.
 
 A charge or a lawsuit is an allegation, and the page says so.
 
@@ -274,8 +330,9 @@ Then run `python3 infra/test_company_check.py`.
 
 On the server it needs `COURTLISTENER_TOKEN` in `/etc/daily-splat.env` (a free
 CourtListener account); without it the court source is skipped. Each source
-refreshes weekly per employer, CourtListener within about 100 searches a day,
-and a source that fails keeps its last facts.
+refreshes weekly per employer, except hiring, which refreshes daily (`REFRESH`
+in `company_check.py`), CourtListener within about 100 searches a day, and a
+source that fails keeps its last facts.
 
 - By hand: `sudo systemctl start company-check.service`
 - Last run: `journalctl -u company-check.service -n 40`
