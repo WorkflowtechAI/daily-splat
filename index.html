@@ -670,7 +670,7 @@
     loadCC().then((d) => {
       const id = d.aliases && d.aliases[pageKey(company)];
       const c = id && d.companies && d.companies[id];
-      panel.replaceChildren(...(c ? ccFacts(c, d.as_of || {}, company, (d.generated_at || "").slice(0, 10)) : ccSearch(company, "This employer is not on the reviewed list yet, so there are no numbers here.")));
+      panel.replaceChildren(...(c ? ccFacts(c, d.as_of || {}, (d.generated_at || "").slice(0, 10)) : ccSearch(company, "This employer is not on the reviewed list yet, so there are no numbers here.")));
       panel.dataset.done = "1";
     }).catch(() => panel.replaceChildren(...ccSearch(company, "The reviewed records did not load.")));
   }
@@ -688,7 +688,7 @@
       ])];
   }
 
-  function ccFacts(c, asOf, company, day) {
+  function ccFacts(c, asOf, day) {
     const box = [], head = (t) => box.push(el("h4", { text: t }));
     const unchecked = () => box.push(para("fine", "Not checked yet; it will be within the week."));
     const n = c.search_name || (c.names || [])[0] || "";
@@ -714,34 +714,29 @@
     // A board that has not answered yet (it may fail every day, so no "tomorrow").
     else if (h.state === "unread") box.push(para("", "Its Splat cards link to a job board the Splat has not been able to read yet: ", boardLink(h.link), "."));
     else if (h.state === "ok") {
-      const num = (k) => out(h.link, fmt(k));
-      const who = company || (c.names || [])[0] || "the employer";
+      // Kept short on purpose (David, 2026-11-12: the first version read "dense"):
+      // one count line, the ages as tags like a card's, one line for relists.
       // A board that fails keeps its employer's last numbers (company_check.py);
-      // checked.hiring is the day they were read, so they say that day, not today.
+      // checked.hiring is the day they were read, so old numbers carry that date.
       const read = (c.checked || {}).hiring || "";
       const fresh = !read || !day || read === day;
-      const when = fresh ? "today" : `on ${longDay(read)}, the last day the Splat could read it`;
-      const board = `${who}'s ${ATS[h.ats] || "job"} board`;
-      if (!h.open) box.push(para("", el("b", {}, out(h.link, "No listings")), ` on ${board} ${when}.`));
-      else box.push(para("", el("b", {}, out(h.link, `${fmt(h.open)} listing${h.open === 1 ? "" : "s"}`)),
-        ` on ${board} ${when}, across all teams and locations, not only the ones on the Splat.`));
-      const undated = h.open - h.dated;
-      if (h.dated > 0) box.push(para("", `By the board's own dates${fresh ? "" : " as of that day"}: `, num(h.under_30), " listed under 30 days ago, ", num(h.d30_89),
-        " between 30 and 89 days, ", num(h.d90_plus), " at 90 days or more.", h.oldest ? ` The oldest dates from ${monthYear(h.oldest)}.` : "",
-        ...(undated > 0 ? [" ", num(undated), ` ${undated === 1 ? "has" : "have"} no date on the board.`] : [])));
-      else if (h.open > 0) box.push(para("", "The board gives none of them a date."));
-      const r = h.relisted;
-      if (!r) box.push(para("", `The Splat has been reading this board daily since ${longDay(h.watching_since)}; roles taken down and listed again show here once it has 90 days of that.`));
-      else if (!r.roles) box.push(para("", `No role was taken down and listed again in the last ${r.window_days || 90} days.`));
+      box.push(para("", el("b", {}, out(h.link, h.open ? `${fmt(h.open)} open listing${h.open === 1 ? "" : "s"}` : "No open listings")),
+        ` on its ${ATS[h.ats] || "job"} board`, h.open ? ", all teams and locations" : "", fresh ? "" : ` (as of ${longDay(read)})`, "."));
+      // How long they have been up, by the board's own dates.
+      const ages = h.dated > 0 ? [`${fmt(h.under_30)} under 30 days`, `${fmt(h.d30_89)} at 30–89 days`, `${fmt(h.d90_plus)} at 90+ days`] : [];
+      if (h.open - h.dated > 0) ages.push(`${fmt(h.open - h.dated)} undated`);
+      if (h.prospect > 0) ages.push(`${fmt(h.prospect)} general-interest post${h.prospect === 1 ? "" : "s"}`);
+      if (ages.length) box.push(el("div", { class: "tags" }, ...ages.map((t) => el("span", { class: "tag", text: t }))));
+      const r = h.relisted, win = (r && r.window_days) || 90;
+      if (!r) box.push(para("", `Relisted roles: counting since ${longDay(h.watching_since)}, numbers after 90 days.`));
+      else if (!r.roles) box.push(para("", `Relisted roles, last ${win} days: none.`));
       else {
-        box.push(para("", `In the last ${r.window_days || 90} days, `, num(r.roles), ` role${r.roles === 1 ? " was" : "s were"} taken down and listed again under a new listing:`));
+        box.push(para("", `Relisted roles, last ${win} days: `, el("b", {}, fmt(r.roles))));
         // The place too: two roles can share a title (the census keys a role by title and place).
         box.push(bullets((r.examples || []).slice(0, 3).map((x) => [out(x.link, x.title || "Listing"), ...(x.place ? [` · ${x.place}`] : [])])));
       }
-      if (h.prospect > 0) box.push(para("", num(h.prospect), ` more ${h.prospect === 1 ? "is a general-interest post" : "are general-interest posts"} the board marks as not tied to a job.`));
-      box.push(para("fine", "The board is the one its Splat cards link to. A role can stay listed a long time because it is hard to fill, because one listing covers several hires, or because the board republishes it; these numbers don't say which. "
-        + "The dates are the board's own, and some boards reset a date when a listing is published again. For scale, ",
-        out(ASHBY_TIMES, "Ashby reports a 75-day median from opening to first hire for technical roles"), "."));
+      box.push(para("fine", "Dates are the board's own; some boards reset them when a role is relisted. A long listing can mean hard to fill or several hires, and these numbers don't say which. ",
+        out(ASHBY_TIMES, "Median time to fill a tech role: 75 days"), " (Ashby)."));
     }
 
     head("Federal contracts");
