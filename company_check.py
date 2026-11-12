@@ -19,6 +19,11 @@ it gathers:
               runs it but cannot give to federal candidates itself.
   violations  Violation Tracker (Good Jobs First): a link to the parent page or
               a name search. Its terms allow linking, not copying the data.
+  hiring      The employer's own Ashby, Greenhouse or Lever board, found from
+              the links on its Splat cards (never from its name): how many
+              listings are open today, how long they have been up by the
+              board's own dates, and, after 90 days of daily census, roles taken
+              down and listed again under a new listing. Read every day.
 
 Every fact carries a link to its source record. An employer the table does not
 cover gets search links only, never numbers: a match made on a loose name pins
@@ -26,7 +31,8 @@ someone else's lawsuit or contract on an innocent employer.
 
 Each source refreshes on its own cadence and budget (CourtListener's free tier
 allows about 125 searches a day) and is cached in $STATE_DIRECTORY; a source
-that fails keeps its last facts. Writes companies.json beside jobs.json.
+that fails keeps its last facts. Writes companies.json beside jobs.json, and
+the board census's ledger to $STATE_DIRECTORY/boards.json.
 
     python3 company_check.py                 # full run
     python3 company_check.py --only labor    # one source (still writes)
@@ -43,6 +49,7 @@ import json
 import os
 import re
 import sqlite3
+import statistics
 import sys
 import time
 import urllib.error
@@ -62,12 +69,17 @@ STATE_DIR = Path(os.environ.get("STATE_DIRECTORY") or HERE / ".state")
 JOBS = Path(os.environ.get("JOBS_JSON") or OUT.parent / "jobs.json")   # today's page: whose employers to check
 CACHE = STATE_DIR / "company-check.json"
 DATA = STATE_DIR / "company-data"
+# The board census's ledger: which listings each board showed on which day. Not
+# in DATA, which holds downloads that are fetched again; this is history that
+# cannot be. splat.py reads it (same StateDirectory) for the employer's own dates.
+BOARDS = STATE_DIR / "boards.json"
 NOW = datetime.now(timezone.utc)
 TODAY = NOW.date()
 UA = "daily-splat/1.0 (company check; https://iambraun.com/cv/job-sources/daily-splat/)"
 
 REFRESH_DAYS = 7          # each source, per employer
-SINCE_YEARS = 5           # labor charges and court cases filed in the last five years
+REFRESH = {"hiring": 1}   # days, for a source that is not weekly: the board census is daily
+SINCE_YEARS = 5          # labor charges and court cases filed in the last five years
 COURT_BUDGET = 100        # CourtListener searches a day, across runs (free tier: 125 a day)
 # Its free tier also limits a minute and an hour: the first live run (2026-11-09)
 # got 429 after about 15 searches back to back. One search per COURT_GAP
@@ -79,7 +91,12 @@ FY_COUNT = 3              # fiscal years of federal obligations shown
 AUTO_MAX = 800            # employers matched automatically, most postings first
 RUN_MINUTES = 50          # then every stage stops and the run writes what it has (the unit allows 60)
 BREAKER = 3               # failures in a row that stop a source for the day: the service is down
-SINCE = (TODAY - timedelta(days=365 * SINCE_YEARS)).isoformat()
+BOARD_MAX = 400           # boards the census reads a run (2026-11-06's page linked 156)
+BOARD_MINUTES = 15        # the census's share of the run; the boards it did not reach wait a day
+LEDGER_DAYS = 180         # a listing (or board) not seen for this long leaves the ledger
+RELIST_DAYS = 90          # the window for roles taken down and listed again, and the watching it needs first
+READ_GAP = 3              # days a board can go unread inside one watch (a vendor down); longer starts the watch again
+SINCE =(TODAY - timedelta(days=365 * SINCE_YEARS)).isoformat()
 START = time.monotonic()
 
 
@@ -132,6 +149,30 @@ def matched_names(e: dict) -> list[str]:
 def legal_set(e: dict) -> set[str]:
     avoid = {norm_entity(a) for a in e.get("avoid") or []}
     return {n for n in (norm_entity(x) for x in e.get("legal") or []) if n and n not in avoid}
+
+
+def first_legal(e: dict) -> str | None:
+    """The first legal name the avoid list leaves standing (legal_set's rule), or
+    None. Not legal[0]: Vultr's first legal name, "The Constant Company, LLC", is
+    also an unrelated Georgia company's and sits on its avoid list, and taking it
+    anyway sent the Violation Tracker search, and the page's search links
+    ("Constant"), to the name its own entry says to avoid (2026-11-12)."""
+    keys = legal_set(e)
+    return next((x for x in e.get("legal") or [] if norm_entity(x) in keys), None)
+
+
+def board_name(e: dict) -> str:
+    """The employer's first board name without a note in parentheses (auto_name):
+    what a search uses when no legal name is left to use. An ambiguous automatic
+    employer avoids its one legal name (auto_entry), and its card name's "(SSG)"
+    matches no record system's name (review, 2026-11-12)."""
+    return auto_name((e.get("names") or [""])[0])
+
+
+def search_name(e: dict) -> str:
+    """The name the page's search links use: the first legal name that survives
+    the avoid list, else the board name, as for an entry with no legal names."""
+    return core_name(first_legal(e) or board_name(e))
 
 
 # What a name-matched source reports when every legal name of the employer is
@@ -560,18 +601,355 @@ def vt_parents(refresh: bool) -> dict[str, str]:
 
 def violations(e: dict, parents: dict[str, str]) -> dict:
     vt = e.get("vt")
+    first = first_legal(e)   # never a legal name the entry says to avoid
     if vt is None and not (e.get("auto") and not legal_set(e)):
         # The employer's own names only: a subsidiary's legal name finds the
         # subsidiary's page (Synopsys's "ANSYS, Inc." found Ansys).
-        for n in [norm_entity(x) for x in (e.get("names") or []) + (e.get("legal") or [])[:1]]:
+        for n in [norm_entity(x) for x in (e.get("names") or []) + ([first] if first else [])]:
             if n in parents:
                 vt = parents[n]
                 break
     if vt:
         return {"link": f"{VT}/parent/{vt}", "kind": "parent"}
-    name = (e.get("legal") or e.get("names") or [""])[0]
+    name = first or board_name(e)
     return {"link": f"{VT}/?" + urllib.parse.urlencode({"company_op": "starts", "company": re.sub(r"[,.]", "", name)}),
             "kind": "search"}
+
+
+# ── Open roles on its own board: Ashby, Greenhouse and Lever ─────────────────
+#
+# Added 2026-11-12: the job-hunt chat argued whether Vultr's ~62 open roles on
+# its Ashby board were hiring, and the panel said nothing about hiring. A daily
+# census reads the board each employer's Splat cards link to, counts what is
+# listed by the board's own dates, and keeps a ledger of the days each listing
+# was up, so a role taken down and listed again under a new listing can show
+# once there are 90 days of history (state.json keeps only yesterday).
+#
+# The board comes from the cards' links only, never from the employer's name: a
+# board named like an employer can be someone else's. Workday's dates stop at
+# "30+ days", so Workday is not read here.
+
+# splat.py's posting patterns (GH_URL, LEVER_URL, ASHBY_URL there), copied so this
+# file stands alone; infra/test_company_check.py holds the copies to the same text.
+GH_URL = re.compile(r"^https://(?:boards|job-boards)(?:\.eu)?\.greenhouse\.io/(?:embed/job_app\?for=)?([\w-]+)/jobs/(\d+)", re.I)
+LEVER_URL = re.compile(r"^https://jobs\.(eu\.)?lever\.co/([\w.-]+)/([0-9a-f-]{36})", re.I)
+ASHBY_URL = re.compile(r"^https://jobs\.ashbyhq\.com/([^/?#]+)/([0-9a-f-]{36})", re.I)
+
+
+def board_of(url: str | None) -> dict | None:
+    """The board a posting link is on, and the posting's id there, or None.
+
+    The key is the one splat.py's board_key() builds, so the splat finds a card's
+    board date in the ledger. Tokens are compared without case (the boards' APIs
+    answer either way: Vultr's cards say "Vultr", its API takes "vultr"). Lever's
+    EU boards are their own host and key ("lever-eu:"). Greenhouse's EU boards
+    are not: on 2026-11-12 boards-api.eu.greenhouse.io did not resolve and
+    boards-api.greenhouse.io served Veeam's EU board, so they are one API."""
+    url = url or ""
+    if m := GH_URL.search(url):
+        tok = m[1].lower()
+        return {"key": f"greenhouse:{tok}", "id": m[2], "ats": "greenhouse", "token": tok,
+                "link": f"https://job-boards.greenhouse.io/{tok}",
+                "api": f"https://boards-api.greenhouse.io/v1/boards/{tok}/jobs"}
+    if m := LEVER_URL.search(url):
+        tok, eu = m[2].lower(), ".eu" if m[1] else ""
+        ats = "lever-eu" if m[1] else "lever"
+        return {"key": f"{ats}:{tok}", "id": m[3].lower(), "ats": ats, "token": tok,
+                "link": f"https://jobs{eu}.lever.co/{tok}", "api": f"https://api{eu}.lever.co/v0/postings/{tok}?mode=json"}
+    if m := ASHBY_URL.search(url):
+        tok = urllib.parse.unquote(m[1]).lower()
+        q = urllib.parse.quote(tok)   # a board name may hold a space ("PAR Technology")
+        return {"key": f"ashby:{tok}", "id": m[2].lower(), "ats": "ashby", "token": tok,
+                "link": f"https://jobs.ashbyhq.com/{q}", "api": f"https://api.ashbyhq.com/posting-api/job-board/{q}"}
+    return None
+
+
+def page_rows(path: Path) -> list[dict]:
+    """Today's page rows. Raises when the page cannot be read: the census then
+    skips the day rather than calling every employer board-less."""
+    jobs = json.loads(path.read_text(encoding="utf-8"))["jobs"]
+    if not isinstance(jobs, list):
+        raise ValueError(f"{path.name}: jobs is not a list")
+    return [j for j in jobs if isinstance(j, dict)]
+
+
+def page_boards(rows: list[dict], alias: dict[str, str]):
+    """From the cards' links: each employer's boards ({employer id: {key}}), every
+    board found ({key: board}), and how many cards link to each. A card whose link
+    is on no board read here (Workday, a LinkedIn tip, an employer's own site)
+    adds nothing.
+
+    Each board also carries the card company name that most often links to it
+    (`name`; a tie goes to the first in sort order) and its card count
+    (`cards`). ledger_update keeps both, and splat.py reads the board directly
+    under that name (its auto_boards), busiest first. Both leave out members'
+    tips (via "member"): a member types the employer's name (for an Ashby link
+    the member must), and a tip on a board the reader reads is on the page
+    without David looking at it, so a tip must not name a board, win a tie for
+    it, or put a board only it links to on the splat's daily list (review,
+    2026-11-12). Such a board has no name and is not read as a found board;
+    the census still reads it for its employer's facts (the third value counts
+    every card)."""
+    by_emp: dict[str, set[str]] = {}
+    boards: dict[str, dict] = {}
+    cards: collections.Counter = collections.Counter()
+    feeds: collections.Counter = collections.Counter()
+    names: dict[str, collections.Counter] = {}
+    for j in rows:
+        b = board_of(j.get("url"))
+        if not b:
+            continue
+        boards.setdefault(b["key"], b)
+        cards[b["key"]] += 1
+        company = j.get("company")
+        if j.get("via") != "member":
+            feeds[b["key"]] += 1
+            if isinstance(company, str) and company.strip():
+                names.setdefault(b["key"], collections.Counter())[company.strip()[:200]] += 1
+        eid = alias.get(page_key(company))
+        if eid:
+            by_emp.setdefault(eid, set()).add(b["key"])
+    for key, b in boards.items():
+        b["cards"] = feeds[key]
+        if key in names:
+            b["name"] = min(names[key].items(), key=lambda x: (-x[1], x[0]))[0]
+    return by_emp, boards, cards
+
+
+def board_day(v) -> str | None:
+    """A board's date as YYYY-MM-DD: ISO text (Ashby, Greenhouse) or epoch
+    milliseconds (Lever)."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        try:
+            return datetime.fromtimestamp(v / 1000, timezone.utc).date().isoformat()
+        except (OverflowError, OSError, ValueError):
+            return None
+    m = re.match(r"(\d{4}-\d{2}-\d{2})", str(v or ""))
+    try:
+        return date.fromisoformat(m[1]).isoformat() if m else None
+    except ValueError:
+        return None
+
+
+def read_board(b: dict) -> dict:
+    """What one board lists today: {"postings": {id: {"t", "l", "d"}}, "prospect": n}.
+    Anything but the expected shape raises, so a bad answer never reads as a board
+    that took every listing down.
+
+    Dates: Ashby's publishedAt (Ashby documents it as when the job was last
+    published), Greenhouse's first_published, Lever's createdAt. Never
+    Greenhouse's updated_at: that is the last edit, and an old role edited
+    yesterday would read as new. A listing with no date stays undated."""
+    d = fetch_json(b["api"], timeout=30)
+    ats = b["ats"]
+    # Lever answers a list (an unknown site is {"ok": false, ...} with a 404);
+    # Ashby and Greenhouse an object holding "jobs".
+    jobs = d if ats.startswith("lever") else d.get("jobs") if isinstance(d, dict) else None
+    if not isinstance(jobs, list):
+        raise ValueError(f"{b['key']}: not a job list")
+    postings: dict[str, dict] = {}
+    prospect = 0
+    for j in jobs:
+        if not isinstance(j, dict) or j.get("id") in (None, ""):
+            continue
+        if ats == "ashby":
+            if j.get("isListed") is False:   # unlisted: reachable by link only, not on the board
+                continue
+            row = {"t": j.get("title"), "l": j.get("location"), "d": board_day(j.get("publishedAt"))}
+        elif ats == "greenhouse":
+            # A prospect post is a general-interest post, not a job; Greenhouse's job
+            # board API docs: "Prospect posts include a null value for internal_job_id".
+            if "internal_job_id" in j and j["internal_job_id"] is None:
+                prospect += 1
+                continue
+            loc = j.get("location")
+            row = {"t": j.get("title"), "l": loc.get("name") if isinstance(loc, dict) else loc,
+                   "d": board_day(j.get("first_published"))}
+        else:
+            cat = j.get("categories")
+            row = {"t": j.get("text"), "l": cat.get("location") if isinstance(cat, dict) else None,
+                   "d": board_day(j.get("createdAt"))}
+        postings[str(j["id"]).lower()] = {"t": str(row["t"] or "")[:200], "l": str(row["l"] or "")[:200], "d": row["d"]}
+    return {"postings": postings, "prospect": prospect}
+
+
+def board_gone(err: Exception) -> bool:
+    """A read that failed because the vendor answered that this one board is not
+    there (404, 410; Lever's unknown site is a 404) or not a job list. Anything else
+    (a timeout, a 5xx, a 429, a page that is not JSON) may be the vendor down."""
+    if isinstance(err, ValueError) and not isinstance(err, json.JSONDecodeError):
+        return True
+    return bool(re.search(r"HTTP Error (?:404|410)\b", str(err)))
+
+
+def load_ledger(path: Path) -> dict:
+    """The census ledger; missing or unreadable starts empty, and says so."""
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(d, dict) and isinstance(d.get("boards"), dict):
+            boards = {k: v for k, v in d["boards"].items()
+                      if isinstance(v, dict) and isinstance(v.get("postings"), dict) and board_day(v.get("first_ok"))
+                      and board_day(v.get("last_ok"))}
+            return {"version": 1, "boards": boards}
+        print(f"hiring: {path.name} is not a ledger; starting empty", file=sys.stderr)
+    except FileNotFoundError:
+        print(f"hiring: no {path.name} yet; starting empty", file=sys.stderr)
+    except (OSError, ValueError) as err:
+        print(f"hiring: {path.name} unreadable ({str(err)[:80]}); starting empty", file=sys.stderr)
+    return {"version": 1, "boards": {}}
+
+
+def shift(d: str, days: int) -> str:
+    return (date.fromisoformat(d) + timedelta(days=days)).isoformat()
+
+
+def read_runs(rec: dict) -> list[list[str]]:
+    """The days the census read this board, as runs of days in a row: [[first,
+    last], ...], oldest first. The census reads only the boards today's cards link
+    to, so a board can go unread for weeks; what changed on it then is not known.
+    A ledger entry without them (none was written so) knows only its last day."""
+    runs = rec.get("reads")
+    if isinstance(runs, list) and runs and all(
+            isinstance(r, list) and len(r) == 2 and board_day(r[0]) == r[0] and board_day(r[1]) == r[1] and r[0] <= r[1]
+            for r in runs):
+        return sorted(runs)
+    last = board_day(rec.get("last_ok"))
+    return [[last, last]] if last else []
+
+
+def ledger_update(ledger: dict, b: dict, got: dict, today: date) -> None:
+    """A successful read onto the ledger. Every listing present gets today as its
+    last day seen (s), and a new one today as its first (f). One absent is left
+    as it was: its s falls behind, which is what taken down means here. Today
+    goes on the board's read days, and today's card name and count (name,
+    cards, from page_boards) on the board; an entry written before them has
+    neither until its next read."""
+    t = today.isoformat()
+    rec = ledger["boards"].setdefault(b["key"], {"first_ok": t, "postings": {}})
+    runs = read_runs(rec) if rec.get("last_ok") else []
+    if runs and runs[-1][1] >= shift(t, -1):
+        runs[-1][1] = max(runs[-1][1], t)
+    else:
+        runs.append([t, t])
+    rec.update(ats=b["ats"], token=b["token"], link=b["link"], last_ok=t, prospect=got.get("prospect", 0), reads=runs)
+    for k in ("name", "cards"):
+        if b.get(k) is not None:
+            rec[k] = b[k]
+    for pid, x in got["postings"].items():
+        p = rec["postings"].get(pid)
+        if isinstance(p, dict):
+            p.update(x, s=t)
+        else:
+            rec["postings"][pid] = {**x, "f": t, "s": t}
+
+
+def ledger_prune(ledger: dict, today: date) -> int:
+    """Listings not seen for LEDGER_DAYS go, and boards not read for as long.
+    Returns how many listings and boards went."""
+    cut = (today - timedelta(days=LEDGER_DAYS)).isoformat()
+    gone = 0
+    for key in list(ledger["boards"]):
+        rec = ledger["boards"][key]
+        if (rec.get("last_ok") or "") < cut:
+            del ledger["boards"][key]
+            gone += 1
+            continue
+        keep = {pid: p for pid, p in rec["postings"].items() if isinstance(p, dict) and (p.get("s") or "") >= cut}
+        gone += len(rec["postings"]) - len(keep)
+        rec["postings"] = keep
+        rec["reads"] = [r for r in read_runs(rec) if r[1] >= cut]
+    return gone
+
+
+def posting_link(rec: dict, pid: str) -> str:
+    return f"{rec['link']}/jobs/{pid}" if rec.get("ats") == "greenhouse" else f"{rec['link']}/{pid}"
+
+
+def watch_start(rec: dict) -> str:
+    """The first day of the board's current watch: back from its last read day
+    through its read days, across gaps of at most READ_GAP days not read (a
+    vendor down a day or two). A longer gap starts the watch again."""
+    runs = read_runs(rec)
+    if not runs:
+        return rec.get("last_ok") or rec.get("first_ok") or ""
+    start = runs[-1][0]
+    for a, b in reversed(runs[:-1]):
+        if (date.fromisoformat(start) - date.fromisoformat(b)).days - 1 > READ_GAP:
+            break
+        start = a
+    return start
+
+
+def read_before(runs: list[list[str]], f: str) -> str | None:
+    """The last day the census read the board before day f, or None."""
+    best = None
+    for a, b in runs:
+        if a < f:
+            best = max(best or "", min(b, shift(f, -1)))
+    return best
+
+
+def relisted(rec: dict, today: date) -> dict | None:
+    """Roles taken down and listed again under a new listing in the last
+    RELIST_DAYS, or None until the board's current watch (watch_start) is that long.
+
+    A role counts when a new listing has the same title and place as a different
+    listing on this board that was gone before the new one was up, as the read
+    days show: on r, the census's last read before the new listing's first day,
+    the old one was already gone (its last day seen is before r), or r is the day
+    before and the old one was there then (a handover overnight). r must fall in
+    the window, so the change did. A gap in the reads hides what happened in it,
+    so two listings up at once while nobody read the board never count, and the
+    first read of a board (or the first after a gap) only sets what is there. One
+    id that leaves and comes back is the same listing. A new listing whose own
+    board date is before the window, or before the old one's last day seen, was up
+    (perhaps unlisted) before and does not count. Counted once per title and
+    place, with the newest new listing as the example (linked to the board when
+    it is no longer listed)."""
+    if (today - date.fromisoformat(watch_start(rec))).days < RELIST_DAYS:
+        return None
+    since = (today - timedelta(days=RELIST_DAYS)).isoformat()
+    runs = read_runs(rec)
+    by_role: dict[tuple, list] = {}
+    for pid, p in rec["postings"].items():
+        role = (page_key(p.get("t")), page_key(p.get("l")))
+        if role[0]:
+            by_role.setdefault(role, []).append((pid, p))
+    found: dict[tuple, tuple] = {}
+    for role, ps in by_role.items():
+        for pid, p in ps:
+            f = p.get("f") or ""
+            r = read_before(runs, f) if board_day(f) else None
+            d = board_day(p.get("d"))
+            if not r or r < since or (d and d < since):
+                continue
+            overnight = r == shift(f, -1)
+            olds = [s for s in (board_day(q.get("s")) for qid, q in ps if qid != pid) if s]
+            if any((s < r or (s == r and overnight)) and not (d and d < s) for s in olds) and \
+                    (role not in found or f > found[role][1]["f"]):
+                found[role] = (pid, p)
+    newest = sorted(found.values(), key=lambda x: (x[1]["f"], x[0]), reverse=True)[:3]
+    return {"roles": len(found), "window_days": RELIST_DAYS,
+            "examples": [{"title": p.get("t") or "", "place": p.get("l") or "",
+                          "link": posting_link(rec, pid) if p.get("s") == rec["last_ok"] else rec["link"]}
+                         for pid, p in newest]}
+
+
+def hiring_facts(rec: dict, today: date) -> dict:
+    """An employer's facts from its board's ledger entry, read today. Ages are
+    from the board's own date to today, over what is listed now."""
+    now = [p for p in rec["postings"].values() if p.get("s") == rec["last_ok"]]
+    dates = sorted(d for d in (board_day(p.get("d")) for p in now) if d)
+    ages = sorted((today - date.fromisoformat(d)).days for d in dates)
+    return {"state": "ok", "ats": rec["ats"], "link": rec["link"], "open": len(now), "dated": len(ages),
+            "under_30": sum(1 for a in ages if a < 30), "d30_89": sum(1 for a in ages if 30 <= a < 90),
+            "d90_plus": sum(1 for a in ages if a >= 90), "oldest": dates[0] if dates else None,
+            # median_low: an even count gives the younger middle listing's age, a whole day.
+            "median_days": statistics.median_low(ages) if ages else None,
+            "watching_since": watch_start(rec), "relisted": relisted(rec, today),
+            "prospect": int(rec.get("prospect") or 0)}
 
 
 # ── Employers the table does not cover: matched automatically ────────────────
@@ -627,8 +1005,10 @@ def auto_entry(name: str, found: dict) -> dict:
 
 # ── The run ──────────────────────────────────────────────────────────────────
 
-SOURCES = ("contracts", "labor", "courts", "pac", "violations")
-AUTO_SOURCES = ("contracts", "labor", "pac", "violations")   # courts' few daily searches go to reviewed employers
+SOURCES = ("contracts", "labor", "courts", "pac", "violations", "hiring")
+# courts' few daily searches go to reviewed employers. hiring is matched by the
+# cards' links, not by name, so an automatic employer gets it the same way.
+AUTO_SOURCES = ("contracts", "labor", "pac", "violations", "hiring")
 
 
 def entry_key(e: dict) -> str:
@@ -641,7 +1021,7 @@ def entry_key(e: dict) -> str:
 def due(cache: dict, e: dict, src: str) -> bool:
     got = (cache.get(e["id"]) or {}).get(src) or {}
     return (not got.get("at") or got.get("key") != entry_key(e)
-            or (TODAY - date.fromisoformat(got["at"])).days >= REFRESH_DAYS)
+            or (TODAY - date.fromisoformat(got["at"])).days >= REFRESH.get(src, REFRESH_DAYS))
 
 
 def main() -> int:
@@ -745,7 +1125,7 @@ def main() -> int:
         companies, aliases = {}, {}
         for e in autos + employers:   # a reviewed employer's name wins over an automatic one
             rec = {"id": e["id"], "legal": e.get("legal") or [], "matched": matched_names(e),
-                   "search_name": core_name((e.get("legal") or e.get("names") or [""])[0]),
+                   "search_name": search_name(e),
                    "confidence": e.get("confidence"), "names": e.get("names") or []}
             if e.get("auto"):
                 found = ((cache.get(e["id"]) or {}).get("discover") or {}).get("facts") or {}
@@ -768,10 +1148,106 @@ def main() -> int:
             return
         STATE_DIR.mkdir(parents=True, exist_ok=True)
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        for path, obj in ((CACHE, cache), (OUT, build())):
+        files = [(CACHE, cache), (OUT, build())]
+        if census["dirty"]:   # the ledger, once, after the census changed it
+            files.append((BOARDS, census["ledger"]))
+            census["dirty"] = False
+        for path, obj in files:
             tmp = path.with_suffix(".tmp")
             tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             os.replace(tmp, path)
+
+    census: dict = {"ledger": None, "dirty": False}
+
+    def hiring_stage():
+        """The daily board census and each employer's hiring facts. Not stage():
+        it reads boards, not employers, and one board that fails is not a streak
+        of failed employers. A board that fails, or that the cap or the clock left
+        for tomorrow, keeps its ledger as it was and its employers' last facts
+        when they are that board's (the page dates them by checked.hiring); an
+        employer with none of that board's facts gets {"state": "unread"}."""
+        src = "hiring"
+        if src not in only:
+            return
+        # An employer whose board has not been read yet is due every run, so a
+        # second run the same day tries the board again.
+        todo = [e for e in everyone if args.refresh or due(cache, e, src)
+                or (((cache.get(e["id"]) or {}).get(src) or {}).get("facts") or {}).get("state") == "unread"]
+        stats[src]["kept"] = len(everyone) - len(todo)
+        if not todo:
+            return
+        try:
+            rows = page_rows(JOBS)
+        except Exception as err:  # noqa: BLE001 - no page today: keep yesterday's facts
+            fail(src, err)
+            stats[src]["kept"] = len(everyone)
+            print(f"{src}: skipped today ({err})", file=sys.stderr)
+            return
+        # The page's company names to employer ids, as build() aliases them.
+        alias = {page_key(n): e["id"] for e in autos + employers for n in e.get("names") or []}
+        by_emp, boards, cards = page_boards(rows, alias)
+        ledger = census["ledger"] = load_ledger(BOARDS)
+        today = TODAY.isoformat()
+        # Every board found, its employer's facts or not (splat.py dates the cards
+        # from them), busiest first; one already read today is not read again.
+        want = [k for k in sorted(boards, key=lambda k: (-cards[k], k))
+                if args.refresh or (ledger["boards"].get(k) or {}).get("last_ok") != today]
+        tally = {"found": len(boards), "read": 0, "failed": 0, "skipped": 0}
+        errors: dict[str, str] = {}
+        streak: dict[str, int] = {}
+        t0 = time.monotonic()
+        for i, key in enumerate(want):
+            b = boards[key]
+            if i >= BOARD_MAX or time.monotonic() - t0 > BOARD_MINUTES * 60 or time.monotonic() - START > RUN_MINUTES * 60:
+                tally["skipped"] += len(want) - i
+                break
+            if streak.get(b["ats"], 0) >= BREAKER:   # that vendor's API is down today
+                tally["skipped"] += 1
+                errors[key] = f"{b['ats']}: stopped after {BREAKER} failures in a row"
+                continue
+            try:
+                ledger_update(ledger, b, read_board(b), TODAY)
+                census["dirty"] = True
+                tally["read"] += 1
+                streak[b["ats"]] = 0
+            except Exception as err:  # noqa: BLE001 - one board never fails the census
+                tally["failed"] += 1
+                errors[key] = str(err)[:160]
+                # A board the vendor says is not there means the vendor answered:
+                # that board's trouble, not the vendor's. When it counted toward
+                # the streak, three dead Lever sites in a row stopped every Lever
+                # board after them, every day, since the boards go in the same
+                # order (review, 2026-11-12).
+                streak[b["ats"]] = 0 if board_gone(err) else streak.get(b["ats"], 0) + 1
+        if tally["skipped"]:
+            print(f"{src}: {tally['skipped']} boards not read today (the cap, the clock or a vendor down)", file=sys.stderr)
+        if ledger_prune(ledger, TODAY):
+            census["dirty"] = True
+        for e in todo:
+            keys = by_emp.get(e["id"]) or set()
+            if not keys:
+                put(e, src, {"state": "none"})
+            elif len(keys) > 1:
+                put(e, src, {"state": "several", "boards": sorted(boards[k]["link"] for k in keys)})
+            elif (rec := ledger["boards"].get(next(iter(keys)))) and rec.get("last_ok") == today:
+                put(e, src, hiring_facts(rec, TODAY))
+            else:
+                key = next(iter(keys))
+                last = ((cache.get(e["id"]) or {}).get(src) or {}).get("facts") or {}
+                if last.get("state") == "ok" and last.get("link") == boards[key]["link"]:
+                    # Its board's last numbers stay; checked.hiring dates them on the page.
+                    stats[src]["kept"] += 1
+                else:
+                    # Never read, or the numbers are another board's (its cards moved):
+                    # say the board is not read yet, with no promise of when (a board
+                    # that fails every day would make "tomorrow" false for good).
+                    put(e, src, {"state": "unread", "link": boards[key]["link"]})
+                if key in errors:
+                    stats[src]["failed"] += 1
+                    stats[src]["error"] = stats[src]["error"] or f"{key}: {errors[key]}"[:160]
+        stats[src]["boards"] = tally
+        print(f"{src}: {stats[src]}", file=sys.stderr)
+        save()
 
     # CourtListener's limit is per day, so the budget counts this day's earlier runs.
     used = cache.get("_court_used") or {}
@@ -790,8 +1266,9 @@ def main() -> int:
         return idx
 
     # Cheap stages first, then the slow network ones, so a short day still
-    # refreshes what it can: discovery, the local indexes, courts (paced, about
-    # ten minutes), then contracts with whatever time is left.
+    # refreshes what it can: discovery, the local indexes, the board census (a
+    # few minutes, at most BOARD_MINUTES), courts (paced, about ten minutes),
+    # then contracts with whatever time is left.
     if only & set(AUTO_SOURCES):
         only.add("discover")
     stage("discover", lambda: None, lambda e, _: discover(e["names"][0]), probes)
@@ -803,7 +1280,8 @@ def main() -> int:
     stage("labor", labor_setup, labor, everyone)
     stage("pac", pac_setup, pac, everyone)
     stage("violations", lambda: vt_parents(args.refresh), violations, everyone)
-    token = os.environ.get("COURTLISTENER_TOKEN", "").strip()
+    hiring_stage()
+    token =os.environ.get("COURTLISTENER_TOKEN", "").strip()
     stage("courts", lambda: token or (_ for _ in ()).throw(RuntimeError("no COURTLISTENER_TOKEN")),
           lambda e, tok: courts(e, tok, budget))
     stage("contracts", lambda: as_of.__setitem__("contracts", usaspending_as_of()),

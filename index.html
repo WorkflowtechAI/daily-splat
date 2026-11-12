@@ -166,6 +166,8 @@
   .srcs{columns:3 200px;font-family:var(--mono);font-size:11px;padding:0;list-style:none;margin:10px 0 0}
   .srcs li{break-inside:avoid;padding:1px 0}
   .srcs .bad{color:var(--copper-ink)}
+  details.found-boards{background:none;border:0;padding:0;margin:10px 0 0}
+  .found-boards>summary{font-family:var(--mono);font-size:.93rem;font-weight:400;color:var(--ink-soft)}
   footer.foot{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   @media (max-width:560px){
     .wrap{padding-top:24px}
@@ -188,7 +190,7 @@
 <body>
 <div class="wrap">
   <header class="mast">
-    <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v2.4</a></p>
+    <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v3.0</a></p>
     <h1>The Daily Splat</h1>
     <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud), tech PM and sales engineering jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
     <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button><button type="button" class="linkbtn" id="share-open">Share a job</button></p>
@@ -370,16 +372,20 @@
 
   <details>
     <summary>How this works</summary>
-    <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads and Workable. Federal IT jobs open to the public in Oregon, Washington and Idaho come from <a href="https://www.usajobs.gov/" target="_blank" rel="noopener">USAJOBS</a>, and each one links to its official posting there. This page is not affiliated with or endorsed by USAJOBS or the U.S. Office of Personnel Management.</p>
+    <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads and Workable. When an aggregator's listings link to an employer's own Ashby, Greenhouse or Lever board, the script reads that board directly too from the next morning, so most of those jobs come from the employer, with its own dates. Federal IT jobs open to the public in Oregon, Washington and Idaho come from <a href="https://www.usajobs.gov/" target="_blank" rel="noopener">USAJOBS</a>, and each one links to its official posting there. This page is not affiliated with or endorsed by USAJOBS or the U.S. Office of Personnel Management.</p>
     <p>Jobs marked "Shared by a member" came in through "Share a job" and go through the same checks as the rest. The Splat never copies LinkedIn or Indeed: when a member shares a job from there, it looks for the employer's own posting and links to that, and if there isn't one the card says "LinkedIn only" (or "Indeed only") and links there for two weeks. A link to a job system the Splat reads directly (Greenhouse, Lever, Ashby, Workday and a few others) shows once the posting there has been read. A link to an employer's own careers site waits until David has looked at it, so a fake page can't slip onto the Splat. A note added to a shared job goes only to David.</p>
     <p>Portland-area public employers that post on governmentjobs.com don't allow their listings to be copied, so look for those jobs on their own pages: <a href="https://www.governmentjobs.com/careers/portlandor" target="_blank" rel="noopener">City of Portland</a>, <a href="https://www.governmentjobs.com/careers/trimet" target="_blank" rel="noopener">TriMet</a>, <a href="https://www.governmentjobs.com/careers/portofportland" target="_blank" rel="noopener">Port of Portland</a>, <a href="https://www.governmentjobs.com/careers/beaverton" target="_blank" rel="noopener">City of Beaverton</a> and <a href="https://www.governmentjobs.com/careers/oregonmetro" target="_blank" rel="noopener">Oregon Metro</a>.</p>
     <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), or as a sales engineer of technology: sales and solutions engineers and consultants, pre-sales roles, and the solutions architects and customer engineers of technology vendors (sales engineers of industrial, building or other non-technology products, account executives and support after the sale are left out); the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
     <p>Each new posting is also read once, the day it first appears, from the employer's own system where it can be: its pay range, any clearance it requires, days in the office, where a remote hire may live, the degree and years it asks for, the kind of work, and whether the job manages people. Pay, years and office days are taken from the text as written; the rest is the classifier's reading of the few sentences that say it, so check the posting before you rely on a tag. <span id="read-line"></span> A federal or defense contractor whose posting could not be read gets "Check clearance", since many of their roles need one the title never mentions.</p>
-    <p>"Company check" under each card shows public records about the employer: its federal contracts by fiscal year from USAspending, with how much the Defense Department and Homeland Security (ICE and CBP among it) paid for; unfair-labor-practice charges filed against it at the National Labor Relations Board and how they closed; federal employment discrimination cases naming it, from CourtListener; what its PAC gave federal candidates, by party, from the FEC (a corporate PAC's money comes from the company's executives, managers and shareholders who choose to give; the company runs it but cannot give to candidates itself); and its page on Good Jobs First's Violation Tracker. For reviewed employers, records are matched on their checked legal names and federal contractor IDs. Every other employer is matched automatically on the name its card shows, and the panel says so and shows what it matched; when several companies are registered under that name, it shows search links instead of numbers. Each week the busiest unreviewed employers are reviewed and added. A charge or a lawsuit is an allegation, not a finding. The records refresh weekly.</p>
+    <p>"Company check" under each card shows public records about the employer: its federal contracts by fiscal year from USAspending, with how much the Defense Department and Homeland Security (ICE and CBP among it) paid for; unfair-labor-practice charges filed against it at the National Labor Relations Board and how they closed; federal employment discrimination cases naming it, from CourtListener; what its PAC gave federal candidates, by party, from the FEC (a corporate PAC's money comes from the company's executives, managers and shareholders who choose to give; the company runs it but cannot give to candidates itself); and its page on Good Jobs First's Violation Tracker. For reviewed employers, records are matched on their checked legal names and federal contractor IDs. Every other employer is matched automatically on the name its card shows, and the panel says so and shows what it matched; when several companies are registered under that name, it shows search links instead of numbers. Each week the busiest unreviewed employers are reviewed and added. A charge or a lawsuit is an allegation, not a finding. The records refresh weekly. The panel also counts the open listings on the employer's own Ashby, Greenhouse or Lever board (the one its cards link to) and how long they have been up, by the board's own dates, and it has started tracking roles taken down and listed again; that part is the Splat's own daily reading of public job boards, not a public record.</p>
     <p>If your last visit on this device was before yesterday, "New" counts from that visit ("New since Thu") instead of from this morning. The visit date is kept only in this browser and never leaves it.</p>
-    <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
+    <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. When an aggregator lists a job from an employer's own Ashby, Greenhouse or Lever board and the Splat has that board's dates, its age counts from the employer's own date for it when that is earlier than the aggregator's. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
     <ul class="srcs" id="srcs"></ul>
+    <details class="found-boards" id="found-boards" hidden>
+      <summary id="found-sum"></summary>
+      <ul class="srcs" id="found-list"></ul>
+    </details>
   </details>
 
   <footer class="foot">
@@ -634,6 +640,11 @@
     : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : `$${Math.round(n)}`;
   // "Nov 2021": the five-year window starts on a date, not on January 1.
   const monthYear = (d) => { const [y, m, dd] = (d || "").split("-").map(Number); return y ? new Date(y, m - 1, dd || 1).toLocaleDateString([], { month: "short", year: "numeric" }) : ""; };
+  // "Nov 12, 2026", built as a local date like monthYear.
+  const longDay = (d) => { const [y, m, dd] = (d || "").split("-").map(Number); return y ? new Date(y, m - 1, dd || 1).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : ""; };
+  // The job boards company_check.py's census reads ("lever-eu" is Lever's EU host).
+  const ATS = { ashby: "Ashby", greenhouse: "Greenhouse", lever: "Lever", "lever-eu": "Lever" };
+  const ASHBY_TIMES = "https://www.ashbyhq.com/talent-trends-report/reports/recruiting-operations-benchmarks-talent-trends";
   // DoD contract records reach USAspending about 90 days late, so a fiscal year
   // (October to September) is missing Defense money until about December 31.
   const dodLag = (fy) => Date.now() < new Date(fy, 11, 31).getTime();
@@ -659,7 +670,7 @@
     loadCC().then((d) => {
       const id = d.aliases && d.aliases[pageKey(company)];
       const c = id && d.companies && d.companies[id];
-      panel.replaceChildren(...(c ? ccFacts(c, d.as_of || {}) : ccSearch(company, "This employer is not on the reviewed list yet, so there are no numbers here.")));
+      panel.replaceChildren(...(c ? ccFacts(c, d.as_of || {}, (d.generated_at || "").slice(0, 10)) : ccSearch(company, "This employer is not on the reviewed list yet, so there are no numbers here.")));
       panel.dataset.done = "1";
     }).catch(() => panel.replaceChildren(...ccSearch(company, "The reviewed records did not load.")));
   }
@@ -677,7 +688,7 @@
       ])];
   }
 
-  function ccFacts(c, asOf) {
+  function ccFacts(c, asOf, day) {
     const box = [], head = (t) => box.push(el("h4", { text: t }));
     const unchecked = () => box.push(para("fine", "Not checked yet; it will be within the week."));
     const n = c.search_name || (c.names || [])[0] || "";
@@ -687,6 +698,46 @@
       out(href, what), " (results can include the other employer)."));
     if (auto) box.push(para("fine", "Matched automatically on the name the card shows; this employer has not been reviewed yet. "
       + "A different company filed under the same name can show up here, so each section says what it matched."));
+
+    // The employer's own job board (company_check.py's daily census of the Ashby,
+    // Greenhouse or Lever board its cards link to). Counts and the board's own
+    // dates only, each number linked to the board; the page draws no conclusion.
+    head("Open roles on its own board");
+    const h = c.hiring;
+    const boardLink = (u) => out(u, (u || "").replace(/^https:\/\//, ""));
+    if (!h) box.push(para("fine", "Not checked yet; it will be tomorrow."));
+    // "none" is about the three boards the census reads: a card can link to the
+    // employer's own Workday or careers site, which is a board too.
+    else if (h.state === "none") box.push(para("", "No Ashby, Greenhouse or Lever board found in the links on its Splat cards; the check reads only those three."));
+    else if (h.state === "several") box.push(para("", "Its Splat cards link to more than one job board, so there are no numbers here: ",
+      ...(h.boards || []).flatMap((u, i) => [i ? ", " : "", boardLink(u)]), "."));
+    // A board that has not answered yet (it may fail every day, so no "tomorrow").
+    else if (h.state === "unread") box.push(para("", "Its Splat cards link to a job board the Splat has not been able to read yet: ", boardLink(h.link), "."));
+    else if (h.state === "ok") {
+      // Kept short on purpose (David, 2026-11-12: the first version read "dense"):
+      // one count line, the ages as tags like a card's, one line for relists.
+      // A board that fails keeps its employer's last numbers (company_check.py);
+      // checked.hiring is the day they were read, so old numbers carry that date.
+      const read = (c.checked || {}).hiring || "";
+      const fresh = !read || !day || read === day;
+      box.push(para("", el("b", {}, out(h.link, h.open ? `${fmt(h.open)} open listing${h.open === 1 ? "" : "s"}` : "No open listings")),
+        ` on its ${ATS[h.ats] || "job"} board`, h.open ? ", all teams and locations" : "", fresh ? "" : ` (as of ${longDay(read)})`, "."));
+      // How long they have been up, by the board's own dates.
+      const ages = h.dated > 0 ? [`${fmt(h.under_30)} under 30 days`, `${fmt(h.d30_89)} at 30–89 days`, `${fmt(h.d90_plus)} at 90+ days`] : [];
+      if (h.open - h.dated > 0) ages.push(`${fmt(h.open - h.dated)} undated`);
+      if (h.prospect > 0) ages.push(`${fmt(h.prospect)} general-interest post${h.prospect === 1 ? "" : "s"}`);
+      if (ages.length) box.push(el("div", { class: "tags" }, ...ages.map((t) => el("span", { class: "tag", text: t }))));
+      const r = h.relisted, win = (r && r.window_days) || 90;
+      if (!r) box.push(para("", `Relisted roles: counting since ${longDay(h.watching_since)}, numbers after 90 days.`));
+      else if (!r.roles) box.push(para("", `Relisted roles, last ${win} days: none.`));
+      else {
+        box.push(para("", `Relisted roles, last ${win} days: `, el("b", {}, fmt(r.roles))));
+        // The place too: two roles can share a title (the census keys a role by title and place).
+        box.push(bullets((r.examples || []).slice(0, 3).map((x) => [out(x.link, x.title || "Listing"), ...(x.place ? [` · ${x.place}`] : [])])));
+      }
+      box.push(para("fine", "Dates are the board's own; some boards reset them when a role is relisted. A long listing can mean hard to fill or several hires, and these numbers don't say which. ",
+        out(ASHBY_TIMES, "Median time to fill a tech role: 75 days"), " (Ashby)."));
+    }
 
     head("Federal contracts");
     const k = c.contracts;
@@ -813,12 +864,26 @@
       document.createTextNode(` · ${fmt(c.total)} open · ${fmt(c.dropped_since_last_run)} gone since yesterday · updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`));
     $("#updated").textContent = `Updated ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
     if (c.read != null) $("#read-line").textContent = `${fmt(c.read)} of ${fmt(c.total)} open postings have been read so far; the rest could not be fetched or are waiting their turn.`;
-    const ok = DATA.sources.filter((s) => s.ok).length;
-    $("#src-line").textContent = `This morning: ${ok} of ${DATA.sources.length} sources answered.`;
-    const ul = $("#srcs");
-    DATA.sources.slice().sort((a, b) => b.kept - a.kept).forEach((s) => {
-      ul.append(el("li", { class: s.ok ? "" : "bad", text: s.ok ? `${s.label}: ${s.kept} kept of ${s.fetched}` : `${s.label}: did not answer` }));
-    });
+    // Employer boards found through the job feeds ("auto:" ids, up to 300) get
+    // one line of their own, with the list folded under it.
+    const found = (s) => String(s.id || "").startsWith("auto:");
+    const listed = DATA.sources.filter((s) => !found(s));
+    const boards = DATA.sources.filter(found);
+    const ok = listed.filter((s) => s.ok).length;
+    $("#src-line").textContent = `This morning: ${ok} of ${listed.length} sources answered.`;
+    const srcItem = (s) => el("li", { class: s.ok ? "" : "bad", text: s.ok ? `${s.label}: ${s.kept} kept of ${s.fetched}` : `${s.label}: did not answer` });
+    const byKept = (a, b) => b.kept - a.kept || String(a.label).localeCompare(String(b.label));
+    $("#srcs").replaceChildren(...listed.slice().sort(byKept).map(srcItem));
+    const box = $("#found-boards");
+    if (boards.length) {
+      const kept = boards.reduce((n, s) => n + (s.kept || 0), 0);
+      const down = boards.filter((s) => !s.ok).length;
+      $("#found-sum").textContent = `${fmt(boards.length)} employer boards found through job feeds: ${fmt(kept)} jobs` + (down ? ` (${fmt(down)} did not answer)` : "");
+      $("#found-list").replaceChildren(...boards.slice().sort(byKept).map(srcItem));
+      box.hidden = false;
+    } else {
+      box.hidden = true;
+    }
   }
 
   function toggle(set, v) { set.has(v) ? set.delete(v) : set.add(v); changed(); }

@@ -24,8 +24,14 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   With a track chosen, a Kind row narrows it (`sub=secops,grc`;
   `#track=se&sub=sesec` is security sales engineering).
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
-  yesterday's postings, for "new today" and the failed-source grace, and the
-  Jev answer cache, so each day only pays for its new postings.
+  yesterday's postings, for "new today" and the failed-source grace (each with
+  its source's id, `sid`, which the page leaves out), and the
+  Jev answer cache, so each day only pays for its new postings. Beside it,
+  `boards.json`: the Company check's census of the employers' own Ashby,
+  Greenhouse and Lever boards (see "Company check"), which `splat.py` reads,
+  never writes, for the employer's own posting dates and for the boards it
+  reads directly ("Found boards" below). A missing or corrupt one is an empty
+  ledger for both scripts, and so no found boards.
 - **Keys:** `/etc/daily-splat.env`, root:root 0600, holding
   `FOORILLA_API_KEY`, `TYPESAFE_API_KEY`, and `USAJOBS_API_KEY` with `USAJOBS_EMAIL` (the address the
   USAJOBS key was registered under; OPM wants it as the User-Agent). Kept on the server only. None is required; a missing one skips that
@@ -36,10 +42,82 @@ live the next morning. Contributions are welcome: see **Contributing** below.
 | kind | sources | how removal works |
 |---|---|---|
 | Company boards | Greenhouse, Lever, Ashby, Workday tenants, Eightfold (Autodesk, Lam Research, Tektronix, Fortive), Amazon and Providence (Oracle HCM), listed in `splat.py`. The Portland-area governments on NEOGOV (City of Portland, TriMet, Port of Portland, Beaverton, Metro) were dropped 2026-11-11: NEOGOV's terms (effective 2025-09-02) forbid republishing content from the career pages it hosts, public or not, and its robots.txt disallows all but search engines. The page links to their job pages instead, and the reader never fetches governmentjobs.com (`NO_FETCH`) | the board stops returning the job |
+| Found boards | An employer's own Ashby, Greenhouse or Lever board that the aggregators' cards link to, read directly (added 2026-11-12, `auto_boards`; see "Found boards" below) | the board stops returning the job; the board stops being read a week after the census last read it |
 | Shared by members | The page's "Share a job" form (added 2026-11-11). `infra/intake.py` checks the tip with `splat.py`'s own rules before taking it, and says why when it refuses: an https link on a host name (IDNA-normalized, so a look-alike spelling is not a way around the rules), not a short link, not a middleman site (`MIDDLEMAN`) or one the Splat may not read (`NO_FETCH`), an employer that is not a staffing firm, a place in WA/OR/ID or remote US, a title in the tracks. It stores the tip in `/var/lib/daily-splat/tips.json` (`TIPS_FILE`; 40 new a day and 300 held at most) and emails David links signed with `TIP_SECRET` (one per action) to remove it and, for a link that needs it, to approve it; with no `TIP_SECRET` it takes no tips. The member's note goes only to that email. `src_tips` reads the file each morning; tips pass the same rules and Jev on the title, employer and place the member typed. A LinkedIn or Indeed link is never fetched (`NO_FETCH`; their terms forbid scraping, and one member pointing at one job is not copying their listings): the Splat looks for the employer's own posting (`find_source`: a Greenhouse board whose own name is the employer's, or a Lever or Ashby board named exactly for it, with the same title in the same place; 40 lookups a run) and links there, else the card says "LinkedIn only" (`gate`). Any other link shows only when it is a posting on a tracking system the reader reads through the vendor's API (`ats_link`) and was read, or when David approved it (`not_verified`, `reader.tip_unverified`): a page that merely carries JobPosting data could sit beside a fake sign-in form. A tip of a job already on the page is dropped (`drop_tip_twins`, `counts.tip_twins`) | 30 days after it was shared (14 for LinkedIn/Indeed), or when David removes it |
 | Federal government | USAJOBS Search API (added 2026-11-11, `src_usajobs`): jobs open to the public in the IT series (2210, 0854, 1550, 0391) in OR, WA and ID, plus remote (none on 2026-11-11). Free with a key; OPM's terms allow republishing ("Prior OPM approval is not required"). Each row links to the official usajobs.gov posting, and the text, pay, grade (as a level hint) and clearance come with the list | the posting closes or is pulled |
 | Open aggregators | RemoteOK, Jobicy, Himalayas, Working Nomads, Workable search. Remotive was dropped 2026-11-04: its API returns the same ~11 jobs whatever is asked, and it asks that its jobs not be republished on third-party sites. The Muse was dropped 2026-11-10: since 2026-11-09 its public jobs API answers every script with a Cloudflare browser challenge (403/404) | the feed stops returning the job |
 | Foorilla (keyed) | PNW location queries over 30 days; remote-US over 14 days from its InfoSec & Privacy (102) and Cybersecurity (26) categories plus security and infra title queries | `expired` flag, or it ages out of the window |
+
+**Found boards** (2026-11-12). An employer that reaches the Splat only through
+an aggregator, but whose cards link to its own Ashby, Greenhouse or Lever
+board, gets that board read directly, the way Vultr's is by hand in `ASHBY`:
+most of its rows then come from the employer (the card says "Employer's own
+board", with the board's own date), and its in-track jobs the aggregator missed
+show up too. A posting whose board row fails a rule its aggregator copy passed
+stays the copy ("Listed on Foorilla", dated by the board): about 1 in 5 rows on
+found boards in a 2026-11-12 sample, mostly a Foorilla copy that passed on
+Foorilla's infosec category (board rows carry none) or a remote Lever role whose
+board gives only a city. The boards come from the Company check's census
+(`boards.json`), which stores for each board the card name that most often
+links to it and how many cards do, leaving out members' tips: a member types
+the employer's name (for an Ashby link the member must), and a tip on a board
+the reader reads is on the page without David looking at it, so a tip never
+names a board or puts one on this list. A board is read when:
+
+- the census read it OK in the last 7 days (`AUTO_BOARD_DAYS`). The census
+  reads the boards today's cards link to, and a found board's own rows link to
+  it, so a board in use is read every day. A week rides out a vendor or the
+  Company check being down for a few days without the employer's rows flipping
+  back to the aggregator's copies (each flip asks Jev and reads again where a
+  copy is keyed differently), and still drops within a week a board no card
+  links to any more, or one that is gone;
+- it is not hand-kept (`GREENHOUSE`, `LEVER`, `ASHBY`, tokens without case;
+  Lever's EU boards are their own key and are read on Lever's EU API host);
+- it has a stored name that is not a staffing firm's (`AGENCY`, checked on the
+  board's token too, since a recruiter's board carries other employers' jobs;
+  the middlemen's own boards, such as jobgether, ladders and haystack, are in
+  `AGENCY`). The only hosts read are the three vendors' APIs, none of them a
+  `MIDDLEMAN` or `NO_FETCH` host;
+- it is among the 300 busiest by cards (`AUTO_BOARD_MAX`): twice the 147 the
+  2026-11-12 page had (98 Greenhouse, 34 Ashby, 14 Lever, 1 Lever EU), and under
+  the census's 400 a run, so every one is read daily.
+
+Each is read by the vendor's own reader under the stored name, so a row's key
+(company, title, place) is the aggregator copy's. Its read key (the key and the
+URL) is the copy's too when the board links the same URL (45 of 46 in a
+2026-11-12 sample), so that posting is not read again; a board whose links go
+to the employer's own site is read once more. Jev's key also holds the place
+as written, which the board words differently about 1 in 4 times ("Remote" for
+Foorilla's "Remote · United States"), so the row that replaces a copy takes the
+copy's Jev answer (`carry_jev`) and Jev is not asked again: without it Jev was
+asked again the day a board took over, and a pm or se row Jev could not
+confirm that day left the page. Where the board titles or places a posting
+differently than the aggregator did, the copy is dropped (`drop_board_copies`,
+counted in `counts.board_copies`; a remote copy marks the board's local row as
+also remote). A local copy of the board's remote row is the other way round,
+as in the remote fold: the local copy stays, marked also remote, and the
+board's row goes, since a remote row can still drop when its posting says
+hybrid or onsite and a local one cannot. They are **not tech
+sources** (`tech_source`): the hand-kept boards are technology companies by
+review, these are whatever employers an aggregator carries (SpaceX, Axon,
+Flexport, a health-care firm), and their rows came through Foorilla, which is
+not one either; so the titles that pass are the ones that passed before, and
+only where a row comes from changes. Source ids are `auto:<board>`
+(`auto:ashby:horizon3ai`), the same every day while the board is in the
+ledger, and the failed-source grace goes by that id (`source_answered`; the
+state keeps each row's source id, the page does not), not by the label: a
+found board's label is its stored name, which can change and can be another
+source's (Palantir's Lever EU board and its hand-kept Lever board). Three at a time per API host, none
+started after 10 minutes into the run (`AUTO_FETCH_MINUTES`), and three
+failures in a row on a host stop its boards for the run (`AUTO_BREAKER`; a 404
+is that board's, not the vendor's; a read that answers starts the count
+again). One list call per board: about 150 more calls a run today, and the
+first run asks Jev about and reads the found boards' rows the page did not
+have, plus a read for the few whose board links elsewhere (about 1.7 new rows
+per board in a 2026-11-12 sample
+of 18 of the busiest; the Lever ones kept none, their remote roles giving only
+a city, which `where` does not take as remote). They are not counted toward failing closed, and the page
+folds them into one line under the source list.
 
 Microsoft's own careers API refuses anonymous calls, but its roles arrive
 through Foorilla. Not covered, and why: LinkedIn (no API, and scraping it is against its terms), We Work Remotely
@@ -71,13 +149,45 @@ a wrong token shows up as a failed source, it does not break the run.
    2026-11-11 97% of links already went to the employer, and 53 of 984
    remote rows said otherwise in their own posting, 46 of them Foorilla's
    remote flag.
+   **The employer's own date** (2026-11-12): an aggregator's date can move
+   while the employer's posting keeps its own (Foorilla had Vultr's
+   "Technical Support Specialist" posted 2026-11-06; Ashby's `publishedAt`
+   for the same posting was 2026-03-31), so a months-old role passed the age
+   rule and read "posted 6 days ago". When the Company check's census
+   (`boards.json`) has the board an aggregator row links to, the card takes
+   the board's date for that posting if it is older (never a later one), and
+   the age rule runs again on it (`board_redate` in `rules_pass`). That
+   happens on each fetched row, before rows are picked one per role: an old
+   copy that won the pick, a tip's twin check or the remote fold and then
+   dropped would take a fresh copy, the employer's own row or the tip with it.
+   It is before Jev and the reader too, so a dropped row costs neither. A row
+   then too old drops and is counted in `counts.older_by_board`. The
+   employer's own board rows already carry the board's date, and members' tips
+   keep their own 30-day life; both are left alone. The census is from the day
+   before (the check runs after the splat); that is fine because a card only
+   ever takes an earlier date, and a board new today dates its cards from
+   tomorrow.
+   **Workday's "30+"** (2026-11-12): a Workday list gives an age, not a
+   date ("Posted Today", "Posted 29 Days Ago", "Posted 30 Days Ago", then
+   "Posted 30+ Days Ago"). The Splat read "30+" as exactly 30 days, so every
+   older local Workday job stayed on the page for good, "posted 30 days ago"
+   (55 rows on 2026-11-12, 31 to 261 days old by Workday's own `startDate`).
+   Checked against each posting's `startDate` that day, "30 Days Ago" is 30
+   days and "30+" is 31 or more, so "30+" is past the 30-day window by
+   Workday's own word: such a row gets no date and drops in `rules_pass`
+   (`_wd_older`), and so does an aggregator's copy of the same posting (the
+   same tenant and requisition in the link, `wd_posting`), whatever date the
+   aggregator gives, since with the Workday row gone a copy keyed the same
+   would take its place. Both are counted in `counts.workday_30_plus`, after
+   the title rules, so the count is rows that would otherwise show. No extra
+   fetch: "30+" never covers a posting inside the window.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
    and owners, when the work is technology, IT or security (`pm_track`). The
    title has to name the work (`PM_TECH`: IT, software, cloud, data, platform,
    SOC, IAM, GRC, Epic...), unless the posting is on a technology employer's
-   own board (`TECH_SOURCES` and `TECH_WORKDAY`: the Greenhouse, Lever and Ashby
-   boards and the tech Workday tenants), where "Senior Product Manager,
+   own board (`TECH_SOURCES` and `TECH_WORKDAY`: the hand-kept Greenhouse, Lever
+   and Ashby boards, not the found ones, and the tech Workday tenants), where "Senior Product Manager,
    Payments" is tech work as written, or Foorilla filed it under infosec.
    Amazon, the aggregators and the telecoms are not tech sources: their PMs
    are mostly operations, retail or any employer's. Three tiers of exclusion:
@@ -218,7 +328,65 @@ none.
 | NLRB, via [labordata/nlrb-data](https://github.com/labordata/nlrb-data) | Unfair-labor-practice charges against it since five years ago, and how they closed | Respondent name equals a reviewed legal name |
 | [CourtListener](https://www.courtlistener.com/help/api/) | Federal employment civil-rights cases (nature of suit 442 and 445) | A docket party equals a reviewed legal name |
 | [FEC bulk files](https://www.fec.gov/data/browse-data/?tab=bulk-data) | What the employer's connected PAC gave federal candidates, by party | The PAC's connected organization equals a reviewed legal name |
-| [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search |
+| [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search (the first legal name its `avoid` list leaves) |
+| The employer's own job board (`hiring`): the public, keyless board APIs of [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api), [Greenhouse](https://docs.greenhouse.io/job-board.html) and [Lever](https://github.com/lever/postings-api) | Open listings today, across all teams and places; their ages by the board's own date, as tags (under 30 days, 30 to 89, 90 or more; `companies.json` also holds the oldest date and the median, which the panel does not show); after 90 days of daily reading, roles taken down and listed again under a new listing ("Relisted roles" on the panel); Greenhouse prospect posts counted apart | By URL, not by name: the board the employer's Splat cards link to, with `splat.py`'s posting patterns. Cards on two or more boards give no numbers; cards on none (Workday, LinkedIn, an employer's own site) say so |
+
+The hiring source, added 2026-11-12 after the group argued whether Vultr's
+~62 open roles on its Ashby board were hiring:
+
+- **The census.** Every run (daily, not weekly), each board found on today's
+  cards is read once (400 a run, busiest first, 15 minutes at most; three
+  failures in a row stop that vendor for the day, but a board the vendor says
+  is not there, a 404 or 410, does not count toward them: the boards go in the
+  same order every day, so three dead ones would stop the rest for good). An
+  employer whose one board has not been read yet, or whose cards moved to a
+  board not read yet, says so (`"state": "unread"`) instead of showing another
+  board's numbers or promising a day; one whose board failed today keeps its
+  last numbers, and the panel gives the day they were read
+  (`checked.hiring`). Dates: Ashby's `publishedAt` (Ashby documents
+  it as when the job was last published), Greenhouse's `first_published`
+  (never `updated_at`, the last edit), Lever's `createdAt`; a listing without
+  one counts as undated. Ashby's unlisted jobs are left out. A Greenhouse
+  "prospect post" (a general-interest post with `internal_job_id` null, per
+  Greenhouse's docs) is counted apart, not as a listing. Greenhouse's EU
+  boards answer on its one API host; Lever's EU boards are their own.
+- **The ledger**, `boards.json` in the state directory (not `company-data`,
+  which holds downloads that can be fetched again): per board, the first and
+  last day it was read and every day it was read (`reads`, as runs of days in
+  a row), the card company name that most often links to it (`name`, a tie to
+  the first in sort order) and how many cards do (`cards`), both leaving out
+  members' tips and both as of its last read (a read whose cards give no name
+  keeps the last one; an entry written before 2026-11-12 has neither until its
+  next read, and `splat.py` reads no found board without a name), and per listing its title, place, board date, and the first and
+  last day the census saw it. No descriptions. A listing not seen for 180
+  days, a board not read for 180 days, and read days as old are pruned. A
+  board that fails leaves its ledger as it was and its employers keep their
+  last facts; a dry run writes no ledger.
+- **Taken down and listed again** shows only after 90 days of daily reading.
+  The census reads only the boards today's cards link to, so a board goes
+  unread while its employer has no card on the page; a gap of more than three
+  days starts the watch again (`READ_GAP`, `watch_start`), and the panel's
+  "reading this board daily since" is that start. A role counts when a new
+  listing has the same title and place as a different listing on the same
+  board that the read days show was gone before the new one was up: on the
+  last day the census read the board before the new listing's first day, the
+  old one was already gone, or that read was the day before and the old one
+  was still there (a handover overnight). That read must fall in the last 90
+  days, and so must the new listing's own board date when it has one (and not
+  before the old one's last day seen). Two listings up at once are several
+  openings, not this, and so are two that may have been up together while
+  nobody read the board; a listing that leaves and comes back under the same
+  id is the same listing; two boards never match. Counted once per title and
+  place, up to three examples with their place.
+- **Wording**, for the page and anything written about it: counts and the
+  board's own dates, each number linked to the board, and no verdict. Never
+  "ghost", "fake", "stale", "suspicious", "red flag", "real", "placeholder",
+  scores, colors or ranks, and never the bare word "repost" (the page uses
+  "reposts" for recruiter copies); say "listing", "listed", "taken down and
+  listed again", and never imply why. A long-listed role can be hard to fill,
+  one listing for several hires, or republished by the board, and the panel
+  says the numbers don't tell which. `infra/test_company_check.py` checks
+  the page for those words.
 
 Two kinds of employer:
 
@@ -232,7 +400,9 @@ Two kinds of employer:
   several registrations share the name, and the panel shows search links
   instead of numbers. The panel says the match is automatic and shows what it
   matched. Court cases are not searched for these (CourtListener allows few
-  searches a day). A looked-up name is cached for a week.
+  searches a day). A looked-up name is cached for a week. The hiring source
+  is matched by the cards' links, not the name, so these get it the same way
+  as reviewed employers.
 
 A charge or a lawsuit is an allegation, and the page says so.
 
@@ -274,8 +444,9 @@ Then run `python3 infra/test_company_check.py`.
 
 On the server it needs `COURTLISTENER_TOKEN` in `/etc/daily-splat.env` (a free
 CourtListener account); without it the court source is skipped. Each source
-refreshes weekly per employer, CourtListener within about 100 searches a day,
-and a source that fails keeps its last facts.
+refreshes weekly per employer, except hiring, which refreshes daily (`REFRESH`
+in `company_check.py`), CourtListener within about 100 searches a day, and a
+source that fails keeps its last facts.
 
 - By hand: `sudo systemctl start company-check.service`
 - Last run: `journalctl -u company-check.service -n 40`
@@ -284,7 +455,9 @@ and a source that fails keeps its last facts.
 ## It fails closed
 
 If fewer than half the sources answer, the script assumes the box lost network,
-writes nothing and exits non-zero. Same if zero postings survive. Yesterday's
+writes nothing and exits non-zero. Found boards are not counted: they are many
+small sources on three vendors' APIs, so one vendor down would otherwise read
+as the box offline. Same if zero postings survive. Yesterday's
 `jobs.json` stays up. A single source failing is normal: its postings from the
 last two days are carried and marked "Source down today" on the page.
 
@@ -307,7 +480,7 @@ sudo systemctl start daily-splat.service      # first run now, so the page has d
 - Last run: `journalctl -u daily-splat.service -n 80`
 - Test without writing (keys from the env file):
   `sudo systemd-run --pipe --wait -p User=foundry -p EnvironmentFile=/etc/daily-splat.env /usr/bin/python3 /home/foundry/daily-splat/splat.py --dry-run --dump /tmp/splat.json`
-- One source only: add `--only greenhouse` (or `workday`, `foorilla`, `ashby:openai`, ...). Partial runs never write.
+- One source only: add `--only greenhouse` (or `workday`, `foorilla`, `ashby:openai`, `auto` for every found board, `auto:ashby:horizon3ai`, ...). Partial runs never write.
 
 ## Contributing
 
