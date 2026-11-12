@@ -677,19 +677,32 @@ def page_boards(rows: list[dict], alias: dict[str, str]):
     """From the cards' links: each employer's boards ({employer id: {key}}), every
     board found ({key: board}), and how many cards link to each. A card whose link
     is on no board read here (Workday, a LinkedIn tip, an employer's own site)
-    adds nothing."""
+    adds nothing.
+
+    Each board also carries the card company name that most often links to it
+    (`name`; a tie goes to the first in sort order) and its card count
+    (`cards`). ledger_update keeps both, and splat.py reads the board directly
+    under that name (its auto_boards), busiest first."""
     by_emp: dict[str, set[str]] = {}
     boards: dict[str, dict] = {}
     cards: collections.Counter = collections.Counter()
+    names: dict[str, collections.Counter] = {}
     for j in rows:
         b = board_of(j.get("url"))
         if not b:
             continue
         boards.setdefault(b["key"], b)
         cards[b["key"]] += 1
-        eid = alias.get(page_key(j.get("company")))
+        company = j.get("company")
+        if isinstance(company, str) and company.strip():
+            names.setdefault(b["key"], collections.Counter())[company.strip()[:200]] += 1
+        eid = alias.get(page_key(company))
         if eid:
             by_emp.setdefault(eid, set()).add(b["key"])
+    for key, b in boards.items():
+        b["cards"] = cards[key]
+        if key in names:
+            b["name"] = min(names[key].items(), key=lambda x: (-x[1], x[0]))[0]
     return by_emp, boards, cards
 
 
@@ -800,7 +813,9 @@ def ledger_update(ledger: dict, b: dict, got: dict, today: date) -> None:
     """A successful read onto the ledger. Every listing present gets today as its
     last day seen (s), and a new one today as its first (f). One absent is left
     as it was: its s falls behind, which is what taken down means here. Today
-    goes on the board's read days."""
+    goes on the board's read days, and today's card name and count (name,
+    cards, from page_boards) on the board; an entry written before them has
+    neither until its next read."""
     t = today.isoformat()
     rec = ledger["boards"].setdefault(b["key"], {"first_ok": t, "postings": {}})
     runs = read_runs(rec) if rec.get("last_ok") else []
@@ -809,6 +824,9 @@ def ledger_update(ledger: dict, b: dict, got: dict, today: date) -> None:
     else:
         runs.append([t, t])
     rec.update(ats=b["ats"], token=b["token"], link=b["link"], last_ok=t, prospect=got.get("prospect", 0), reads=runs)
+    for k in ("name", "cards"):
+        if b.get(k) is not None:
+            rec[k] = b[k]
     for pid, x in got["postings"].items():
         p = rec["postings"].get(pid)
         if isinstance(p, dict):

@@ -543,6 +543,8 @@ TECH_SOURCE = [
     ("eightfold:autodesk", True), ("eightfold:lamresearch", True), ("eightfold:fortive", False),
     ("providence", False), ("amazon", False), ("himalayas", False),
     ("foorilla", False), ("workable", False),
+    # Found boards keep the title rules their aggregator copies had (auto_boards).
+    ("auto:greenhouse:purestorage", False), ("auto:ashby:horizon3ai", False), ("auto:lever-eu:siteimprove", False),
 ]
 
 # PM titles carry "Manager" as the job, not the grade.
@@ -891,6 +893,229 @@ def check_board_dates() -> tuple[int, int]:
     return bad, len(checks)
 
 
+def check_auto_boards() -> tuple[int, int]:
+    """Found boards (auto_boards, src_auto): the employer boards company_check.py's
+    census read from aggregator links, read directly under the card name the
+    ledger stores. Names and boards from the 2026-11-12 page."""
+    import inspect as _inspect
+    import json
+    from datetime import timedelta as _td
+    today = splat.NOW.date()
+    ago = lambda n: (today - _td(days=n)).isoformat()   # noqa: E731
+
+    def entry(name, cards, last, link=""):
+        e = {"first_ok": ago(40), "last_ok": last, "postings": {}, "link": link}
+        if name is not None:
+            e["name"] = name
+        if cards is not None:
+            e["cards"] = cards
+        return e
+    led = {
+        "ashby:horizon3ai": entry("Horizon3.ai", 11, ago(1)),
+        "greenhouse:purestorage": entry("Pure Storage", 8, ago(0)),
+        "greenhouse:axon": entry("Axon", 6, ago(splat.AUTO_BOARD_DAYS)),          # the cutoff's last day: in
+        "greenhouse:flexport": entry("Flexport", 4, ago(splat.AUTO_BOARD_DAYS + 1)),  # a day past it: out
+        "lever-eu:siteimprove": entry("Siteimprove", 1, ago(1)),
+        "lever-eu:palantir": entry("Palantir", 1, ago(1)),       # Lever EU is its own key: not the hand-kept US board
+        "lever:palantir": entry("Palantir", 9, ago(1)),          # hand-kept
+        "ashby:vultr": entry("Vultr", 12, ago(1)),               # hand-kept ("Vultr" in ASHBY, keyed without case)
+        "greenhouse:okta": entry("Okta", 20, ago(1)),            # hand-kept
+        "ashby:par technology": entry("PAR Technology", 2, ago(2)),   # a board name with a space
+        "greenhouse:insightglobal": entry("Insight Global", 5, ago(1)),   # a staffing firm by name
+        "lever:jobgether": entry("Acme Cloud", 5, ago(1)),       # a recruiter's board under one client's name
+        "greenhouse:diceboard": entry("Dice Co", 5, ago(1), "https://www.dice.com/jobs/x"),   # a middleman's link
+        "ashby:noname": entry(None, 3, ago(1)),                   # written before the ledger kept names
+        "ashby:blank": entry("  ", 3, ago(1)),
+        "greenhouse:nocards": entry("Fleetio", None, ago(1)),    # no count: last
+        "greenhouse:baddate": entry("Dragos", 2, "2026-02-30"),  # not a real day
+        "greenhouse:nodate": entry("Impinj", 2, None),
+        "greenhouse:a/b": entry("Slash", 2, ago(1)),             # not a token a board URL gives
+        "lever:..": entry("Dots", 2, ago(1)),
+        "workday:acme": entry("Acme", 2, ago(1)),                # not a board read here
+        "ashby:list": ["not", "a", "board"],
+    }
+    want_ids = ["auto:ashby:horizon3ai", "auto:greenhouse:purestorage", "auto:greenhouse:axon",
+                "auto:ashby:par technology", "auto:lever-eu:palantir", "auto:lever-eu:siteimprove",
+                "auto:greenhouse:nocards"]
+    picked = splat.auto_boards(led)
+    cap = splat.AUTO_BOARD_MAX
+    splat.AUTO_BOARD_MAX = 2
+    try:
+        capped = [x[0] for x in splat.auto_boards(led)]
+    finally:
+        splat.AUTO_BOARD_MAX = cap
+
+    # Each found board read by its vendor's reader, under the stored name.
+    T1, T2 = "Consulting Field Solutions Architect, Cyber Resilience - SLED West", "Program Manager"
+    U = "6e0fea62-a9b8-4b06-a434-79968877f510"
+    gh_url = "https://job-boards.greenhouse.io/purestorage/jobs/7000001"
+    answers = {
+        "https://boards-api.greenhouse.io/v1/boards/purestorage/jobs": {"jobs": [
+            {"id": 7000001, "title": T1, "absolute_url": gh_url, "location": {"name": "Seattle, Washington"},
+             "first_published": ago(20) + "T09:00:00-07:00", "updated_at": ago(1) + "T09:00:00-07:00"},
+            {"id": 7000002, "title": T2, "absolute_url": "https://job-boards.greenhouse.io/purestorage/jobs/7000002",
+             "location": {"name": "Portland, Oregon"}, "first_published": ago(3) + "T09:00:00-07:00"}]},
+        "https://api.ashbyhq.com/posting-api/job-board/par%20technology?includeCompensation=true": {"jobs": [
+            {"id": U, "title": "Cloud Security Engineer", "jobUrl": f"https://jobs.ashbyhq.com/PAR%20Technology/{U}",
+             "location": "Remote - US", "workplaceType": "Remote", "publishedAt": ago(2) + "T00:00:00+00:00"}]},
+        "https://api.eu.lever.co/v0/postings/siteimprove?mode=json": [
+            {"id": U, "text": "Security Engineer", "hostedUrl": f"https://jobs.eu.lever.co/siteimprove/{U}",
+             "categories": {"location": "Remote - US"}, "workplaceType": "remote"}],
+    }
+    calls: list[str] = []
+    mode = {"fail": None}
+
+    def fake(url, *a, **k):
+        calls.append(url)
+        if mode["fail"]:
+            raise RuntimeError(f"HTTPError: HTTP Error {mode['fail']}")
+        if url not in answers:
+            raise RuntimeError("HTTPError: HTTP Error 404: Not Found")
+        return json.loads(json.dumps(answers[url]))
+
+    real, real_t0 = splat.http_json, splat._T0
+    splat.http_json, splat._T0 = fake, time.monotonic()
+    splat._AUTO_FAILS.clear()
+    try:
+        srcs = splat.all_sources(None, led)
+        auto = [s for s in srcs if s[0].startswith("auto:")]
+        tail = [s[0] for s in srcs[-len(want_ids):]]
+        rows = {sid: fn(*a) for sid, label, fn, a in auto if sid in (
+            "auto:greenhouse:purestorage", "auto:ashby:par technology", "auto:lever-eu:siteimprove")}
+        read_calls = list(calls)
+        only_auto = [s[0] for s in splat.all_sources({"auto"}, led)]
+        only_gh = [s[0] for s in splat.all_sources({"greenhouse"}, led) if s[0].startswith("auto:")]
+        no_ledger = [s[0] for s in splat.all_sources(None) if s[0].startswith("auto:")]
+        # The breaker: AUTO_BREAKER failures in a row on one host stop its boards; a 404 is the board's own.
+        calls.clear()
+        mode["fail"] = "404: Not Found"
+        errs404 = []
+        for _ in range(splat.AUTO_BREAKER + 2):
+            try:
+                splat.src_auto("greenhouse", "gone", "Gone")
+            except RuntimeError as e:
+                errs404.append(str(e))
+        n404 = len(calls)
+        calls.clear()
+        mode["fail"] = "503: Service Unavailable"
+        errs503 = []
+        for _ in range(splat.AUTO_BREAKER + 2):
+            try:
+                splat.src_auto("greenhouse", "purestorage", "Pure Storage")
+            except RuntimeError as e:
+                errs503.append(str(e))
+        n503 = len(calls)
+        mode["fail"] = None
+        calls.clear()
+        lever_ok = len(splat.src_auto("lever-eu", "siteimprove", "Siteimprove"))   # another host: not stopped
+        splat._AUTO_FAILS.clear()
+        # Late in the run: no found board starts.
+        splat._T0 = time.monotonic() - splat.AUTO_FETCH_MINUTES * 60 - 1
+        calls.clear()
+        try:
+            splat.src_auto("greenhouse", "purestorage", "Pure Storage")
+            late = "read"
+        except RuntimeError as e:
+            late = str(e)
+        late_calls = len(calls)
+    finally:
+        splat.http_json, splat._T0 = real, real_t0
+        splat._AUTO_FAILS.clear()
+
+    # The board's row replaces the aggregator's copy: the same row key and read key,
+    # origin company, the board's own date.
+    gh = rows.get("auto:greenhouse:purestorage") or []
+    copy = splat.posting(title=T1, company="Pure Storage", url=gh_url, location="Seattle, Washington, United States",
+                         posted=ago(2), origin="aggregator")
+    board_row = next((p for p in gh if p["title"] == T1), None)
+    merged, _ = splat.rules_pass([("foorilla", copy), ("auto:greenhouse:purestorage", dict(board_row or {}))], {})
+    key = f"{splat.norm('Pure Storage')}|{splat.norm(T1)}|pnw"
+    kept = merged.get(key) or {}
+
+    # Not a tech source: "Program Manager" from a found board drops as Foorilla's
+    # copy does, and passes on a hand-kept tech board.
+    def pm(sid, origin):
+        return sid, splat.posting(title=T2, company="Pure Storage", url="https://job-boards.greenhouse.io/purestorage/jobs/7000002",
+                                  location="Portland, Oregon", posted=ago(3), origin=origin)
+    pm_auto = splat.rules_pass([pm("auto:greenhouse:purestorage", "company")], {})[0]
+    pm_agg = splat.rules_pass([pm("foorilla", "aggregator")], {})[0]
+    pm_tech = splat.rules_pass([pm("greenhouse:okta", "company")], {})[0]
+    sa = "Solutions Architect"
+    sa_auto = splat.rule_track(sa, False, splat.tech_source("auto:ashby:horizon3ai"), splat.tech_source("auto:ashby:horizon3ai"))
+
+    # drop_board_copies: one posting, two keys.
+    tu = "https://jobs.ashbyhq.com/temporal/11111111-2222-3333-4444-555555555555"
+    cands = {
+        "pure storage|sled west|pnw": {"origin": "company", "url": gh_url, "where": "pnw"},
+        "pure storage|west|remote": {"origin": "aggregator", "url": gh_url + "?gh_src=feed", "where": "remote"},
+        "pure storage|other|pnw": {"origin": "aggregator", "url": "https://job-boards.greenhouse.io/purestorage/jobs/7000009", "where": "pnw"},
+        "temporal|sse|pnw": {"origin": "aggregator", "url": tu, "where": "pnw"},
+        "temporal|sse|remote": {"origin": "company", "url": tu.replace("temporal", "Temporal"), "where": "remote"},
+        "pure storage|sled west|oregon": {"origin": "member", "url": gh_url, "where": "oregon"},   # a tip: its own step
+        "workday|x|pnw": {"origin": "aggregator", "url": "https://acme.wd5.myworkdayjobs.com/External/job/Portland/SRE_R1", "where": "pnw"},
+    }
+    copies = splat.drop_board_copies(cands)
+    main_src = _inspect.getsource(splat.main)
+    at = lambda s: main_src.find(s)   # noqa: E731
+
+    checks = [
+        ("auto_boards: recent, not hand-kept, named, busiest first", [x[0] for x in picked], want_ids),
+        ("auto_boards: the stored name is the source's name",
+         {x[0]: x[1] for x in picked if x[0] in ("auto:ashby:horizon3ai", "auto:ashby:par technology")},
+         {"auto:ashby:horizon3ai": "Horizon3.ai", "auto:ashby:par technology": "PAR Technology"}),
+        ("auto_boards: the vendor and token from the ledger key", [x[2:] for x in picked][-3:],
+         [("lever-eu", "palantir"), ("lever-eu", "siteimprove"), ("greenhouse", "nocards")]),
+        ("auto_boards: the same ledger gives the same ids (the failed-source grace keys on them)",
+         [x[0] for x in splat.auto_boards(json.loads(json.dumps(led)))], want_ids),
+        ("auto_boards: the cap keeps the busiest", capped, want_ids[:2]),
+        ("auto_boards: a week's cutoff, 300 boards, 10 minutes, 3 failures (as the README says)",
+         (splat.AUTO_BOARD_DAYS, splat.AUTO_BOARD_MAX, splat.AUTO_FETCH_MINUTES, splat.AUTO_BREAKER), (7, 300, 10, 3)),
+        ("auto_boards: no ledger, no boards", (splat.auto_boards({}), splat.auto_boards(None)), ([], [])),
+        ("all_sources: found boards last, read by src_auto under the stored name",
+         (tail, {s[2] for s in auto}, [s[3] for s in auto][:2]),
+         (want_ids, {splat.src_auto}, [("ashby", "horizon3ai", "Horizon3.ai"), ("greenhouse", "purestorage", "Pure Storage")])),
+        ("all_sources: --only auto, and not under the vendor's family", (only_auto, only_gh, no_ledger), (want_ids, [], [])),
+        ("src_auto: one list call each; Ashby's space quoted; Lever EU on its own host", sorted(read_calls),
+         sorted(answers)),
+        ("src_auto: every row carries the stored name",
+         {sid: sorted({p["company"] for p in r}) for sid, r in rows.items()},
+         {"auto:greenhouse:purestorage": ["Pure Storage"], "auto:ashby:par technology": ["PAR Technology"],
+          "auto:lever-eu:siteimprove": ["Siteimprove"]}),
+        ("src_auto: Greenhouse's first_published, never updated_at", board_row and board_row["posted"], ago(20)),
+        ("rules_pass: the board's row replaces the aggregator's copy, same key, the board's date",
+         (list(merged), kept.get("origin"), kept.get("source"), kept.get("posted")),
+         ([key], "company", "auto:greenhouse:purestorage", ago(20))),
+        ("read_key: the same as the copy's, so the posting is not read again",
+         splat.read_key(key, kept.get("url", "")), splat.read_key(key, copy["url"])),
+        ("tech_source: a found board's PM passes only where the copy's did",
+         (len(pm_auto), len(pm_agg), [p["track"] for p in pm_tech.values()]), (0, 0, ["pm"])),
+        ("tech_source: a found board's solutions architect is not a sales engineer", sa_auto, None),
+        ("src_auto: a board that is not there never stops the vendor",
+         (n404, all("404" in e for e in errs404)), (splat.AUTO_BREAKER + 2, True)),
+        ("src_auto: AUTO_BREAKER failures in a row stop that host's boards",
+         (n503, errs503[-1].startswith("not read today")), (splat.AUTO_BREAKER, True)),
+        ("src_auto: another host's boards go on", lever_ok, 1),
+        ("src_auto: none starts after AUTO_FETCH_MINUTES", (late.startswith("not read today"), late_calls), (True, 0)),
+        ("drop_board_copies: the board's row stays, its copies under other keys go, a tip and other postings stay",
+         (copies, sorted(cands)),
+         (2, ["pure storage|other|pnw", "pure storage|sled west|oregon", "pure storage|sled west|pnw",
+              "temporal|sse|remote", "workday|x|pnw"])),
+        ("drop_board_copies: a remote copy marks the local row also_remote",
+         (cands["pure storage|sled west|pnw"].get("also_remote"), "also_remote" in cands["temporal|sse|remote"]), (True, False)),
+        ("main: found boards from the ledger; not counted toward failing closed; copies dropped before the twin steps",
+         ("all_sources(only, board_ledger)" in main_src, 'not sid.startswith("auto:")' in main_src,
+          0 < at("rules_pass(raw, board_ledger)") < at("drop_board_copies(cands)") < at("drop_tip_twins("),
+          '"board_copies": board_copies' in main_src),
+         (True, True, True, True)),
+    ]
+    bad = 0
+    for label, g, w in checks:
+        if g != w:
+            print(f"{label} = {g!r}, want {w!r}")
+            bad += 1
+    return bad, len(checks)
+
+
 def check_eightfold() -> int:
     rows = splat.eightfold_rows(EIGHTFOLD_POSITIONS, "jobs.autodesk.com", "Autodesk")
     got = [(r["title"], r["url"], splat.where(r["location"], r["remote"]), r["remote"], r["posted"]) for r in rows]
@@ -1153,7 +1378,9 @@ REVIEW_DAYS = [
 def main() -> int:
     reader_bad, reader_total = check_reader()
     board_bad, board_total = check_board_dates()
-    bad = check_eightfold() + check_usajobs() + check_tips() + check_fold_remote_twins() + reader_bad + board_bad
+    auto_bad, auto_total = check_auto_boards()
+    bad = (check_eightfold() + check_usajobs() + check_tips() + check_fold_remote_twins() + reader_bad + board_bad
+           + auto_bad)
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -1275,7 +1502,7 @@ def main() -> int:
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
              + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 4 + reader_total
-             + board_total
+             + board_total + auto_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES) + len(NOT_REMOTE) + len(MIDDLEMAN_URLS))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0

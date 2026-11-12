@@ -9,7 +9,9 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
   1. READS every source fresh. Company boards (Greenhouse, Lever, Ashby,
      Workday, Eightfold, Amazon) and the open aggregators (RemoteOK, Jobicy,
      Himalayas, Working Nomads) return what is open today; Foorilla
-     (keyed) returns the last FOORILLA_DAYS days with an `expired` flag.
+     (keyed) returns the last FOORILLA_DAYS days with an `expired` flag. An
+     employer's own Ashby, Greenhouse or Lever board that the aggregators'
+     cards link to is read directly too (auto_boards, from boards.json).
   2. FILTERS with rules: a title that reads as security, infra engineering, a
      technology project, program or product manager, or a sales engineer, a level
      that is not intern/junior/director, and a location in WA/OR/ID or remote
@@ -915,8 +917,10 @@ def structured_pay(lo, hi, unit_word=None) -> str | None:
     return money(lo_f, hi_f, unit)
 
 
-def src_lever(token: str, name: str) -> list[dict]:
-    d = http_json(f"https://api.lever.co/v0/postings/{token}?mode=json")
+def src_lever(token: str, name: str, eu: bool = False) -> list[dict]:
+    # eu: a board on jobs.eu.lever.co answers only on Lever's EU API host (the
+    # census reads it there too; one found board on 2026-11-12, Siteimprove).
+    d = http_json(f"https://api{'.eu' if eu else ''}.lever.co/v0/postings/{token}?mode=json")
     out = []
     for j in d:
         c = j.get("categories") or {}
@@ -929,7 +933,8 @@ def src_lever(token: str, name: str) -> list[dict]:
 
 
 def src_ashby(token: str, name: str) -> list[dict]:
-    d = http_json(f"https://api.ashbyhq.com/posting-api/job-board/{token}?includeCompensation=true")
+    # Quoted: a found board's name may hold a space ("PAR Technology"); the hand-kept tokens are unchanged by it.
+    d = http_json(f"https://api.ashbyhq.com/posting-api/job-board/{urllib.parse.quote(token)}?includeCompensation=true")
     out = []
     for j in d.get("jobs", []):
         if j.get("isListed") is False:
@@ -1565,7 +1570,121 @@ def tech_source(sid: str) -> bool:
             or (family == "eightfold" and name in TECH_EIGHTFOLD))
 
 
-def all_sources(only: set[str] | None):
+# ── Employer boards found through job feeds ("found boards") ────────────────
+#
+# An employer that reaches the Splat only through an aggregator, but whose cards
+# link to its own Ashby, Greenhouse or Lever board, gets that board read
+# directly, as Vultr's is by hand: its rows then come from the employer (origin
+# "company", the board's own dates), and its in-track jobs the aggregator missed
+# show up too. The boards are the ones company_check.py's census read
+# (boards.json), each with the card name that most often links to it (`name`)
+# and how many cards do (`cards`). Each is read by its vendor's own reader under
+# that name, so a row keys (company|title|where) and reads (read_key: the key
+# and the URL) as the aggregator's copy did, and a posting read before is not
+# read again. On 2026-11-12, 147 boards linked from aggregator rows were not
+# hand-kept (98 Greenhouse, 34 Ashby, 14 Lever, 1 Lever EU).
+#
+# - Read OK within AUTO_BOARD_DAYS. The census reads only the boards today's
+#   cards link to, and a found board's own rows link to it, so a board in use
+#   is read every day. A week rides out a vendor, or the company check, down for
+#   a few days without the employer's rows flipping back to the aggregator's
+#   copies (each flip pays Jev and the reader again where a copy keys
+#   differently), and still drops within a week a board nobody links to any
+#   more or one that is gone (its reads fail).
+# - Not hand-kept (GREENHOUSE, LEVER, ASHBY above; Lever EU is its own key).
+# - A usable name that is not a staffing firm's (AGENCY, on the token too: a
+#   recruiter's board carries other employers' jobs under its one name), on a
+#   board whose URLs pass MIDDLEMAN and NO_FETCH.
+# - At most AUTO_BOARD_MAX, the busiest (cards) first: twice the 2026-11-12
+#   count, and under the census's BOARD_MAX (400) so each one is read daily.
+#
+# Not tech sources (tech_source): the hand-kept boards are technology companies
+# by review; these are whatever employers an aggregator carries (SpaceX, Axon,
+# Flexport, a health-care firm), and their rows came through Foorilla, which is
+# not a tech source either. So the titles that pass are the ones that passed
+# before; only where a row comes from changes. The family is "auto"
+# ("auto:ashby:horizon3ai"), an id that stays the same while the board is in
+# the ledger, so the failed-source grace (by label, the stored name) holds.
+AUTO_BOARD_DAYS = 7
+AUTO_BOARD_MAX = 300
+AUTO_FETCH_MINUTES = 10   # no found board starts later in the run: the rest of RUN_BUDGET is Jev's and the reader's
+AUTO_BREAKER = 3          # failures in a row on one API host stop its found boards for the run
+AUTO_API = {"greenhouse": "boards-api.greenhouse.io", "lever": "api.lever.co", "lever-eu": "api.eu.lever.co",
+            "ashby": "api.ashbyhq.com"}
+# Tokens as board_key() makes them from a URL: Ashby's may hold a space ("par technology").
+AUTO_TOKEN = {"greenhouse": re.compile(r"[\w-]{1,100}"), "lever": re.compile(r"[\w.-]{1,100}"),
+              "lever-eu": re.compile(r"[\w.-]{1,100}"), "ashby": re.compile(r"[^/?#%\\\x00-\x1f\x7f]{1,100}")}
+_AUTO_FAILS: dict[str, int] = {}
+
+
+def hand_kept_boards() -> set[str]:
+    """The boards listed at the top of this file, keyed as board_key() keys them."""
+    return ({f"greenhouse:{t.lower()}" for t in GREENHOUSE} | {f"lever:{t.lower()}" for t in LEVER}
+            | {f"ashby:{t.lower()}" for t in ASHBY})
+
+
+def auto_boards(ledger: dict | None) -> list[tuple[str, str, str, str]]:
+    """The found boards to read this run, busiest first: (source id, name, ats,
+    token). The token is the ledger key's, checked, never the entry's own field."""
+    hand = hand_kept_boards()
+    picked = []
+    for key, rec in (ledger or {}).items():
+        if not isinstance(key, str) or not isinstance(rec, dict) or key in hand:
+            continue
+        ats, _, token = key.partition(":")
+        if ats not in AUTO_API or not AUTO_TOKEN[ats].fullmatch(token) or not token.strip(". "):
+            continue
+        last = rec.get("last_ok")
+        age = age_days(last) if isinstance(last, str) else None
+        if age is None or age > AUTO_BOARD_DAYS:
+            continue
+        name = rec.get("name").strip() if isinstance(rec.get("name"), str) else ""
+        if not name or len(name) > 200 or AGENCY.search(name) or AGENCY.search(token):
+            continue
+        link = rec.get("link") if isinstance(rec.get("link"), str) else ""
+        if any(MIDDLEMAN.search(u) or NO_FETCH.search(u) for u in (f"https://{AUTO_API[ats]}/", link)):
+            continue
+        cards = rec.get("cards")
+        cards = cards if isinstance(cards, int) and not isinstance(cards, bool) else 0
+        picked.append((cards, key, name, ats, token))
+    picked.sort(key=lambda x: (-x[0], x[1]))
+    return [(f"auto:{key}", name, ats, token) for _, key, name, ats, token in picked[:AUTO_BOARD_MAX]]
+
+
+def src_auto(ats: str, token: str, name: str) -> list[dict]:
+    """A found board, through src_greenhouse, src_lever or src_ashby. Three at a
+    time per API host (host_get's semaphores), none started after
+    AUTO_FETCH_MINUTES, and AUTO_BREAKER failures in a row on a host stop the
+    rest of its boards for the run; a board the vendor says is not there (404,
+    410) is that board's trouble and does not count. A board not read is a
+    failed source: its rows from the last GRACE_DAYS are carried."""
+    host = AUTO_API[ats]
+    with _HOSTS_LOCK:
+        slot = _HOSTS.setdefault(host, threading.BoundedSemaphore(3))
+    with slot:
+        if time.monotonic() - _T0 > AUTO_FETCH_MINUTES * 60:
+            raise RuntimeError("not read today: the run's time for found boards is up")
+        with _HOSTS_LOCK:
+            if _AUTO_FAILS.get(host, 0) >= AUTO_BREAKER:
+                raise RuntimeError(f"not read today: {host} failed {AUTO_BREAKER} times in a row")
+        try:
+            if ats == "greenhouse":
+                rows = src_greenhouse(token, name)
+            elif ats == "ashby":
+                rows = src_ashby(token, name)
+            else:
+                rows = src_lever(token, name, eu=ats == "lever-eu")
+        except Exception as e:
+            with _HOSTS_LOCK:
+                if not re.search(r"HTTP Error (?:404|410)\b", str(e)):
+                    _AUTO_FAILS[host] = _AUTO_FAILS.get(host, 0) + 1
+            raise
+        with _HOSTS_LOCK:
+            _AUTO_FAILS[host] = 0
+    return rows
+
+
+def all_sources(only: set[str] | None, board_ledger: dict | None = None):
     s = [("foorilla", "Foorilla", src_foorilla, ()), ("amazon", "Amazon", src_amazon, ()),
          ("remoteok", "RemoteOK", src_remoteok, ()),
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
@@ -1579,6 +1698,8 @@ def all_sources(only: set[str] | None):
     s += [(f"workday:{w[0]}", w[3], src_workday, w) for w in WORKDAY]
     s += [(f"workday:{w[0]}", w[3], src_workday, (*w, "local")) for w in WORKDAY_LOCAL]
     s += [(f"workday:{w[0]}", w[3], src_workday, (*w, "all_oregon")) for w in WORKDAY_ALL_OREGON]
+    # Last, so the pool starts every listed source before them.
+    s += [(sid, name, src_auto, (ats, tok, name)) for sid, name, ats, tok in auto_boards(board_ledger)]
     if only:
         s = [x for x in s if x[0] in only or x[0].split(":")[0] in only]
     return s
@@ -2567,6 +2688,33 @@ def board_redate(p: dict, ledger: dict) -> bool:
     return True
 
 
+def drop_board_copies(cands: dict) -> int:
+    """An aggregator's copy of a posting whose own board row is on the page under
+    another title or place: the same posting id on the same board, so one job,
+    and the board's row stays. rules_pass already keeps one row per
+    company|title|where; this is the rest. Sampled 2026-11-12 on found boards, 5
+    of 68 aggregator rows were the board's own row keyed differently: Pure
+    Storage's "... Cyber Resilience - SLED West" was "... - West" on Foorilla,
+    Temporal's US-remote role a Seattle copy, Fluidstack's Seattle-and-remote
+    roles remote copies. A remote copy of a local row marks it also_remote, as
+    the remote fold would. Returns how many went."""
+    own: dict[tuple, dict] = {}
+    for p in cands.values():
+        if p.get("origin") == "company" and (bk := board_key(p.get("url"))):
+            own.setdefault(bk, p)
+    gone = 0
+    for k in list(cands):
+        p = cands[k]
+        mine = own.get(board_key(p.get("url"))) if p.get("origin") == "aggregator" else None
+        if mine is None:
+            continue
+        if p.get("where") == "remote" and mine.get("where") != "remote":
+            mine["also_remote"] = True
+        del cands[k]
+        gone += 1
+    return gone
+
+
 def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, int]:
     """The rules over every fetched row, one row per company|title|where: (the
     rows kept, how many aggregator rows the employer's own board date made too
@@ -2621,7 +2769,8 @@ def main() -> int:
     only = set(args.only.split(",")) if args.only else None
     # Yesterday's board census (company_check.py runs after the splat): a
     # posting's date is fixed, so a day old is fine. A board new today is read
-    # later this morning and dates its cards from tomorrow.
+    # later this morning and dates its cards from tomorrow, and is read as a
+    # found board (auto_boards) from tomorrow too.
     board_ledger = load_board_ledger()
 
     prev = {}
@@ -2633,7 +2782,7 @@ def main() -> int:
     prev_jobs: dict = prev.get("jobs", {})
     jev_cache: dict = prev.get("jev", {})
 
-    sources = all_sources(only)
+    sources = all_sources(only, board_ledger)  # the found boards from the census too (auto_boards)
     stats: dict[str, dict] = {}
     raw: list[tuple[str, dict]] = []
 
@@ -2655,15 +2804,20 @@ def main() -> int:
             raw += [(sid, r) for r in rows]
             print(f"{sid:32} {'OK ' if err is None else 'ERR'} {len(rows):6} {err or ''}", file=sys.stderr)
 
-    ok = sum(1 for s in stats.values() if s["ok"])
-    if not only and ok < len(stats) / 2:
-        print(f"FAIL CLOSED: only {ok}/{len(stats)} sources answered; leaving the page as it was", file=sys.stderr)
+    # The found boards are not counted: they are many small sources on three
+    # vendors' APIs, so one vendor down would read as the box offline, and a
+    # lost network shows as plainly in the listed sources.
+    core = [s for sid, s in stats.items() if not sid.startswith("auto:")]
+    ok = sum(1 for s in core if s["ok"])
+    if not only and ok < len(core) / 2:
+        print(f"FAIL CLOSED: only {ok}/{len(core)} sources answered; leaving the page as it was", file=sys.stderr)
         return 2
 
     # Rules first: cheap, and they decide everything Jev does not. The employer's
     # own board dates go in there too, before Jev and the reader, so a row they
     # drop costs neither.
     cands, older_by_board = rules_pass(raw, board_ledger)
+    board_copies = drop_board_copies(cands)
     tip_twins = drop_tip_twins(cands)
     folded = fold_remote_twins(cands)
 
@@ -2810,6 +2964,8 @@ def main() -> int:
                    "remote_twins_folded": folded, "tip_twins": tip_twins,
                    # aggregator copies too old by the employer's own board date (rules_pass)
                    "older_by_board": older_by_board,
+                   # aggregator copies of a posting its own board row is on the page with (drop_board_copies)
+                   "board_copies": board_copies,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),

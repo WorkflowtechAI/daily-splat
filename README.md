@@ -28,8 +28,9 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   Jev answer cache, so each day only pays for its new postings. Beside it,
   `boards.json`: the Company check's census of the employers' own Ashby,
   Greenhouse and Lever boards (see "Company check"), which `splat.py` reads,
-  never writes, for the employer's own posting dates. A missing or corrupt
-  one is an empty ledger for both scripts.
+  never writes, for the employer's own posting dates and for the boards it
+  reads directly ("Found boards" below). A missing or corrupt one is an empty
+  ledger for both scripts, and so no found boards.
 - **Keys:** `/etc/daily-splat.env`, root:root 0600, holding
   `FOORILLA_API_KEY`, `TYPESAFE_API_KEY`, and `USAJOBS_API_KEY` with `USAJOBS_EMAIL` (the address the
   USAJOBS key was registered under; OPM wants it as the User-Agent). Kept on the server only. None is required; a missing one skips that
@@ -40,10 +41,58 @@ live the next morning. Contributions are welcome: see **Contributing** below.
 | kind | sources | how removal works |
 |---|---|---|
 | Company boards | Greenhouse, Lever, Ashby, Workday tenants, Eightfold (Autodesk, Lam Research, Tektronix, Fortive), Amazon and Providence (Oracle HCM), listed in `splat.py`. The Portland-area governments on NEOGOV (City of Portland, TriMet, Port of Portland, Beaverton, Metro) were dropped 2026-11-11: NEOGOV's terms (effective 2025-09-02) forbid republishing content from the career pages it hosts, public or not, and its robots.txt disallows all but search engines. The page links to their job pages instead, and the reader never fetches governmentjobs.com (`NO_FETCH`) | the board stops returning the job |
+| Found boards | An employer's own Ashby, Greenhouse or Lever board that the aggregators' cards link to, read directly (added 2026-11-12, `auto_boards`; see "Found boards" below) | the board stops returning the job; the board stops being read a week after the census last read it |
 | Shared by members | The page's "Share a job" form (added 2026-11-11). `infra/intake.py` checks the tip with `splat.py`'s own rules before taking it, and says why when it refuses: an https link on a host name (IDNA-normalized, so a look-alike spelling is not a way around the rules), not a short link, not a middleman site (`MIDDLEMAN`) or one the Splat may not read (`NO_FETCH`), an employer that is not a staffing firm, a place in WA/OR/ID or remote US, a title in the tracks. It stores the tip in `/var/lib/daily-splat/tips.json` (`TIPS_FILE`; 40 new a day and 300 held at most) and emails David links signed with `TIP_SECRET` (one per action) to remove it and, for a link that needs it, to approve it; with no `TIP_SECRET` it takes no tips. The member's note goes only to that email. `src_tips` reads the file each morning; tips pass the same rules and Jev on the title, employer and place the member typed. A LinkedIn or Indeed link is never fetched (`NO_FETCH`; their terms forbid scraping, and one member pointing at one job is not copying their listings): the Splat looks for the employer's own posting (`find_source`: a Greenhouse board whose own name is the employer's, or a Lever or Ashby board named exactly for it, with the same title in the same place; 40 lookups a run) and links there, else the card says "LinkedIn only" (`gate`). Any other link shows only when it is a posting on a tracking system the reader reads through the vendor's API (`ats_link`) and was read, or when David approved it (`not_verified`, `reader.tip_unverified`): a page that merely carries JobPosting data could sit beside a fake sign-in form. A tip of a job already on the page is dropped (`drop_tip_twins`, `counts.tip_twins`) | 30 days after it was shared (14 for LinkedIn/Indeed), or when David removes it |
 | Federal government | USAJOBS Search API (added 2026-11-11, `src_usajobs`): jobs open to the public in the IT series (2210, 0854, 1550, 0391) in OR, WA and ID, plus remote (none on 2026-11-11). Free with a key; OPM's terms allow republishing ("Prior OPM approval is not required"). Each row links to the official usajobs.gov posting, and the text, pay, grade (as a level hint) and clearance come with the list | the posting closes or is pulled |
 | Open aggregators | RemoteOK, Jobicy, Himalayas, Working Nomads, Workable search. Remotive was dropped 2026-11-04: its API returns the same ~11 jobs whatever is asked, and it asks that its jobs not be republished on third-party sites. The Muse was dropped 2026-11-10: since 2026-11-09 its public jobs API answers every script with a Cloudflare browser challenge (403/404) | the feed stops returning the job |
 | Foorilla (keyed) | PNW location queries over 30 days; remote-US over 14 days from its InfoSec & Privacy (102) and Cybersecurity (26) categories plus security and infra title queries | `expired` flag, or it ages out of the window |
+
+**Found boards** (2026-11-12). An employer that reaches the Splat only through
+an aggregator, but whose cards link to its own Ashby, Greenhouse or Lever
+board, gets that board read directly, the way Vultr's is by hand in `ASHBY`:
+its rows then come from the employer (the card says "Employer's own board", with
+the board's own date), and its in-track jobs the aggregator missed show up too.
+The boards come from the Company check's census (`boards.json`), which stores
+for each board the card name that most often links to it and how many cards
+do. A board is read when:
+
+- the census read it OK in the last 7 days (`AUTO_BOARD_DAYS`). The census
+  reads the boards today's cards link to, and a found board's own rows link to
+  it, so a board in use is read every day. A week rides out a vendor or the
+  Company check being down for a few days without the employer's rows flipping
+  back to the aggregator's copies (each flip asks Jev and reads again where a
+  copy is keyed differently), and still drops within a week a board no card
+  links to any more, or one that is gone;
+- it is not hand-kept (`GREENHOUSE`, `LEVER`, `ASHBY`, tokens without case;
+  Lever's EU boards are their own key and are read on Lever's EU API host);
+- it has a stored name that is not a staffing firm's (`AGENCY`, checked on the
+  board's token too, since a recruiter's board carries other employers' jobs),
+  and its URLs pass `MIDDLEMAN` and `NO_FETCH`;
+- it is among the 300 busiest by cards (`AUTO_BOARD_MAX`): twice the 147 the
+  2026-11-12 page had (98 Greenhouse, 34 Ashby, 14 Lever, 1 Lever EU), and under
+  the census's 400 a run, so every one is read daily.
+
+Each is read by the vendor's own reader under the stored name, so a row's key
+(company, title, place) and its read key (the key and the URL) are the
+aggregator copy's, and a posting already read is not read again. Where the
+board titles or places a posting differently than the aggregator did, the
+copy is dropped (`drop_board_copies`, counted in `counts.board_copies`; a remote
+copy marks the board's local row as also remote). They are **not tech
+sources** (`tech_source`): the hand-kept boards are technology companies by
+review, these are whatever employers an aggregator carries (SpaceX, Axon,
+Flexport, a health-care firm), and their rows came through Foorilla, which is
+not one either; so the titles that pass are the ones that passed before, and
+only where a row comes from changes. Source ids are `auto:<board>`
+(`auto:ashby:horizon3ai`), the same every day while the board is in the
+ledger, so the failed-source grace holds. Three at a time per API host, none
+started after 10 minutes into the run (`AUTO_FETCH_MINUTES`), and three
+failures in a row on a host stop its boards for the run (`AUTO_BREAKER`; a 404
+is that board's, not the vendor's). One list call per board: about 150 more
+calls a run today, and the first run asks Jev about and reads the found
+boards' rows the page did not have (about 1.7 per board in a 2026-11-12 sample
+of 18 of the busiest; the Lever ones kept none, their remote roles giving only
+a city, which `where` does not take as remote). They are not counted toward failing closed, and the page
+folds them into one line under the source list.
 
 Microsoft's own careers API refuses anonymous calls, but its roles arrive
 through Foorilla. Not covered, and why: LinkedIn (no API, and scraping it is against its terms), We Work Remotely
@@ -98,8 +147,8 @@ a wrong token shows up as a failed source, it does not break the run.
    and owners, when the work is technology, IT or security (`pm_track`). The
    title has to name the work (`PM_TECH`: IT, software, cloud, data, platform,
    SOC, IAM, GRC, Epic...), unless the posting is on a technology employer's
-   own board (`TECH_SOURCES` and `TECH_WORKDAY`: the Greenhouse, Lever and Ashby
-   boards and the tech Workday tenants), where "Senior Product Manager,
+   own board (`TECH_SOURCES` and `TECH_WORKDAY`: the hand-kept Greenhouse, Lever
+   and Ashby boards, not the found ones, and the tech Workday tenants), where "Senior Product Manager,
    Payments" is tech work as written, or Foorilla filed it under infosec.
    Amazon, the aggregators and the telecoms are not tech sources: their PMs
    are mostly operations, retail or any employer's. Three tiers of exclusion:
@@ -265,7 +314,10 @@ The hiring source, added 2026-11-12 after the group argued whether Vultr's
 - **The ledger**, `boards.json` in the state directory (not `company-data`,
   which holds downloads that can be fetched again): per board, the first and
   last day it was read and every day it was read (`reads`, as runs of days in
-  a row), and per listing its title, place, board date, and the first and
+  a row), the card company name that most often links to it (`name`, a tie to
+  the first in sort order) and how many cards do (`cards`), both as of its last
+  read (an entry written before 2026-11-12 has neither until its next read, and
+  `splat.py` reads no found board without a name), and per listing its title, place, board date, and the first and
   last day the census saw it. No descriptions. A listing not seen for 180
   days, a board not read for 180 days, and read days as old are pruned. A
   board that fails leaves its ledger as it was and its employers keep their
@@ -363,7 +415,9 @@ source that fails keeps its last facts.
 ## It fails closed
 
 If fewer than half the sources answer, the script assumes the box lost network,
-writes nothing and exits non-zero. Same if zero postings survive. Yesterday's
+writes nothing and exits non-zero. Found boards are not counted: they are many
+small sources on three vendors' APIs, so one vendor down would otherwise read
+as the box offline. Same if zero postings survive. Yesterday's
 `jobs.json` stays up. A single source failing is normal: its postings from the
 last two days are carried and marked "Source down today" on the page.
 
@@ -386,7 +440,7 @@ sudo systemctl start daily-splat.service      # first run now, so the page has d
 - Last run: `journalctl -u daily-splat.service -n 80`
 - Test without writing (keys from the env file):
   `sudo systemd-run --pipe --wait -p User=foundry -p EnvironmentFile=/etc/daily-splat.env /usr/bin/python3 /home/foundry/daily-splat/splat.py --dry-run --dump /tmp/splat.json`
-- One source only: add `--only greenhouse` (or `workday`, `foorilla`, `ashby:openai`, ...). Partial runs never write.
+- One source only: add `--only greenhouse` (or `workday`, `foorilla`, `ashby:openai`, `auto` for every found board, `auto:ashby:horizon3ai`, ...). Partial runs never write.
 
 ## Contributing
 

@@ -432,6 +432,22 @@ check("page_boards: each employer's boards through the aliases; a Workday link a
       by_emp, {"vultr": {"ashby:vultr"}, "acme": {"greenhouse:acme", "lever:acme"}})
 check("page_boards: every board found, with its cards", (sorted(found_boards), card_n["ashby:vultr"]),
       (["ashby:vultr", "greenhouse:acme", "lever:acme", "lever:nobody"], 2))
+# Each board carries the card name that most often links to it and its card
+# count: splat.py reads the board directly under that name (auto_boards).
+check("page_boards: each board's card name and card count",
+      {k: (b.get("name"), b.get("cards")) for k, b in found_boards.items()},
+      {"ashby:vultr": ("Vultr", 2), "greenhouse:acme": ("Acme", 1), "lever:acme": ("ACME", 1), "lever:nobody": ("Nobody", 1)})
+_, named_boards, _ = cc.page_boards([
+    {"company": "Horizon3.ai", "url": f"https://jobs.ashbyhq.com/horizon3ai/{U1}"},
+    {"company": " Horizon3.ai ", "url": f"https://jobs.ashbyhq.com/Horizon3ai/{U2}"},
+    {"company": "Horizon3 AI", "url": f"https://jobs.ashbyhq.com/horizon3ai/{U1}"},
+    {"company": "Zeta", "url": "https://boards.greenhouse.io/tie/jobs/1"},
+    {"company": "Alpha", "url": "https://boards.greenhouse.io/tie/jobs/2"},
+    {"company": "", "url": "https://boards.greenhouse.io/blank/jobs/3"},
+    {"company": None, "url": "https://boards.greenhouse.io/blank/jobs/4"}], {})
+check("page_boards: the name most cards show; a tie goes to the first in sort order; cards with no name give none",
+      {k: (b.get("name"), b["cards"]) for k, b in named_boards.items()},
+      {"ashby:horizon3ai": ("Horizon3.ai", 3), "greenhouse:tie": ("Alpha", 2), "greenhouse:blank": (None, 2)})
 
 # ── Open roles on its own board: reading a board ─────────────────────────────
 
@@ -531,6 +547,15 @@ check("ledger: the first run sets f and s to today",
       (rec["first_ok"], rec["last_ok"], rec["link"], rec["reads"], rec["postings"]["a"]),
       ("2026-01-01", "2026-01-01", "https://jobs.ashbyhq.com/vultr", [["2026-01-01", "2026-01-01"]],
        {"t": "SRE", "l": "Portland, OR", "d": "2025-12-01", "f": "2026-01-01", "s": "2026-01-01"}))
+check("ledger: a read with no card name or count (an older caller) writes neither", ("name" in rec, "cards" in rec),
+      (False, False))
+NL = {"version": 1, "boards": {}}
+nrec = []
+for n, b in ((0, {**VB, "name": "Vultr", "cards": 2}), (1, VB), (2, {**VB, "name": "Vultr Cloud", "cards": 5})):
+    cc.ledger_update(NL, b, {"postings": {}, "prospect": 0}, day(n))
+    nrec.append((NL["boards"]["ashby:vultr"].get("name"), NL["boards"]["ashby:vultr"].get("cards")))
+check("ledger: the board's card name and count, kept until a read brings new ones",
+      nrec, [("Vultr", 2), ("Vultr", 2), ("Vultr Cloud", 5)])
 watch(L, range(1, 41), LISTINGS)
 check("ledger: an absent listing keeps its last day seen", (rec["postings"]["a"]["s"], rec["postings"]["d"]["f"]),
       (ds(29), ds(40)))
@@ -644,6 +669,21 @@ odd_file.write_text(json.dumps({"version": 1, "boards": {
     "ashby:nopostings": {"first_ok": ds(0), "last_ok": ds(1)},
     "ashby:list": ["not", "a", "board"]}}), encoding="utf-8")
 check("load_ledger: a board without its days or listings is dropped", sorted(cc.load_ledger(odd_file)["boards"]), ["ashby:ok"])
+# A ledger written before boards kept their card name and count still loads as it
+# was, in both scripts; splat.py reads no board from an entry without a name.
+old_entry = {"ats": "ashby", "token": "horizon3ai", "link": "https://jobs.ashbyhq.com/horizon3ai", "prospect": 0,
+             "first_ok": cc.TODAY.isoformat(), "last_ok": cc.TODAY.isoformat(),
+             "reads": [[cc.TODAY.isoformat(), cc.TODAY.isoformat()]], "postings": {U1: {"t": "SRE", "l": "Remote", "d": None,
+                                                                                    "f": cc.TODAY.isoformat(), "s": cc.TODAY.isoformat()}}}
+old_file = tmp / "boards-old.json"
+old_file.write_text(json.dumps({"version": 1, "boards": {"ashby:horizon3ai": old_entry}}), encoding="utf-8")
+check("load_ledger: an entry from before name and cards loads as it was",
+      (cc.load_ledger(old_file)["boards"], splat.load_board_ledger(old_file)),
+      ({"ashby:horizon3ai": old_entry}, {"ashby:horizon3ai": old_entry}))
+check("load_ledger: splat.py reads no board under a name the ledger does not have",
+      (splat.auto_boards(splat.load_board_ledger(old_file)),
+       [x[:2] for x in splat.auto_boards({"ashby:horizon3ai": {**old_entry, "name": "Horizon3.ai", "cards": 11}})]),
+      ([], [("auto:ashby:horizon3ai", "Horizon3.ai")]))
 
 # Age bands and the median, by the board's own dates, over what is listed today.
 T = date(2026, 11, 12)
@@ -867,6 +907,12 @@ check("hiring run: the census in the stats", (out["stats"]["hiring"]["boards"], 
 ledger_now = json.loads(cc.BOARDS.read_text(encoding="utf-8"))
 check("hiring run: boards.json holds every board read, several's too",
       (ledger_now["version"], sorted(ledger_now["boards"])), (1, ["ashby:attainx", "ashby:vultr", "greenhouse:acme", "lever:acme"]))
+check("hiring run: each board keeps the card name and count the splat reads it under",
+      {k: (r.get("name"), r.get("cards")) for k, r in ledger_now["boards"].items()},
+      {"ashby:attainx": ("AttainX", 1), "ashby:vultr": ("Vultr", 2), "greenhouse:acme": ("Acme", 1), "lever:acme": ("ACME", 1)})
+check("hiring run: the ledger gives splat.py its found boards (Vultr's board is hand-kept)",
+      [x[:2] for x in splat.auto_boards(ledger_now["boards"])],
+      [("auto:ashby:attainx", "AttainX"), ("auto:greenhouse:acme", "Acme"), ("auto:lever:acme", "ACME")])
 check("hiring run: the ledger keeps the listing, not its text",
       ledger_now["boards"]["ashby:vultr"]["postings"][U1], {"t": "RMA Systems Engineer", "l": "Remote - US", "d": "2026-04-30",
                                                            "f": today_s, "s": today_s})
