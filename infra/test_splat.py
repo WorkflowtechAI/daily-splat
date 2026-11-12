@@ -812,21 +812,21 @@ def check_board_dates() -> tuple[int, int]:
                                   remote=remote, posted=posted, origin=origin, **kw)
     tss = "Technical Support Specialist"
     # Two copies of one remote role, the months-old one first: the fresh one shows.
-    dedupe, dedupe_n = splat.rules_pass([agg(OLD, tss, "Remote - US", ago(6), True), agg(NEW, tss, "Remote - US", ago(6), True)], led)
+    dedupe, dedupe_n, _ = splat.rules_pass([agg(OLD, tss, "Remote - US", ago(6), True), agg(NEW, tss, "Remote - US", ago(6), True)], led)
     # A Portland copy of the old listing, and the employer's own remote row: the
     # employer's row is not folded into a copy that then drops.
-    fold, fold_n = splat.rules_pass([agg(OLD, tss, "Portland, OR", ago(6)),
+    fold, fold_n, _ = splat.rules_pass([agg(OLD, tss, "Portland, OR", ago(6)),
                                      agg(NEW, tss, "Remote - US", ago(7), True, sid="ashby:vultr", origin="company")], led)
     folded = splat.fold_remote_twins(fold)
     # A member's Portland tip of the same role: not dropped as the twin of a copy that drops.
-    tips, tips_n = splat.rules_pass([agg(OLD, tss, "Remote - US", ago(6), True),
+    tips, tips_n, _ = splat.rules_pass([agg(OLD, tss, "Remote - US", ago(6), True),
                                      ("tips", splat.posting(title=tss, company="Vultr", url="https://www.linkedin.com/jobs/view/4012345678/",
                                                             location="Portland, OR", posted=ago(3), origin="member", gate="linkedin"))], led)
     tip_twins = splat.drop_tip_twins(tips)
     # The age rule at its edges, on the board's date: 30 days stays and 31 drops
     # locally, 14 stays and 15 drops remote, the same rule as the aggregator's date.
     uid = lambda n: f"{n:08d}-2222-3333-4444-555555555555"   # noqa: E731
-    edges, edges_n = splat.rules_pass([
+    edges, edges_n, _ = splat.rules_pass([
         agg(uid(30), "Cloud Engineer", "Portland, OR", ago(2)), agg(uid(31), "Network Engineer", "Portland, OR", ago(2)),
         agg(uid(14), "Systems Engineer", "Remote - US", ago(2), True), agg(uid(15), "Site Reliability Engineer", "Remote - US", ago(2), True),
         agg(uid(50), "SOC Analyst", "Portland, OR", ago(40)),          # too old by its own date: not the board's doing
@@ -1028,7 +1028,7 @@ def check_auto_boards() -> tuple[int, int]:
     copy = splat.posting(title=T1, company="Pure Storage", url=gh_url, location="Seattle, Washington, United States",
                          posted=ago(2), origin="aggregator")
     board_row = next((p for p in gh if p["title"] == T1), None)
-    merged, _ = splat.rules_pass([("foorilla", copy), ("auto:greenhouse:purestorage", dict(board_row or {}))], {})
+    merged, _, _ = splat.rules_pass([("foorilla", copy), ("auto:greenhouse:purestorage", dict(board_row or {}))], {})
     key = f"{splat.norm('Pure Storage')}|{splat.norm(T1)}|pnw"
     kept = merged.get(key) or {}
 
@@ -1107,6 +1107,102 @@ def check_auto_boards() -> tuple[int, int]:
           0 < at("rules_pass(raw, board_ledger)") < at("drop_board_copies(cands)") < at("drop_tip_twins("),
           '"board_copies": board_copies' in main_src),
          (True, True, True, True)),
+    ]
+    bad = 0
+    for label, g, w in checks:
+        if g != w:
+            print(f"{label} = {g!r}, want {w!r}")
+            bad += 1
+    return bad, len(checks)
+
+
+def check_workday_30_plus() -> tuple[int, int]:
+    """Workday's "Posted 30+ Days Ago" is more than 30 days (probed 2026-11-12:
+    "30 Days Ago" was startDate today-30, the youngest "30+" today-31). It gives
+    no date and drops in rules_pass, with its aggregator copies; it used to be
+    read as exactly 30 days old and stay on the page for good."""
+    import inspect as _inspect
+    from datetime import timedelta as _td
+    today = splat.NOW.date()
+    ago = lambda n: (today - _td(days=n)).isoformat()   # noqa: E731
+
+    # src_workday on a stubbed tenant: one Oregon facet, then its jobs.
+    listed = [("Cloud Engineer", "/job/Portland/Cloud-Engineer_R1", "Posted 30+ Days Ago"),
+              ("Network Engineer", "/job/Portland/Network-Engineer_R2", "Posted 30 Days Ago"),
+              ("Systems Engineer", "/job/Portland/Systems-Engineer_R3", "Posted 29 Days Ago"),
+              ("Security Engineer", "/job/Portland/Security-Engineer_R4", "Posted Today")]
+
+    def fake(url, body=None, *a, **k):
+        if (body or {}).get("limit") == 1:
+            return {"facets": [{"facetParameter": "locations", "values": [{"id": "pdx", "descriptor": "Portland, Oregon"}]}]}
+        return {"jobPostings": [{"title": t, "externalPath": p, "locationsText": "Portland, Oregon", "postedOn": o}
+                                for t, p, o in listed]}
+    real = splat.http_json
+    splat.http_json = fake
+    try:
+        wd = {p["title"]: p for p in splat.src_workday("acme", "wd5", "External", "Acme", "local")}
+    finally:
+        splat.http_json = real
+
+    # rules_pass over the tenant's rows and aggregators' copies.
+    base = "https://acme.wd5.myworkdayjobs.com/External/job/Portland/"
+    agg_base = "https://acme.wd5.myworkdayjobs.com/en-US/External/job/Portland/"
+
+    def row(sid, title, path, posted=None, origin="company", company="Acme", loc="Portland, Oregon", remote=False, **kw):
+        url = path if path.startswith("https://") else (agg_base if origin == "aggregator" else base) + path
+        return sid, splat.posting(title=title, company=company, url=url, location=loc, remote=remote, posted=posted,
+                                  origin=origin, **kw)
+    raw = [
+        # An aggregator's fresh-dated copy of the "30+" posting, listed before the
+        # Workday row: still dropped, and does not take the row's place.
+        row("foorilla", "Cloud Engineer", "Cloud-Engineer_R1", ago(3), "aggregator"),
+        row("workday:acme", "Cloud Engineer", "Cloud-Engineer_R1", None, older_than=30),
+        # The same posting under another employer name and place: dropped too.
+        row("foorilla", "Cloud Engineer", "Cloud-Engineer_R1", ago(3), "aggregator", company="Acme Technology Inc",
+            loc="Remote - US", remote=True),
+        # Another posting with the same title and place: stays, with its own date.
+        row("foorilla", "Cloud Engineer II", "Cloud-Engineer-II_R9", ago(3), "aggregator"),
+        # A "30+" remote row: past the 14-day limit too.
+        row("workday:acme", "Site Reliability Engineer", "SRE_R5", None, loc="Remote - US", remote=True, older_than=30),
+        # "30 Days Ago" is a true date at the edge: it stays, dated.
+        row("workday:acme", "Network Engineer", "Network-Engineer_R2", ago(30)),
+        # Out of the tracks anyway: dropped by the title rules, not counted.
+        row("workday:acme", "Registered Nurse", "Registered-Nurse_R6", None, older_than=30),
+        # A member's tip of the "30+" posting keeps its own 30-day life.
+        row("tips", "Cloud Engineer", "Cloud-Engineer_R1", ago(2), "member", loc="Seattle, WA"),
+        # "More than 7 days" in a 30-day window: kept, and with no date rather than an invented one.
+        row("workday:acme", "Help Desk Technician", "Help-Desk_R7", None, older_than=7),
+    ]
+    cands, older_by_board, n30 = splat.rules_pass(raw, {})
+    kept = sorted((p["title"], p["origin"], p["posted"]) for p in cands.values())
+    flipped, *_ = splat.rules_pass([raw[1], raw[0]], {})
+    main_src = _inspect.getsource(splat.main)
+
+    checks = [
+        ("_wd_days: today, yesterday, N days", [splat._wd_days(s) for s in (
+            "Posted Today", "Posted Yesterday", "Posted 2 Days Ago", "Posted 29 Days Ago", "Posted 30 Days Ago")],
+         [ago(0), ago(1), ago(2), ago(29), ago(30)]),
+        ("_wd_days: \"30+\" is no date", [splat._wd_days(s) for s in ("Posted 30+ Days Ago", "", None)], [None] * 3),
+        ("_wd_older: only \"N+\" gives a bound", [splat._wd_older(s) for s in (
+            "Posted 30+ Days Ago", "Posted 30 Days Ago", "Posted Today", None)], [30, None, None, None]),
+        ("src_workday: \"30+\" carries no date and older_than 30; the rest their true dates",
+         {t: (p["posted"], p["older_than"]) for t, p in wd.items()},
+         {"Cloud Engineer": (None, 30), "Network Engineer": (ago(30), None), "Systems Engineer": (ago(29), None),
+          "Security Engineer": (ago(0), None)}),
+        ("wd_posting: the locale prefix and site do not matter, the posting does",
+         (splat.wd_posting(base + "Cloud-Engineer_R1") == splat.wd_posting(agg_base + "Cloud-Engineer_R1"),
+          splat.wd_posting(base + "Cloud-Engineer_R1") == splat.wd_posting(base + "Cloud-Engineer_R1-1"),
+          splat.wd_posting("https://jobs.ashbyhq.com/acme/1")),
+         (True, False, None)),
+        ("rules_pass: \"30+\" rows and their aggregator copies drop; a true 30-day date, another posting and a tip stay",
+         kept, sorted([("Cloud Engineer II", "aggregator", ago(3)), ("Network Engineer", "company", ago(30)),
+                       ("Cloud Engineer", "member", ago(2)), ("Help Desk Technician", "company", None)])),
+        ("rules_pass: counted in rows that would otherwise show, apart from the board dates",
+         (n30, older_by_board), (4, 0)),
+        ("rules_pass: the copy drops whichever comes first", sorted(p["origin"] for p in flipped.values()), []),
+        ("main: workday_30_plus from the rules pass, published with the counts",
+         ("cands, older_by_board, workday_30_plus = rules_pass(raw, board_ledger)" in main_src,
+          '"workday_30_plus": workday_30_plus' in main_src), (True, True)),
     ]
     bad = 0
     for label, g, w in checks:
@@ -1379,8 +1475,9 @@ def main() -> int:
     reader_bad, reader_total = check_reader()
     board_bad, board_total = check_board_dates()
     auto_bad, auto_total = check_auto_boards()
+    wd30_bad, wd30_total = check_workday_30_plus()
     bad = (check_eightfold() + check_usajobs() + check_tips() + check_fold_remote_twins() + reader_bad + board_bad
-           + auto_bad)
+           + auto_bad + wd30_bad)
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -1502,7 +1599,7 @@ def main() -> int:
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
              + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 4 + reader_total
-             + board_total + auto_total
+             + board_total + auto_total + wd30_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES) + len(NOT_REMOTE) + len(MIDDLEMAN_URLS))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0

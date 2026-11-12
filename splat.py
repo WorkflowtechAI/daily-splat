@@ -27,7 +27,8 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
      board does not empty its section. Anything posted more than MAX_AGE_DAYS
      ago drops regardless; an aggregator's copy of an Ashby, Greenhouse or
      Lever posting is dated by the employer's own board where company_check.py's
-     census has it (boards.json).
+     census has it (boards.json), and a Workday posting its own list calls
+     "30+" days old drops with its aggregator copies (_wd_older).
 
 It fails closed: if fewer than half the sources answer, it assumes the box lost
 network, writes nothing, and exits non-zero. Yesterday's page stands.
@@ -815,9 +816,10 @@ def ashby_pay(summary: str | None) -> str | None:
 def posting(**kw) -> dict:
     # body: the posting's full text when the list call carries it; ref: how to fetch
     # it when it does not (see fetch_posting); mode/yrs: structured facts a source gives.
+    # older_than: a source that gives no date, only "more than N days old" (Workday's "30+").
     p = {"title": "", "company": "", "url": "", "location": "", "remote": False, "posted": None,
          "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False,
-         "body": "", "ref": None, "mode": None, "yrs": None}
+         "body": "", "ref": None, "mode": None, "yrs": None, "older_than": None}
     p.update(kw)
     p["title"] = re.sub(r"\s+", " ", unescape(p["title"] or "")).strip()
     p["company"] = unescape(p["company"] or "").strip()
@@ -969,14 +971,32 @@ def _wd_facets(node, out: list):
     return out
 
 
+# Workday's list gives an age, not a date: "Posted Today", "Posted Yesterday",
+# "Posted N Days Ago" up to 30, then "Posted 30+ Days Ago". Probed 2026-11-12 on
+# NVIDIA's and F5's date-sorted lists against each posting's startDate (the
+# detail call's own date): "29 Days Ago" was startDate today-29, "30 Days Ago"
+# today-30, and the youngest "30+" today-31 (F5, CrowdStrike); the 55 live "30+"
+# rows were 31 to 261 days old. So "30+" means more than 30 days, past
+# MAX_AGE_DAYS by Workday's own word, and no date can be read off it: it used
+# to become exactly today-30, so every older local Workday job stayed on the
+# page for good, "posted 30 days ago". It now gives no date (_wd_days) and
+# older_than=30 (_wd_older), and rules_pass drops it (counts.workday_30_plus).
+# No detail fetch for startDate: "30+" never covers a posting inside the window.
+
 def _wd_days(s: str) -> str | None:
     s = (s or "").lower()
     if "today" in s:
         return TODAY
     if "yesterday" in s:
         return (NOW - timedelta(days=1)).date().isoformat()
-    m = re.search(r"(\d+)\+?\s*days", s)
+    m = re.search(r"(\d+)\s*days", s)   # not "30+ days": that is no date (above)
     return (NOW - timedelta(days=int(m.group(1)))).date().isoformat() if m else None
+
+
+def _wd_older(s: str) -> int | None:
+    """N for "Posted N+ Days Ago": the posting is more than N days old, no more said."""
+    m = re.search(r"(\d+)\+\s*days", (s or "").lower())
+    return int(m.group(1)) if m else None
 
 
 WD_QUERIES = ("security", "cyber", "cloud", "infrastructure", "network", "systems engineer", "devops", "reliability",
@@ -1022,7 +1042,8 @@ def src_workday(tenant: str, host: str, site: str, name: str, mode: str = "searc
                     out.append(posting(title=j.get("title"), company=name,
                                        url=f"https://{tenant}.{host}.myworkdayjobs.com/{site}{path}",
                                        location=desc if re.match(r"\d+ Locations", loc) else loc,
-                                       remote=bool(REMOTE.search(desc)), posted=_wd_days(j.get("postedOn"))))
+                                       remote=bool(REMOTE.search(desc)), posted=_wd_days(j.get("postedOn")),
+                                       older_than=_wd_older(j.get("postedOn"))))
                 if len(rows) < 20:
                     break
                 offset += 20
@@ -2715,12 +2736,28 @@ def drop_board_copies(cands: dict) -> int:
     return gone
 
 
-def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, int]:
+def wd_posting(url: str | None) -> tuple[str, str] | None:
+    """(tenant, posting) for a link to a Workday posting, whatever its locale
+    prefix or site: Foorilla links Micron's ".../en-US/External/job/Boise-ID---Main-Site/
+    Staff-System-Engineer_JR103532-1", the Splat's own read the same without
+    "en-US" (2026-11-12). The last path part ends in the requisition id (and
+    Workday's posting suffix), so it names one posting at that tenant."""
+    m = WD_URL.match(url or "")
+    return (m[1].lower(), m[4].rstrip("/").rsplit("/", 1)[-1].lower()) if m else None
+
+
+def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, int, int]:
     """The rules over every fetched row, one row per company|title|where: (the
     rows kept, how many aggregator rows the employer's own board date made too
-    old). Cheap, and they decide everything Jev does not."""
+    old, how many rows Workday's "30+" made too old). Cheap, and they decide
+    everything Jev does not."""
     cands: dict[str, dict] = {}
-    older_by_board = 0
+    older_by_board = workday_30_plus = 0
+    # Workday's own list calls these postings more than N days old (_wd_older). An
+    # aggregator's copy of one is as old, whatever date the aggregator gives: with
+    # the Splat's own row gone, a copy keyed the same would take its place.
+    wd_older = {wk: p["older_than"] for _, p in raw
+                if p.get("older_than") is not None and (wk := wd_posting(p["url"]))}
     for sid, p in raw:
         if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
                 or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
@@ -2735,6 +2772,15 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
         track = rule_track(p["title"], p["sec_topic"], tech_source(sid), tech_source(sid) or sid == "amazon")
         level = rule_level(p["title"], p["hint"], track)
         if not track or not level:
+            continue
+        # No date, only "more than N days old" (Workday's "30+"), and N at or past
+        # the limit: too old by the source's own word. After the title rules, so
+        # the count is rows that would otherwise be on the page.
+        older = p.get("older_than")
+        if older is None and p["origin"] == "aggregator":
+            older = wd_older.get(wd_posting(p["url"]))
+        if older is not None and older >= max_age:
+            workday_30_plus += 1
             continue
         # The employer's own date, here and not once the rows are picked: an old
         # aggregator copy that won the pick below (or a tip's twin check, or the
@@ -2754,7 +2800,7 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
             if old and not p["posted"]:
                 p["posted"] = old["posted"]
             cands[k] = p
-    return cands, older_by_board
+    return cands, older_by_board, workday_30_plus
 
 
 def main() -> int:
@@ -2816,7 +2862,7 @@ def main() -> int:
     # Rules first: cheap, and they decide everything Jev does not. The employer's
     # own board dates go in there too, before Jev and the reader, so a row they
     # drop costs neither.
-    cands, older_by_board = rules_pass(raw, board_ledger)
+    cands, older_by_board, workday_30_plus = rules_pass(raw, board_ledger)
     board_copies = drop_board_copies(cands)
     tip_twins = drop_tip_twins(cands)
     folded = fold_remote_twins(cands)
@@ -2964,6 +3010,8 @@ def main() -> int:
                    "remote_twins_folded": folded, "tip_twins": tip_twins,
                    # aggregator copies too old by the employer's own board date (rules_pass)
                    "older_by_board": older_by_board,
+                   # Workday rows its own list calls "30+" days old, and their aggregator copies (rules_pass)
+                   "workday_30_plus": workday_30_plus,
                    # aggregator copies of a posting its own board row is on the page with (drop_board_copies)
                    "board_copies": board_copies,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),

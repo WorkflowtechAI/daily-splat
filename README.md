@@ -142,6 +142,20 @@ a wrong token shows up as a failed source, it does not break the run.
    before (the check runs after the splat); that is fine because a card only
    ever takes an earlier date, and a board new today dates its cards from
    tomorrow.
+   **Workday's "30+"** (2026-11-12): a Workday list gives an age, not a
+   date ("Posted Today", "Posted 29 Days Ago", "Posted 30 Days Ago", then
+   "Posted 30+ Days Ago"). The Splat read "30+" as exactly 30 days, so every
+   older local Workday job stayed on the page for good, "posted 30 days ago"
+   (55 rows on 2026-11-12, 31 to 261 days old by Workday's own `startDate`).
+   Checked against each posting's `startDate` that day, "30 Days Ago" is 30
+   days and "30+" is 31 or more, so "30+" is past the 30-day window by
+   Workday's own word: such a row gets no date and drops in `rules_pass`
+   (`_wd_older`), and so does an aggregator's copy of the same posting (the
+   same tenant and requisition in the link, `wd_posting`), whatever date the
+   aggregator gives, since with the Workday row gone a copy keyed the same
+   would take its place. Both are counted in `counts.workday_30_plus`, after
+   the title rules, so the count is rows that would otherwise show. No extra
+   fetch: "30+" never covers a posting inside the window.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
    and owners, when the work is technology, IT or security (`pm_track`). The
