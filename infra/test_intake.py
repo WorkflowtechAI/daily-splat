@@ -86,6 +86,50 @@ err("clean_tip an internship", lambda: intake.clean_tip({**good, "title": "Secur
 err("clean_tip a staffing firm", lambda: intake.clean_tip({**good, "company": "Robert Half"}))
 eq("clean_tip Portland", intake.clean_tip({**good, "location": "Portland, OR"})["location"], "Portland, OR")
 
+# Only the link is required: the rest comes from the posting when the Splat can read it.
+gh = "https://boards.greenhouse.io/okta/jobs/7103874"
+seen = {"title": "Solutions Engineer", "company": "Okta", "location": "Portland, OR"}
+t2 = intake.clean_tip({"url": gh}, look=lambda u: seen)
+eq("link only, details read from the posting", (t2["title"], t2["company"], t2["location"]),
+   ("Solutions Engineer", "Okta", "Portland, OR"))
+t3 = intake.clean_tip({"url": gh, "title": "Senior Solutions Engineer"}, look=lambda u: seen)
+eq("the member's words win", t3["title"], "Senior Solutions Engineer")
+t4 = intake.clean_tip({"url": f"Saw this today, looks good: {gh}. Remote ok?"}, look=lambda u: seen)
+eq("a link inside pasted text", t4["url"], gh)
+try:
+    intake.clean_tip({"url": "https://www.linkedin.com/jobs/view/4012345678/"}, look=lambda u: {})
+    eq("LinkedIn link alone asks for details", "no error", "NeedDetails")
+except intake.NeedDetails as e:
+    eq("LinkedIn link alone asks for details", "LinkedIn" in str(e), True)
+err("no link at all", lambda: intake.clean_tip({"url": "a great job at Okta"}))
+err("details read but outside the area", lambda: intake.clean_tip({"url": gh}, look=lambda u: {**seen, "location": "Austin, TX"}))
+
+# describe: each reader, with the fetch stubbed.
+pages = {
+    "https://boards-api.greenhouse.io/v1/boards/okta/jobs/7103874": {"title": "Solutions Engineer", "location": {"name": "Portland, Oregon"}},
+    "https://boards-api.greenhouse.io/v1/boards/okta": {"name": "Okta"},
+    "https://api.lever.co/v0/postings/palantir/0e3c1b2a-1111-2222-3333-444455556666": {"text": "Security Engineer", "categories": {"location": "Seattle, WA"}},
+    "https://careers.example.com/jobs/9": '<html><script type="application/ld+json">{"@type": "JobPosting", "title": "Help Desk Technician", '
+                                          '"hiringOrganization": {"name": "Example Health"}, "jobLocation": {"address": {"addressLocality": "Bend", '
+                                          '"addressRegion": "OR"}}}</script></html>',
+    "https://careers.example.com/jobs/10": '<html><script type="application/ld+json">{"@type": "JobPosting", "title": "SOC Analyst", '
+                                           '"hiringOrganization": "Example", "jobLocationType": "TELECOMMUTE"}</script></html>',
+}
+old_get = intake.quick_get
+intake.quick_get = lambda url, as_json=True: pages[url]
+try:
+    eq("describe greenhouse", intake.describe(gh), {"title": "Solutions Engineer", "location": "Portland, Oregon", "company": "Okta"})
+    eq("describe lever", intake.describe("https://jobs.lever.co/palantir/0e3c1b2a-1111-2222-3333-444455556666"),
+       {"title": "Security Engineer", "location": "Seattle, WA", "company": "Palantir"})
+    eq("describe JobPosting", intake.describe("https://careers.example.com/jobs/9"),
+       {"title": "Help Desk Technician", "company": "Example Health", "location": "Bend, OR"})
+    eq("describe remote JobPosting", intake.describe("https://careers.example.com/jobs/10"),
+       {"title": "SOC Analyst", "company": "Example", "location": "Remote US"})
+    eq("describe LinkedIn (never read)", intake.describe("https://www.linkedin.com/jobs/view/4012345678/"), {})
+    eq("describe a fetch failure", intake.describe("https://careers.example.com/nope"), {})
+finally:
+    intake.quick_get = old_get
+
 # Store, dedupe, remove and approve with the matching signed link only.
 tip, new = intake.add_tip(t)
 eq("add_tip new", (new, tip["status"]), (True, "new"))

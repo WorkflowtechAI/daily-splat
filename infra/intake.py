@@ -134,14 +134,110 @@ def tidy_url(raw: str) -> str:
     return url
 
 
-def clean_tip(form: dict) -> dict:
-    """The tip, or TipError. Title, employer and place are checked with the Splat's
-    own rules, so the member learns now why it would never show."""
+class NeedDetails(TipError):
+    """The link alone does not say what the job is: the form asks for the details."""
+
+
+FIRST_URL = re.compile(r"https://[^\s<>\"']+", re.I)
+
+
+def quick_get(url: str, as_json: bool = True):
+    """A short, guarded fetch while the member waits (nginx gives the request 20
+    seconds): https to a public host only, never a NO_FETCH site, 6 seconds in all,
+    a few hundred KB at most."""
+    u = urllib.parse.urlsplit(url)
+    if u.scheme != "https" or not splat.public_host(u.hostname or "") or splat.NO_FETCH.search(url):
+        raise TipError("not fetched")
+    s = splat.http_text(url, headers={"Accept": "application/json" if as_json else "text/html"}, tries=1, timeout=6,
+                        limit=20_000_000 if as_json else 500_000, opener=splat.PUBLIC, deadline=6)
+    return json.loads(s) if as_json else s
+
+
+def _place(*parts) -> str:
+    return ", ".join(str(p).strip() for p in parts if p and str(p).strip())
+
+
+def describe(url: str) -> dict:
+    """What the posting at a link says it is: title, company, location, as far as a
+    quick read can tell. From the tracking system's own API where the Splat knows it
+    (Greenhouse, Lever, Ashby, Workday), else the page's schema.org JobPosting. Never
+    LinkedIn or Indeed (the Splat does not read them). Empty when it cannot tell."""
+    out: dict = {}
+    try:
+        if m := splat.GH_URL.search(url):
+            j = quick_get(f"https://boards-api.greenhouse.io/v1/boards/{m[1]}/jobs/{m[2]}")
+            out = {"title": j.get("title"), "location": (j.get("location") or {}).get("name"),
+                   "company": quick_get(f"https://boards-api.greenhouse.io/v1/boards/{m[1]}").get("name")}
+        elif m := splat.LEVER_URL.search(url):
+            j = quick_get(f"https://api{'.eu' if m[1] else ''}.lever.co/v0/postings/{m[2]}/{m[3]}")
+            out = {"title": j.get("text"), "location": (j.get("categories") or {}).get("location"),
+                   "company": splat.LEVER.get(m[2]) or m[2].replace("-", " ").title()}
+        elif m := splat.ASHBY_URL.search(url):
+            org = urllib.parse.unquote(m[1])
+            jobs = quick_get(f"https://api.ashbyhq.com/posting-api/job-board/{urllib.parse.quote(org)}").get("jobs") or []
+            j = next((x for x in jobs if x.get("id") == m[2]), {})
+            loc = j.get("location") or ""
+            if j.get("isRemote") and "remote" not in loc.lower():
+                loc = f"{loc} (remote)" if loc else "Remote US"
+            # Ashby's board names no employer; only a board the Splat already reads has one.
+            out = {"title": j.get("title"), "location": loc, "company": splat.ASHBY.get(org.lower())}
+        elif m := splat.WD_URL.search(url):
+            info = quick_get(f"https://{m[1]}.{m[2]}.myworkdayjobs.com/wday/cxs/{m[1]}/{m[3]}/{m[4]}").get("jobPostingInfo") or {}
+            names = {w[0]: w[3] for w in (*splat.WORKDAY, *splat.WORKDAY_LOCAL, *splat.WORKDAY_ALL_OREGON)}
+            out = {"title": info.get("title"), "location": info.get("location"),
+                   "company": names.get(m[1].lower()) or ((info.get("hiringOrganization") or {}).get("name") if isinstance(info.get("hiringOrganization"), dict) else None)}
+        elif not splat.GATE_HOST.match(url) and not splat.NO_FETCH.search(url):
+            for blob in splat.ld_blobs(quick_get(url, as_json=False)):
+                try:
+                    data = json.loads(blob.strip())
+                except ValueError:
+                    continue
+                node = next((n for n in splat._ld_nodes(data) if "JobPosting" in str(n.get("@type"))), None)
+                if not node:
+                    continue
+                org = node.get("hiringOrganization")
+                locs = node.get("jobLocation")
+                loc = (locs[0] if isinstance(locs, list) and locs else locs) or {}
+                addr = loc.get("address") if isinstance(loc, dict) else {}
+                addr = addr if isinstance(addr, dict) else {}
+                place = _place(addr.get("addressLocality"), addr.get("addressRegion"))
+                if "TELECOMMUTE" in str(node.get("jobLocationType")).upper():
+                    place = f"{place} (remote)" if place else "Remote US"
+                out = {"title": node.get("title"), "company": org.get("name") if isinstance(org, dict) else org,
+                       "location": place}
+                break
+    except Exception:  # noqa: BLE001 - any failure means: ask the member
+        return {}
+    return {k: splat.text(str(v), TIP_FIELDS[k]) for k, v in out.items() if v and str(v).strip()}
+
+
+def clean_tip(form: dict, look=None) -> dict:
+    """The tip, or TipError. Only the link is required: the title, employer and place
+    come from the posting itself when the Splat can read it (describe; `look` is for
+    tests), from the member otherwise, the member's words winning. NeedDetails when
+    neither says. Then they are checked with the Splat's own rules, so the member
+    learns now why it would never show."""
     t = {k: re.sub(r"\s+", " ", str(form.get(k) or "")).strip()[:n] for k, n in TIP_FIELDS.items()}
-    for k, what in (("title", "the job title"), ("company", "the employer"), ("location", "where the job is")):
-        if len(t[k]) < 2:
-            raise TipError(f"Please add {what}.")
-    t["url"] = tidy_url(t["url"])
+    raw = str(form.get("url") or "")[:5000]
+    m = FIRST_URL.search(raw)  # a pasted bit of text with the link in it works too
+    if not m:
+        raise TipError("Paste the link to the job (it starts with https://).")
+    t["url"] = tidy_url(m[0].rstrip(".,;:)]}"))
+    if any(len(t[k]) < 2 for k in ("title", "company", "location")):
+        found = (look or describe)(t["url"])
+        for k in ("title", "company", "location"):
+            if len(t[k]) < 2 and found.get(k):
+                t[k] = found[k]
+    missing = [k for k in ("title", "company", "location") if len(t[k]) < 2]
+    if missing:
+        why = ("The Splat doesn't read LinkedIn or Indeed, so it can't see what this job is."
+               if splat.GATE_HOST.match(t["url"]) else "The Splat couldn't read what this job is from the link.")
+        names = {"title": "the job title", "company": "the employer", "location": "where it is"}
+        ask = [names[k] for k in missing]
+        what = ask[0] if len(ask) == 1 else ", ".join(ask[:-1]) + " and " + ask[-1]
+        if not splat.GATE_HOST.match(t["url"]) and len(missing) < 3:
+            why = "The Splat read the posting but couldn't tell " + what + "."
+        raise NeedDetails(f"{why} Add {what} under \"Add details\" and send it again.")
     if splat.AGENCY.search(t["company"]):
         raise TipError("The Splat lists employers, not recruiters or staffing firms. "
                        "Share the employer's own posting if you can find it.")
@@ -340,6 +436,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(503, {"ok": False, "error": "Sharing is switched off right now. Please try again later."})
             try:
                 tip, new = add_tip(clean_tip(form))
+            except NeedDetails as e:  # the form opens its optional fields and asks for these
+                return self.reply(400, {"ok": False, "need": "details", "error": str(e)})
             except TipError as e:
                 return self.reply(400, {"ok": False, "error": str(e)})
             except OSError as e:  # the tips file: say what failed in the log
@@ -350,7 +448,8 @@ class Handler(BaseHTTPRequestHandler):
                     send_mail(f"Splat tip: {tip['title']} at {tip['company']}", tip_mail_text(tip))
                 except Exception as e:  # noqa: BLE001 - the tip is saved; only the notice failed
                     print(f"tip mail failed: {type(e).__name__}: {str(e)[:200]}", file=sys.stderr)
-            return self.reply(200, {"ok": True, "new": new, "review": new and needs_approval(tip)})
+            return self.reply(200, {"ok": True, "new": new, "review": new and needs_approval(tip),
+                                    "summary": f"{tip['title']} at {tip['company']}, {tip['location']}"})
         try:
             send(clean(form))
         except Exception as e:  # noqa: BLE001 - say what failed in the log, not to the visitor

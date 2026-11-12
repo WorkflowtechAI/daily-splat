@@ -121,6 +121,8 @@
   :is(#help,#share) .q{margin:0 0 8px}
   :is(#help,#share) fieldset{border:0;padding:0;margin:0 0 18px;min-width:0}
   :is(#help,#share) .two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  #share .share-more{margin:0 0 14px}
+  #share .share-more>summary{cursor:pointer;font-size:.93rem;color:var(--copper-ink);margin:0 0 12px;width:max-content}
   :is(#help,#share) input[type=text],:is(#help,#share) input[type=email],:is(#help,#share) select,:is(#help,#share) textarea{width:100%;font:15px var(--sans);padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
   :is(#help,#share) input:focus,:is(#help,#share) select:focus,:is(#help,#share) textarea:focus{outline:2px solid var(--copper);outline-offset:1px;border-color:transparent}
   :is(#help,#share) textarea{min-height:110px;resize:vertical;line-height:1.45}
@@ -235,15 +237,18 @@
   <details id="share">
     <summary>Share a job <span class="sum-note">Found one that isn't here? &middot; goes on the public page</span></summary>
     <div class="help-body">
-    <p class="help-intro">Found a job the Splat doesn't have? Share it. The form tells you right away if it's outside the Splat's tracks or places; otherwise it shows up after the next morning's run. A LinkedIn or Indeed link works: the Splat looks for the employer's own posting first, and if there isn't one, the card says "LinkedIn only" and links there. A link to an employer's own careers site waits for David to look at it first. Nothing about you is kept.</p>
+    <p class="help-intro">Found a job the Splat doesn't have? Paste the link and send it. That's all it needs: the Splat reads the posting for the title, employer and place, and tells you right away if it's outside the tracks or the area. LinkedIn and Indeed links work too, but the Splat doesn't read those sites, so it asks you for the details. Nothing about you is kept.</p>
     <form id="share-form" novalidate>
-      <label class="field"><span>Link to the job</span><input type="text" name="url" inputmode="url" maxlength="500" placeholder="https://..." autocomplete="off"></label>
-      <div class="two">
-        <label class="field"><span>Job title</span><input type="text" name="title" maxlength="160" autocomplete="off"></label>
-        <label class="field"><span>Employer</span><input type="text" name="company" maxlength="120" autocomplete="off"></label>
-      </div>
-      <label class="field"><span>Where</span><input type="text" name="location" maxlength="120" placeholder="Portland, OR · Seattle, WA · Remote US" autocomplete="off"></label>
-      <label class="field"><span>Anything to know about it (optional, goes only to David)</span><textarea name="note" maxlength="500"></textarea></label>
+      <label class="field"><span>Link to the job</span><input type="text" name="url" inputmode="url" maxlength="5000" placeholder="https://..." autocomplete="off"></label>
+      <details class="share-more" id="share-more">
+        <summary>Add details (optional)</summary>
+        <div class="two">
+          <label class="field"><span>Job title</span><input type="text" name="title" maxlength="160" autocomplete="off"></label>
+          <label class="field"><span>Employer</span><input type="text" name="company" maxlength="120" autocomplete="off"></label>
+        </div>
+        <label class="field"><span>Where</span><input type="text" name="location" maxlength="120" placeholder="Portland, OR · Seattle, WA · Remote US" autocomplete="off"></label>
+        <label class="field"><span>Anything to know about it (goes only to David)</span><textarea name="note" maxlength="500"></textarea></label>
+      </details>
       <input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div class="send-row">
         <button class="send" type="submit">Share it</button>
@@ -918,11 +923,16 @@
     try {
       const r = await fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const d = await r.json().catch(() => ({}));
+      if (d.need === "details") {  // the link alone doesn't say what the job is: open the optional fields
+        const more = document.getElementById("share-more");
+        more.open = true; more.querySelector("input[name=title]").focus();
+      }
       if (!r.ok || !d.ok) throw new Error(d.error || "It did not send. Please try again in a bit.");
-      shareForm.reset(); shareStatus.className = "ok";
+      shareForm.reset(); document.getElementById("share-more").open = false; shareStatus.className = "ok";
+      const what = d.summary ? `${d.summary}. ` : "";
       shareStatus.textContent = d.new === false ? "Someone already shared that one. Thank you anyway."
-        : d.review ? "Shared. Thank you. That link isn't on a job system the Splat can check, so David looks at it before it shows up."
-        : "Shared. Thank you. It shows up after the next morning's run.";
+        : d.review ? `Got it: ${what}Thank you. That link isn't on a job system the Splat can check, so David looks at it before it shows up.`
+        : `Got it: ${what}Thank you. It shows up after the next morning's run.`;
     } catch (err) {
       shareStatus.className = "err"; shareStatus.textContent = err.message;
     } finally { btn.disabled = false; }
