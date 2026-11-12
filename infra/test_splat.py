@@ -640,6 +640,119 @@ def check_usajobs() -> int:
     return 0
 
 
+def check_tips() -> int:
+    """Members' shared jobs (src_tips and its guards). No network: host_get and
+    find_source are stubbed."""
+    import json as _json
+    import tempfile as _tempfile
+    from datetime import date, timedelta
+    from pathlib import Path as _Path
+    today = date.today()
+    d = lambda n: (today - timedelta(days=n)).isoformat()  # noqa: E731
+    tips = [
+        {"id": "a" * 16, "shared": d(1), "url": "https://www.linkedin.com/jobs/view/4012345678/", "status": "new",
+         "title": "IT Systems Security Administrator", "company": "Hilgers PLLC", "location": "Remote US",
+         "note": "No clearance needed"},
+        {"id": "b" * 16, "shared": d(1), "url": "https://www.indeed.com/viewjob?jk=0a1b2c3d4e5f6789", "status": "new",
+         "title": "Help Desk Technician", "company": "Acme Health", "location": "Portland, OR", "note": ""},
+        {"id": "c" * 16, "shared": d(20), "url": "https://www.linkedin.com/jobs/view/4000000001/", "status": "new",
+         "title": "Network Engineer", "company": "Old Co", "location": "Seattle, WA", "note": ""},
+        {"id": "d" * 16, "shared": d(2), "url": "https://careers.example.com/jobs/42", "status": "removed",
+         "title": "SOC Analyst", "company": "Gone Inc", "location": "Remote US", "note": ""},
+        {"id": "e" * 16, "shared": d(3), "url": "https://careers.example.com/jobs/43", "status": "approved",
+         "title": "Cloud Engineer", "company": "Example", "location": "Bend, OR", "note": ""},
+    ]
+    f = _Path(_tempfile.mkdtemp()) / "tips.json"
+    f.write_text(_json.dumps(tips), encoding="utf-8")
+    old_tips, old_find = splat.TIPS, splat.find_source
+    splat.TIPS = f
+    splat.find_source = lambda company, title, w: ({"url": "https://boards.greenhouse.io/acmehealth/jobs/1",
+                                                    "ref": ("gh", "acmehealth", 1)} if company == "Acme Health" else None)
+    try:
+        rows = splat.src_tips()
+    finally:
+        splat.TIPS, splat.find_source = old_tips, old_find
+    got = [(r["title"], r["url"], r.get("gate"), bool(r.get("found")), r["approved"], r["posted"], r["desc"],
+            splat.where(r["location"], r["remote"])) for r in rows]
+    want = [("IT Systems Security Administrator", "https://www.linkedin.com/jobs/view/4012345678/", "LinkedIn", False,
+             False, None, "", "remote"),
+            ("Help Desk Technician", "https://boards.greenhouse.io/acmehealth/jobs/1", None, True, False, None, "", "oregon"),
+            ("Cloud Engineer", "https://careers.example.com/jobs/43", None, False, True, None, "", "oregon")]
+    bad = 0
+    if got != want:
+        print(f"src_tips = {got!r}, want {want!r}")
+        bad += 1
+
+    # find_source: a Greenhouse board counts only when its own name is the employer's
+    # and the job is the same title in the same place; it keeps the API reference.
+    boards = {
+        "https://boards-api.greenhouse.io/v1/boards/acme": {"name": "Acme"},
+        "https://boards-api.greenhouse.io/v1/boards/acme/jobs": {"jobs": [
+            {"id": 7, "title": "Help Desk Technician", "location": {"name": "Portland, Oregon"},
+             "absolute_url": "https://acme.example/careers?gh_jid=7"},
+            {"id": 8, "title": "Help Desk Technician", "location": {"name": "Austin, TX"},
+             "absolute_url": "https://acme.example/careers?gh_jid=8"}]},
+        "https://boards-api.greenhouse.io/v1/boards/other": {"name": "Other Acme Holdings"},
+    }
+
+    def fake_get(url, *a, **k):
+        if url in boards:
+            return boards[url]
+        raise RuntimeError("HTTP Error 404")
+    old_get = splat.host_get
+    splat.host_get = fake_get
+    try:
+        splat._FIND_LEFT[0] = 5
+        hit = splat.find_source("Acme", "Help Desk Technician", "oregon")
+        miss_place = splat.find_source("Acme", "Help Desk Technician", "remote")
+        miss_name = splat.find_source("Other", "Help Desk Technician", "oregon")
+        splat._FIND_LEFT[0] = 0
+        capped = splat.find_source("Acme", "Help Desk Technician", "oregon")
+    finally:
+        splat.host_get = old_get
+        splat._FIND_LEFT[0] = splat.FIND_MAX
+    checks = [
+        ("find_source match", hit, {"url": "https://acme.example/careers?gh_jid=7", "ref": ("gh", "acme", 7)}),
+        ("find_source other place", miss_place, None),
+        ("find_source board of another name", miss_name, None),
+        ("find_source past the cap", capped, None),
+        ("tip_slugs", splat.tip_slugs("Hilgers PLLC"), ["hilgers", "hilgerspllc", "hilgers-pllc"]),
+        ("tip_slugs &", splat.tip_slugs("Ben & Jerry's"), ["benandjerrys", "ben-and-jerrys"]),
+        ("ats_link greenhouse", splat.ats_link("https://boards.greenhouse.io/acme/jobs/1"), True),
+        ("ats_link lever", splat.ats_link("https://jobs.lever.co/acme/0e3c1b2a-1111-2222-3333-444455556666"), True),
+        ("ats_link employer site", splat.ats_link("https://careers.example.com/jobs/42"), False),
+        ("ats_link path spoof", splat.ats_link("https://evil.example/boards.greenhouse.io/x/jobs/1"), False),
+        # A phishing page with JobPosting data reads fine; it still is not verified.
+        ("not_verified read, not an ATS", splat.not_verified({"origin": "member", "url": "https://acme-careers.example/apply"},
+                                                             {"read": True}), True),
+        ("not_verified read ATS", splat.not_verified({"origin": "member", "url": "https://boards.greenhouse.io/a/jobs/1"},
+                                                     {"read": True}), False),
+        ("not_verified unread ATS", splat.not_verified({"origin": "member", "url": "https://boards.greenhouse.io/a/jobs/1"},
+                                                       {"read": False}), True),
+        ("not_verified found + read", splat.not_verified({"origin": "member", "url": "https://acme.example/c?gh_jid=7",
+                                                          "found": True}, {"read": True}), False),
+        ("not_verified approved", splat.not_verified({"origin": "member", "approved": True, "url": "https://x.example/"},
+                                                     None), False),
+        ("not_verified gated", splat.not_verified({"origin": "member", "gate": "LinkedIn"}, None), False),
+        ("not_verified not a tip", splat.not_verified({"origin": "company"}, None), False),
+        ("NO_FETCH linkedin", bool(splat.NO_FETCH.search("https://www.linkedin.com/jobs/view/1/")), True),
+        ("NO_FETCH indeed", bool(splat.NO_FETCH.search("https://ca.indeed.com/viewjob?jk=ab")), True),
+        ("NO_FETCH lnkd.in", bool(splat.NO_FETCH.search("https://lnkd.in/gAbC123")), True),
+        ("fetch_posting skips linkedin", splat.fetch_posting({"url": "https://www.linkedin.com/jobs/view/1/"}), None),
+    ]
+    # drop_tip_twins: a tip of a job the page already has, in any place, goes.
+    cands = {"acme|help desk technician|remote": {"company": "Acme", "title": "Help Desk Technician", "origin": "company"},
+             "acme|help desk technician|oregon": {"company": "ACME", "title": "Help Desk Technician", "origin": "member"},
+             "x|cloud engineer|oregon": {"company": "X", "title": "Cloud Engineer", "origin": "member"}}
+    n = splat.drop_tip_twins(cands)
+    checks.append(("drop_tip_twins", (n, sorted(cands)), (1, ["acme|help desk technician|remote", "x|cloud engineer|oregon"])))
+    for label, g, w in checks:
+        if g != w:
+            print(f"{label} = {g!r}, want {w!r}")
+            bad += 1
+    return bad
+
+
 def check_eightfold() -> int:
     rows = splat.eightfold_rows(EIGHTFOLD_POSITIONS, "jobs.autodesk.com", "Autodesk")
     got = [(r["title"], r["url"], splat.where(r["location"], r["remote"]), r["remote"], r["posted"]) for r in rows]
@@ -901,7 +1014,7 @@ REVIEW_DAYS = [
 
 def main() -> int:
     reader_bad, reader_total = check_reader()
-    bad = check_eightfold() + check_usajobs() + check_fold_remote_twins() + reader_bad
+    bad = check_eightfold() + check_usajobs() + check_tips() + check_fold_remote_twins() + reader_bad
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -1022,7 +1135,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 3 + reader_total
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 4 + reader_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES) + len(NOT_REMOTE) + len(MIDDLEMAN_URLS))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0

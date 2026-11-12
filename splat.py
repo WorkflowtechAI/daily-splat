@@ -1290,6 +1290,148 @@ def usajobs_rows(items: list) -> list[dict]:
     return out
 
 
+# Jobs members share (added 2026-11-11): the "Share a job" form on the page posts to
+# infra/intake.py, which checks the link, the place and the title against these
+# same rules, appends the tip to TIPS beside the state file, and emails David signed
+# links to remove it (and, where needed, to approve it). For jobs only on LinkedIn or
+# Indeed, which the Splat never copies (their terms forbid it): a member pointing at
+# one job is not copying their database. Every tip still goes through the rules and
+# Jev, on the title, employer and place the member typed; the member's note goes
+# only to David's email, never to the page or the classifier.
+# - A LinkedIn or Indeed link (`gate`): the Splat looks for the employer's own
+#   posting on its Greenhouse, Lever or Ashby board (find_source) and links there
+#   when it is surely the same job; otherwise the row says "LinkedIn only" and stays
+#   TIP_GATED_DAYS. Those pages are never fetched (NO_FETCH).
+# - Any other link shows only when it is a posting on an applicant tracking system
+#   the reader reads through its own API (ats_link) and the reader read it, or when
+#   David approved it. A page that merely carries JobPosting data is not enough:
+#   anyone can put that beside a fake sign-in form (the branch review, 2026-11-11).
+# - A tip of a job already on the page is dropped (drop_tip_twins), so a member's
+#   copy never stands in for the employer's own row.
+TIPS = STATE_DIR / "tips.json"
+TIP_GATED_DAYS = 14
+GATE_HOST = re.compile(r"^https://(?:[\w-]+\.)*(linkedin|indeed)\.com/", re.I)
+FIND_MAX = 40          # find_source lookups a run: a flood of tips must not stall the run
+_FIND_LEFT = [FIND_MAX]
+
+
+def tip_slugs(company: str) -> list[str]:
+    """Board names a company might use: "Hilgers PLLC" -> hilgers, hilgerspllc."""
+    words = re.sub(r"[^a-z0-9 ]+", "", re.sub(r"&", " and ", (company or "").lower())).split()
+    core = [w for w in words if w not in ("inc", "llc", "pllc", "ltd", "corp", "corporation", "co", "company", "the")]
+    out = []
+    for ws in (core, words):
+        for s in ("".join(ws), "-".join(ws)):
+            if len(s) >= 3 and s not in out:
+                out.append(s)
+    return out[:4]
+
+
+def same_place(loc: str, tip_where: str | None) -> bool:
+    w = where(loc or "", bool(REMOTE.search(loc or "")))
+    return bool(w) and (w == tip_where or (tip_where in ("oregon", "pnw") and w in ("oregon", "pnw")))
+
+
+def find_source(company: str, title: str, tip_where: str | None) -> dict | None:
+    """The employer's own posting of a job a member found on LinkedIn or Indeed, or
+    None. Only when it is surely the same job: the same title in the same place, on
+    a Greenhouse board whose own name is the employer's, or on a Lever or Ashby
+    board named exactly for it (the review found a guessed board name alone can be
+    another company's). At most FIND_MAX lookups a run. The Greenhouse match keeps
+    its API reference, so the reader reads it even on a custom careers domain."""
+    if _FIND_LEFT[0] <= 0:
+        return None
+    _FIND_LEFT[0] -= 1
+    want, who = norm(title), norm(company)
+    slugs = tip_slugs(company)
+    for slug in slugs:
+        try:
+            board = host_get(f"https://boards-api.greenhouse.io/v1/boards/{slug}")
+            if norm(board.get("name") or "") != who:
+                continue
+            for j in host_get(f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs").get("jobs") or []:
+                if norm(j.get("title") or "") == want and same_place((j.get("location") or {}).get("name"), tip_where):
+                    return {"url": j.get("absolute_url"), "ref": ("gh", slug, j.get("id"))}
+        except Exception:  # noqa: BLE001 - no board under that name
+            continue
+    exact = slugs[:1]  # the whole name, joined: "hilgers" for "Hilgers PLLC"
+    for slug in exact:
+        for url, rows, link, place in (
+                (f"https://api.lever.co/v0/postings/{slug}?mode=json", lambda d: d if isinstance(d, list) else [],
+                 lambda j: j.get("hostedUrl"), lambda j: (j.get("categories") or {}).get("location")),
+                (f"https://api.ashbyhq.com/posting-api/job-board/{slug}", lambda d: d.get("jobs") or [],
+                 lambda j: j.get("jobUrl"), lambda j: j.get("location"))):
+            try:
+                d = host_get(url)
+            except Exception:  # noqa: BLE001 - no board under that name
+                continue
+            for j in rows(d):
+                if (norm(j.get("title") or j.get("text") or "") == want and same_place(place(j), tip_where)
+                        and (u := link(j))):
+                    return {"url": u, "ref": None}
+    return None
+
+
+def src_tips() -> list[dict]:
+    if not TIPS.exists():
+        return []
+    tips = json.loads(TIPS.read_text(encoding="utf-8"))
+    out = []
+    _FIND_LEFT[0] = FIND_MAX
+    for t in tips if isinstance(tips, list) else []:
+        age = age_days(t.get("shared"))
+        url = t.get("url") or ""
+        gate = GATE_HOST.match(url)
+        if t.get("status") == "removed" or age is None or age > (TIP_GATED_DAYS if gate else MAX_AGE_DAYS):
+            continue
+        loc = t.get("location") or ""
+        # posted stays empty: the share date is not when the job was posted.
+        p = posting(title=t.get("title"), company=t.get("company"), url=url, location=loc,
+                    remote=bool(REMOTE.search(loc)), origin="member")
+        p["approved"] = t.get("status") == "approved"
+        if gate:
+            src = find_source(p["company"], p["title"], where(loc, p["remote"]))
+            if src:
+                p.update(url=src["url"], ref=src["ref"], found=True)
+            else:
+                p["gate"] = "LinkedIn" if gate[1].lower() == "linkedin" else "Indeed"
+        out.append(p)
+    return out
+
+
+def ats_link(url: str) -> bool:
+    """A posting on an applicant tracking system whose own API the reader reads (see
+    fetch_posting), so what a visitor reaches is the vendor's page, not one an
+    anyone-can-type link could swap or cloak."""
+    if any(r.search(url or "") for r in (GH_URL, LEVER_URL, ASHBY_URL, WD_URL, ORACLE_URL, RIPPLING_URL,
+                                         SMARTR_URL, BAMBOO_URL, WORKABLE_URL)):
+        return True
+    m = EF_URL.search(url or "")
+    return bool(m and EF_DOMAIN.get(m[1].lower()))
+
+
+def not_verified(p: dict, f: dict | None) -> bool:
+    """A member's tip that is not on LinkedIn or Indeed is held back unless David
+    approved it, or the reader read it as a posting on a tracking system it reads
+    through the vendor's API (ats_link, or a find_source match)."""
+    if p.get("origin") != "member" or p.get("gate") or p.get("approved"):
+        return False
+    return not (f and f.get("read") and (p.get("found") or ats_link(p.get("url") or "")))
+
+
+def drop_tip_twins(cands: dict) -> int:
+    """A member's tip of a job already on the page (the same employer and title from
+    any other source, in any place) is dropped: the employer's own row, not a member's
+    copy, shows. The review found a Portland-typed LinkedIn tip could otherwise fold
+    away the employer's own remote row. Returns how many were dropped."""
+    seen = {(norm(p["company"]), norm(p["title"])) for p in cands.values() if p.get("origin") != "member"}
+    twins = [k for k, p in cands.items()
+             if p.get("origin") == "member" and (norm(p["company"]), norm(p["title"])) in seen]
+    for k in twins:
+        del cands[k]
+    return len(twins)
+
+
 def src_usajobs() -> list[dict]:
     key = os.environ.get("USAJOBS_API_KEY", "").strip()
     email = os.environ.get("USAJOBS_EMAIL", "").strip()
@@ -1420,7 +1562,7 @@ def all_sources(only: set[str] | None):
          ("jobicy", "Jobicy", src_jobicy, ()), ("himalayas", "Himalayas", src_himalayas, ()),
          ("workingnomads", "Working Nomads", src_workingnomads, ()),
          ("workable", "Workable", src_workable, ()), ("providence", "Providence", src_providence, ()),
-         ("usajobs", "USAJOBS", src_usajobs, ())]
+         ("usajobs", "USAJOBS", src_usajobs, ()), ("tips", "Shared by members", src_tips, ())]
     s += [(f"eightfold:{e[0]}", e[3], src_eightfold, e) for e in EIGHTFOLD]
     s += [(f"greenhouse:{t}", n, src_greenhouse, (t, n)) for t, n in GREENHOUSE.items()]
     s += [(f"lever:{t}", n, src_lever, (t, n)) for t, n in LEVER.items()]
@@ -1764,7 +1906,10 @@ WD_URL = re.compile(r"^https://([\w-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}
 EF_URL = re.compile(r"^https://([\w.-]+)/careers/(?:job/(\d+)|[^#]{0,200}?\bpid=\D{0,40}(\d+))", re.I)
 # Hosts the reader never fetches, a redirect included: their terms or robots.txt
 # say no to automated access (governmentjobs.com, see the NEOGOV note above).
-NO_FETCH = re.compile(r"^https?://(?:[\w-]+\.)*governmentjobs\.com(?::\d+)?(?:[/?#]|$)", re.I)
+# LinkedIn and Indeed too: members may share their job links (see src_tips), and
+# their terms forbid scraping, so the Splat links to them and never reads them.
+NO_FETCH = re.compile(r"^https?://(?:[\w-]+\.)*(?:governmentjobs\.com|linkedin\.com|indeed\.com|lnkd\.in)(?::\d+)?(?:[/?#]|$)",
+                      re.I)
 ORACLE_URL = re.compile(r"^(https://[\w-]+\.fa\.[\w-]+\.oraclecloud\.com)/hcmUI/CandidateExperience/[\w-]+/sites/([\w-]+)/job/(\d+)", re.I)
 RIPPLING_URL = re.compile(r"^https://ats\.rippling\.com/([\w-]+)/jobs/([0-9a-f-]{36})", re.I)
 SMARTR_URL = re.compile(r"^https://jobs\.smartrecruiters\.com/([\w-]+)/(\d+)", re.I)
@@ -2394,7 +2539,7 @@ def main() -> int:
     cands: dict[str, dict] = {}
     for sid, p in raw:
         if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
-                or MIDDLEMAN.search(p["url"])):
+                or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
             continue
         w = where(p["location"], p["remote"])
         if not w:
@@ -2416,6 +2561,7 @@ def main() -> int:
             if old and not p["posted"]:
                 p["posted"] = old["posted"]
             cands[k] = p
+    tip_twins = drop_tip_twins(cands)
     folded = fold_remote_twins(cands)
 
     # Jev refines track and level on postings it has not seen.
@@ -2447,7 +2593,7 @@ def main() -> int:
     reads: dict = prev.get("read", {})
     run_facts: dict = {}  # today's answers, shown today even when not cached
     read_stats = {"asked": 0, "read": 0, "unread": 0, "failed": 0, "cached": 0, "abandoned": 0, "tokens": 0,
-                  "not_presales": 0, "not_remote": 0, "error": None}
+                  "not_presales": 0, "not_remote": 0, "tip_unverified": 0, "error": None}
     if args.no_jev or args.no_read or not key:
         read_stats["error"] = "skipped" if key else "no TYPESAFE_API_KEY"
     else:
@@ -2510,6 +2656,9 @@ def main() -> int:
         if not_remote(p, f):
             read_stats["not_remote"] += 1
             continue
+        if not_verified(p, f):
+            read_stats["tip_unverified"] += 1
+            continue
         jobs[jid] = {
             "id": jid, "title": p["title"], "company": p["company"], "url": p["url"],
             "location": p["location"][:160], "where": p["where"], "track": p["track"], "level": p["level"],
@@ -2518,6 +2667,8 @@ def main() -> int:
             "via": p["origin"], "clearance": p["clearance"], "checked": p["jev"],
         }
         # Only when true, so a day-old page and this one read the same.
+        if p.get("gate"):
+            jobs[jid]["gate"] = p["gate"]  # a member's tip only on LinkedIn or Indeed
         for flag in ("clearance_check", "also_remote"):
             if p.get(flag):
                 jobs[jid][flag] = True
@@ -2553,7 +2704,7 @@ def main() -> int:
                   "grace_days": GRACE_DAYS},
         "counts": {"total": len(rows), "new_today": sum(1 for j in rows if j["first_seen"] == TODAY),
                    "dropped_since_last_run": len(set(prev_jobs) - set(jobs)), "carried": carried,
-                   "remote_twins_folded": folded,
+                   "remote_twins_folded": folded, "tip_twins": tip_twins,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),
