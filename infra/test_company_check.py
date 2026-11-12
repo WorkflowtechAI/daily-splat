@@ -448,6 +448,30 @@ _, named_boards, _ = cc.page_boards([
 check("page_boards: the name most cards show; a tie goes to the first in sort order; cards with no name give none",
       {k: (b.get("name"), b["cards"]) for k, b in named_boards.items()},
       {"ashby:horizon3ai": ("Horizon3.ai", 3), "greenhouse:tie": ("Alpha", 2), "greenhouse:blank": (None, 2)})
+# A member's tip neither names a board nor counts as its card: the member typed
+# the name, and the tip is on the page without David's approval (review,
+# 2026-11-12). A board only a tip links to has no name, so the splat never reads
+# it as a found board; the census still reads it (the third value counts it).
+_, tip_boards, tip_cards = cc.page_boards([
+    {"company": "Acme (great place!)", "url": f"https://jobs.lever.co/acme/{U1}", "via": "member"},
+    {"company": "Whatever The Member Typed", "url": f"https://jobs.ashbyhq.com/somestartup/{U1}", "via": "member"},
+    {"company": "Real Co", "url": "https://boards.greenhouse.io/realco/jobs/1", "via": "aggregator"},
+    {"company": "AAA Not Real Co", "url": "https://boards.greenhouse.io/realco/jobs/1", "via": "member"},
+    {"company": "Real Co", "url": "https://boards.greenhouse.io/realco/jobs/2", "via": "company"},
+    {"company": "ACME Hiring", "url": f"https://jobs.lever.co/tieco/{U1}", "via": "member"},
+    {"company": "Tieco", "url": f"https://jobs.lever.co/tieco/{U2}", "via": "aggregator"}], {})
+check("page_boards: a member's tip names no board and is not its card; the census still sees it",
+      ({k: (b.get("name"), b["cards"]) for k, b in tip_boards.items()},
+       {k: tip_cards[k] for k in tip_boards}),
+      ({"lever:acme": (None, 0), "ashby:somestartup": (None, 0), "greenhouse:realco": ("Real Co", 2),
+        "lever:tieco": ("Tieco", 1)},
+       {"lever:acme": 1, "ashby:somestartup": 1, "greenhouse:realco": 3, "lever:tieco": 2}))
+TIP_LEDGER = {"version": 1, "boards": {}}
+for b in tip_boards.values():
+    cc.ledger_update(TIP_LEDGER, b, {"postings": {}, "prospect": 0}, cc.TODAY)
+check("page_boards: the splat reads no board only a tip links to, and a tip's name never",
+      [x[:2] for x in splat.auto_boards(TIP_LEDGER["boards"])],
+      [("auto:greenhouse:realco", "Real Co"), ("auto:lever:tieco", "Tieco")])
 
 # ── Open roles on its own board: reading a board ─────────────────────────────
 

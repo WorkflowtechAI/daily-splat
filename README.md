@@ -24,7 +24,8 @@ live the next morning. Contributions are welcome: see **Contributing** below.
   With a track chosen, a Kind row narrows it (`sub=secops,grc`;
   `#track=se&sub=sesec` is security sales engineering).
 - **State:** `/var/lib/daily-splat/state.json` (systemd `StateDirectory`):
-  yesterday's postings, for "new today" and the failed-source grace, and the
+  yesterday's postings, for "new today" and the failed-source grace (each with
+  its source's id, `sid`, which the page leaves out), and the
   Jev answer cache, so each day only pays for its new postings. Beside it,
   `boards.json`: the Company check's census of the employers' own Ashby,
   Greenhouse and Lever boards (see "Company check"), which `splat.py` reads,
@@ -50,11 +51,18 @@ live the next morning. Contributions are welcome: see **Contributing** below.
 **Found boards** (2026-11-12). An employer that reaches the Splat only through
 an aggregator, but whose cards link to its own Ashby, Greenhouse or Lever
 board, gets that board read directly, the way Vultr's is by hand in `ASHBY`:
-its rows then come from the employer (the card says "Employer's own board", with
-the board's own date), and its in-track jobs the aggregator missed show up too.
-The boards come from the Company check's census (`boards.json`), which stores
-for each board the card name that most often links to it and how many cards
-do. A board is read when:
+most of its rows then come from the employer (the card says "Employer's own
+board", with the board's own date), and its in-track jobs the aggregator missed
+show up too. A posting whose board row fails a rule its aggregator copy passed
+stays the copy ("Listed on Foorilla", dated by the board): about 1 in 5 rows on
+found boards in a 2026-11-12 sample, mostly a Foorilla copy that passed on
+Foorilla's infosec category (board rows carry none) or a remote Lever role whose
+board gives only a city. The boards come from the Company check's census
+(`boards.json`), which stores for each board the card name that most often
+links to it and how many cards do, leaving out members' tips: a member types
+the employer's name (for an Ashby link the member must), and a tip on a board
+the reader reads is on the page without David looking at it, so a tip never
+names a board or puts one on this list. A board is read when:
 
 - the census read it OK in the last 7 days (`AUTO_BOARD_DAYS`). The census
   reads the boards today's cards link to, and a found board's own rows link to
@@ -66,30 +74,47 @@ do. A board is read when:
 - it is not hand-kept (`GREENHOUSE`, `LEVER`, `ASHBY`, tokens without case;
   Lever's EU boards are their own key and are read on Lever's EU API host);
 - it has a stored name that is not a staffing firm's (`AGENCY`, checked on the
-  board's token too, since a recruiter's board carries other employers' jobs),
-  and its URLs pass `MIDDLEMAN` and `NO_FETCH`;
+  board's token too, since a recruiter's board carries other employers' jobs;
+  the middlemen's own boards, such as jobgether, ladders and haystack, are in
+  `AGENCY`). The only hosts read are the three vendors' APIs, none of them a
+  `MIDDLEMAN` or `NO_FETCH` host;
 - it is among the 300 busiest by cards (`AUTO_BOARD_MAX`): twice the 147 the
   2026-11-12 page had (98 Greenhouse, 34 Ashby, 14 Lever, 1 Lever EU), and under
   the census's 400 a run, so every one is read daily.
 
 Each is read by the vendor's own reader under the stored name, so a row's key
-(company, title, place) and its read key (the key and the URL) are the
-aggregator copy's, and a posting already read is not read again. Where the
-board titles or places a posting differently than the aggregator did, the
-copy is dropped (`drop_board_copies`, counted in `counts.board_copies`; a remote
-copy marks the board's local row as also remote). They are **not tech
+(company, title, place) is the aggregator copy's. Its read key (the key and the
+URL) is the copy's too when the board links the same URL (45 of 46 in a
+2026-11-12 sample), so that posting is not read again; a board whose links go
+to the employer's own site is read once more. Jev's key also holds the place
+as written, which the board words differently about 1 in 4 times ("Remote" for
+Foorilla's "Remote · United States"), so the row that replaces a copy takes the
+copy's Jev answer (`carry_jev`) and Jev is not asked again: without it Jev was
+asked again the day a board took over, and a pm or se row Jev could not
+confirm that day left the page. Where the board titles or places a posting
+differently than the aggregator did, the copy is dropped (`drop_board_copies`,
+counted in `counts.board_copies`; a remote copy marks the board's local row as
+also remote). A local copy of the board's remote row is the other way round,
+as in the remote fold: the local copy stays, marked also remote, and the
+board's row goes, since a remote row can still drop when its posting says
+hybrid or onsite and a local one cannot. They are **not tech
 sources** (`tech_source`): the hand-kept boards are technology companies by
 review, these are whatever employers an aggregator carries (SpaceX, Axon,
 Flexport, a health-care firm), and their rows came through Foorilla, which is
 not one either; so the titles that pass are the ones that passed before, and
 only where a row comes from changes. Source ids are `auto:<board>`
 (`auto:ashby:horizon3ai`), the same every day while the board is in the
-ledger, so the failed-source grace holds. Three at a time per API host, none
+ledger, and the failed-source grace goes by that id (`source_answered`; the
+state keeps each row's source id, the page does not), not by the label: a
+found board's label is its stored name, which can change and can be another
+source's (Palantir's Lever EU board and its hand-kept Lever board). Three at a time per API host, none
 started after 10 minutes into the run (`AUTO_FETCH_MINUTES`), and three
 failures in a row on a host stop its boards for the run (`AUTO_BREAKER`; a 404
-is that board's, not the vendor's). One list call per board: about 150 more
-calls a run today, and the first run asks Jev about and reads the found
-boards' rows the page did not have (about 1.7 per board in a 2026-11-12 sample
+is that board's, not the vendor's; a read that answers starts the count
+again). One list call per board: about 150 more calls a run today, and the
+first run asks Jev about and reads the found boards' rows the page did not
+have, plus a read for the few whose board links elsewhere (about 1.7 new rows
+per board in a 2026-11-12 sample
 of 18 of the busiest; the Lever ones kept none, their remote roles giving only
 a city, which `where` does not take as remote). They are not counted toward failing closed, and the page
 folds them into one line under the source list.
@@ -329,9 +354,10 @@ The hiring source, added 2026-11-12 after the group argued whether Vultr's
   which holds downloads that can be fetched again): per board, the first and
   last day it was read and every day it was read (`reads`, as runs of days in
   a row), the card company name that most often links to it (`name`, a tie to
-  the first in sort order) and how many cards do (`cards`), both as of its last
-  read (an entry written before 2026-11-12 has neither until its next read, and
-  `splat.py` reads no found board without a name), and per listing its title, place, board date, and the first and
+  the first in sort order) and how many cards do (`cards`), both leaving out
+  members' tips and both as of its last read (a read whose cards give no name
+  keeps the last one; an entry written before 2026-11-12 has neither until its
+  next read, and `splat.py` reads no found board without a name), and per listing its title, place, board date, and the first and
   last day the census saw it. No descriptions. A listing not seen for 180
   days, a board not read for 180 days, and read days as old are pruned. A
   board that fails leaves its ledger as it was and its employers keep their

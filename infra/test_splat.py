@@ -923,7 +923,8 @@ def check_auto_boards() -> tuple[int, int]:
         "ashby:par technology": entry("PAR Technology", 2, ago(2)),   # a board name with a space
         "greenhouse:insightglobal": entry("Insight Global", 5, ago(1)),   # a staffing firm by name
         "lever:jobgether": entry("Acme Cloud", 5, ago(1)),       # a recruiter's board under one client's name
-        "greenhouse:diceboard": entry("Dice Co", 5, ago(1), "https://www.dice.com/jobs/x"),   # a middleman's link
+        "lever:haystack": entry("Northwind", 5, ago(1)),         # a middleman's own board: AGENCY on the token
+        "ashby:theladders": entry("Contoso", 5, ago(1)),
         "ashby:noname": entry(None, 3, ago(1)),                   # written before the ledger kept names
         "ashby:blank": entry("  ", 3, ago(1)),
         "greenhouse:nocards": entry("Fleetio", None, ago(1)),    # no count: last
@@ -1008,6 +1009,21 @@ def check_auto_boards() -> tuple[int, int]:
         mode["fail"] = None
         calls.clear()
         lever_ok = len(splat.src_auto("lever-eu", "siteimprove", "Siteimprove"))   # another host: not stopped
+        # Failures in a row, not in all: a read that answers starts the count again,
+        # so two, an answer, then two more are all tried; a third in a row stops the host.
+        splat._AUTO_FAILS.clear()
+        calls.clear()
+        streak = []
+        for fail in ("503: Service Unavailable", "503: Service Unavailable", None, "503: Service Unavailable",
+                     "503: Service Unavailable", "503: Service Unavailable", None):
+            mode["fail"] = fail
+            try:
+                splat.src_auto("greenhouse", "purestorage", "Pure Storage")
+                streak.append("read")
+            except RuntimeError as e:
+                streak.append("stopped" if str(e).startswith("not read today") else "failed")
+        n_streak = len(calls)
+        mode["fail"] = None
         splat._AUTO_FAILS.clear()
         # Late in the run: no found board starts.
         splat._T0 = time.monotonic() - splat.AUTO_FETCH_MINUTES * 60 - 1
@@ -1031,6 +1047,26 @@ def check_auto_boards() -> tuple[int, int]:
     merged, _, _ = splat.rules_pass([("foorilla", copy), ("auto:greenhouse:purestorage", dict(board_row or {}))], {})
     key = f"{splat.norm('Pure Storage')}|{splat.norm(T1)}|pnw"
     kept = merged.get(key) or {}
+    # A board whose posting link is the employer's own site (Okta's Greenhouse
+    # absolute_url is): the row key holds, the read key does not.
+    okta_copy = splat.posting(title="Security Engineer", company="Okta Inc", url="https://job-boards.greenhouse.io/okta/jobs/8093704",
+                              location="Seattle, WA", posted=ago(2), origin="aggregator")
+    okta_own = splat.posting(title="Security Engineer", company="Okta Inc",
+                             url="https://www.okta.com/company/careers/opportunity/8093704?gh_jid=8093704",
+                             location="Seattle, Washington", posted=ago(2), origin="company")
+    okta, _, _ = splat.rules_pass([("foorilla", okta_copy), ("auto:greenhouse:okta2", okta_own)], {})
+    okta_key = f"{splat.norm('Okta Inc')}|{splat.norm('Security Engineer')}|pnw"
+
+    # The copy's Jev answer goes to the row that replaced it (carry_jev): its own
+    # Jev key holds the place as the board words it, so it differs.
+    ans = {"track": kept.get("track"), "level": kept.get("level"), "clearance": False, "seen": ago(3)}
+    jev_cache = {splat.jev_key(copy): dict(ans)}
+    carried_n = splat.carry_jev(merged, jev_cache)
+    carried_again = splat.carry_jev(merged, jev_cache)   # the row has its own now: nothing to carry
+    unconfirmed = splat.apply_jev(dict(kept), None)       # what Jev down did to a pm or se row without it
+    confirmed = splat.apply_jev(dict(kept), jev_cache.get(splat.jev_key(kept)))
+    other_cache = {splat.jev_key(kept): {**ans, "level": "entry"}, splat.jev_key(copy): dict(ans)}
+    splat.carry_jev(merged, other_cache)                   # never over the row's own answer
 
     # Not a tech source: "Program Manager" from a found board drops as Foorilla's
     # copy does, and passes on a hand-kept tech board.
@@ -1046,15 +1082,57 @@ def check_auto_boards() -> tuple[int, int]:
     # drop_board_copies: one posting, two keys.
     tu = "https://jobs.ashbyhq.com/temporal/11111111-2222-3333-4444-555555555555"
     cands = {
-        "pure storage|sled west|pnw": {"origin": "company", "url": gh_url, "where": "pnw"},
-        "pure storage|west|remote": {"origin": "aggregator", "url": gh_url + "?gh_src=feed", "where": "remote"},
+        "pure storage|sled west|pnw": {"origin": "company", "url": gh_url, "where": "pnw", "posted": ago(20)},
+        "pure storage|west|remote": {"origin": "aggregator", "url": gh_url + "?gh_src=feed", "where": "remote", "posted": ago(2)},
         "pure storage|other|pnw": {"origin": "aggregator", "url": "https://job-boards.greenhouse.io/purestorage/jobs/7000009", "where": "pnw"},
-        "temporal|sse|pnw": {"origin": "aggregator", "url": tu, "where": "pnw"},
-        "temporal|sse|remote": {"origin": "company", "url": tu.replace("temporal", "Temporal"), "where": "remote"},
+        # A local copy of the board's remote row: local wins, as in the remote fold.
+        "temporal|sse|pnw": {"origin": "aggregator", "url": tu, "where": "pnw", "posted": None},
+        "temporal|sse|remote": {"origin": "company", "url": tu.replace("temporal", "Temporal"), "where": "remote", "posted": ago(5)},
+        "temporal|staff sse|remote": {"origin": "aggregator", "url": tu, "where": "remote", "posted": ago(4)},
         "pure storage|sled west|oregon": {"origin": "member", "url": gh_url, "where": "oregon"},   # a tip: its own step
         "workday|x|pnw": {"origin": "aggregator", "url": "https://acme.wd5.myworkdayjobs.com/External/job/Portland/SRE_R1", "where": "pnw"},
     }
     copies = splat.drop_board_copies(cands)
+
+    # The case that lost a job: Ashby says "Remote - US" with workplaceType Hybrid,
+    # Foorilla lists the same posting in Seattle. The reader's hybrid drops a remote
+    # row (not_remote) and never a local one, so the Seattle row has to be the one kept.
+    hy = "https://jobs.ashbyhq.com/temporal/22222222-2222-3333-4444-555555555555"
+    hy_raw = [("foorilla", splat.posting(title="Security Engineer", company="Temporal", url=hy, location="Seattle, WA",
+                                         posted=ago(2), origin="aggregator")),
+              ("auto:ashby:temporal", splat.posting(title="Security Engineer", company="Temporal", url=hy, location="Remote - US",
+                                                    remote=False, posted=ago(9), origin="company", mode="hybrid"))]
+    hy_cands, _, _ = splat.rules_pass(hy_raw, {})
+    hy_keys = sorted(hy_cands)
+    hy_gone = splat.drop_board_copies(hy_cands)
+    splat.fold_remote_twins(hy_cands)
+    hy_left = [(p["where"], p["origin"], bool(p.get("also_remote")), p["posted"],
+                splat.not_remote(p, {"mode": "hybrid"})) for p in hy_cands.values()]
+
+    # The failed-source grace by source id (source_answered). Palantir's Lever EU
+    # board and its hand-kept Lever board share a label; Acme's stored name changed.
+    gstats = {"lever:palantir": {"label": "Palantir", "ok": True},
+              "auto:lever-eu:palantir": {"label": "Palantir", "ok": False},
+              "auto:greenhouse:acme": {"label": "ACME Corp", "ok": False},
+              "foorilla": {"label": "Foorilla", "ok": True}}
+    grace = [splat.source_answered(j, gstats) for j in (
+        {"source": "Palantir", "sid": "auto:lever-eu:palantir"},   # failed: carried, though a "Palantir" answered
+        {"source": "Palantir", "sid": "lever:palantir"},           # answered: removed
+        {"source": "Acme", "sid": "auto:greenhouse:acme"},         # failed under its old name: carried
+        {"source": "Gone Co", "sid": "auto:greenhouse:gone"},      # not a source today: removed
+        {"source": "Foorilla"},                                    # a row from before the id: by label
+        {"source": "Nobody"})]
+
+    # Failing closed counts the listed sources only: the 2026-11-12 page had 127
+    # listed and 147 found. Every found board down is not the box offline; most
+    # listed sources down is, whatever the found boards did.
+    def sources(listed_ok, listed, found_ok, found):
+        st = {f"src{i}": {"label": f"S{i}", "ok": i < listed_ok} for i in range(listed)}
+        st.update({f"auto:greenhouse:b{i}": {"label": f"B{i}", "ok": i < found_ok} for i in range(found)})
+        return st
+    closed = [splat.fails_closed(sources(*a), only) for a, only in (
+        ((127, 127, 0, 147), None), ((63, 127, 147, 147), None), ((64, 127, 0, 147), None),
+        ((2, 4, 0, 0), None), ((1, 4, 0, 0), None), ((0, 127, 0, 147), {"auto"}))]
     main_src = _inspect.getsource(splat.main)
     at = lambda s: main_src.find(s)   # noqa: E731
 
@@ -1065,8 +1143,11 @@ def check_auto_boards() -> tuple[int, int]:
          {"auto:ashby:horizon3ai": "Horizon3.ai", "auto:ashby:par technology": "PAR Technology"}),
         ("auto_boards: the vendor and token from the ledger key", [x[2:] for x in picked][-3:],
          [("lever-eu", "palantir"), ("lever-eu", "siteimprove"), ("greenhouse", "nocards")]),
-        ("auto_boards: the same ledger gives the same ids (the failed-source grace keys on them)",
+        ("auto_boards: the same ledger gives the same ids, day to day",
          [x[0] for x in splat.auto_boards(json.loads(json.dumps(led)))], want_ids),
+        ("auto_boards: only the vendors' APIs are read, never a MIDDLEMAN or NO_FETCH host",
+         [h for h in splat.AUTO_API.values() if splat.MIDDLEMAN.search(f"https://{h}/") or splat.NO_FETCH.search(f"https://{h}/")],
+         []),
         ("auto_boards: the cap keeps the busiest", capped, want_ids[:2]),
         ("auto_boards: a week's cutoff, 300 boards, 10 minutes, 3 failures (as the README says)",
          (splat.AUTO_BOARD_DAYS, splat.AUTO_BOARD_MAX, splat.AUTO_FETCH_MINUTES, splat.AUTO_BREAKER), (7, 300, 10, 3)),
@@ -1085,8 +1166,19 @@ def check_auto_boards() -> tuple[int, int]:
         ("rules_pass: the board's row replaces the aggregator's copy, same key, the board's date",
          (list(merged), kept.get("origin"), kept.get("source"), kept.get("posted")),
          ([key], "company", "auto:greenhouse:purestorage", ago(20))),
-        ("read_key: the same as the copy's, so the posting is not read again",
+        ("read_key: the copy's when the board links the same URL, so the posting is not read again",
          splat.read_key(key, kept.get("url", "")), splat.read_key(key, copy["url"])),
+        ("read_key: a board linking the employer's own site keeps the row key, not the read key (read once more)",
+         (list(okta), okta[okta_key]["origin"] if okta_key in okta else None,
+          splat.read_key(okta_key, okta.get(okta_key, {}).get("url", "")) == splat.read_key(okta_key, okta_copy["url"])),
+         ([okta_key], "company", False)),
+        ("jev_key: the board words the place differently, so the row keeps the copy's key (jev_alt)",
+         (splat.jev_key(kept) != splat.jev_key(copy), kept.get("jev_alt") == splat.jev_key(copy)), (True, True)),
+        ("carry_jev: the copy's answer under the row's own key, once; never over the row's own",
+         (carried_n, carried_again, jev_cache.get(splat.jev_key(kept)), other_cache[splat.jev_key(kept)]["level"]),
+         (1, 0, ans, "entry")),
+        ("carry_jev: the row stands on the copy's answer, as without it a pm or se row could not",
+         (confirmed, unconfirmed), (True, kept.get("track") not in splat.CONFIRM)),
         ("tech_source: a found board's PM passes only where the copy's did",
          (len(pm_auto), len(pm_agg), [p["track"] for p in pm_tech.values()]), (0, 0, ["pm"])),
         ("tech_source: a found board's solutions architect is not a sales engineer", sa_auto, None),
@@ -1095,18 +1187,34 @@ def check_auto_boards() -> tuple[int, int]:
         ("src_auto: AUTO_BREAKER failures in a row stop that host's boards",
          (n503, errs503[-1].startswith("not read today")), (splat.AUTO_BREAKER, True)),
         ("src_auto: another host's boards go on", lever_ok, 1),
+        ("src_auto: a read that answers starts the count again (failures in a row, not in all)",
+         (streak, n_streak), (["failed", "failed", "read", "failed", "failed", "failed", "stopped"], 6)),
         ("src_auto: none starts after AUTO_FETCH_MINUTES", (late.startswith("not read today"), late_calls), (True, 0)),
-        ("drop_board_copies: the board's row stays, its copies under other keys go, a tip and other postings stay",
+        ("drop_board_copies: the board's row stays, its copies under other keys go; a local copy of a remote row "
+         "stays in its place; a tip and other postings stay",
          (copies, sorted(cands)),
-         (2, ["pure storage|other|pnw", "pure storage|sled west|oregon", "pure storage|sled west|pnw",
-              "temporal|sse|remote", "workday|x|pnw"])),
-        ("drop_board_copies: a remote copy marks the local row also_remote",
-         (cands["pure storage|sled west|pnw"].get("also_remote"), "also_remote" in cands["temporal|sse|remote"]), (True, False)),
-        ("main: found boards from the ledger; not counted toward failing closed; copies dropped before the twin steps",
-         ("all_sources(only, board_ledger)" in main_src, 'not sid.startswith("auto:")' in main_src,
-          0 < at("rules_pass(raw, board_ledger)") < at("drop_board_copies(cands)") < at("drop_tip_twins("),
+         (3, ["pure storage|other|pnw", "pure storage|sled west|oregon", "pure storage|sled west|pnw",
+              "temporal|sse|pnw", "workday|x|pnw"])),
+        ("drop_board_copies: a remote copy marks the local row also_remote, the local copy takes the board row's date",
+         ({k: (p.get("also_remote"), p.get("posted")) for k, p in cands.items() if k in ("pure storage|sled west|pnw", "temporal|sse|pnw")}),
+         {"pure storage|sled west|pnw": (True, ago(20)), "temporal|sse|pnw": (True, ago(5))}),
+        ("drop_board_copies: a remote board row the reader calls hybrid no longer takes its Seattle copy with it",
+         (hy_keys, hy_gone, hy_left),
+         (["temporal|security engineer|pnw", "temporal|security engineer|remote"], 1, [("pnw", "aggregator", True, ago(2), False)])),
+        ("source_answered: by the source's id; a row from before the id by its label",
+         grace, [False, True, False, True, True, True]),
+        ("fails_closed: the listed sources decide, the found boards never",
+         closed, [False, True, False, False, True, False]),
+        ("main: found boards from the ledger; fails_closed; copies dropped before the twin steps; Jev carried before asked",
+         ("all_sources(only, board_ledger)" in main_src, "if fails_closed(stats, only):" in main_src,
+          0 < at("rules_pass(raw, board_ledger)") < at("drop_board_copies(cands)") < at("drop_tip_twins(")
+          < at("carry_jev(cands, jev_cache)") < at("jev_key(p) not in jev_cache][:JEV_MAX_PER_RUN]"),
           '"board_copies": board_copies' in main_src),
          (True, True, True, True)),
+        ("main: the grace by source id, kept in the state and not on the page",
+         ('"sid": p["source"]' in main_src, "if source_answered(j, stats):" in main_src,
+          '"jobs": [{k: v for k, v in j.items() if k != "sid"} for j in rows]' in main_src),
+         (True, True, True)),
     ]
     bad = 0
     for label, g, w in checks:

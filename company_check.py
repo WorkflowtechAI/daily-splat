@@ -682,10 +682,18 @@ def page_boards(rows: list[dict], alias: dict[str, str]):
     Each board also carries the card company name that most often links to it
     (`name`; a tie goes to the first in sort order) and its card count
     (`cards`). ledger_update keeps both, and splat.py reads the board directly
-    under that name (its auto_boards), busiest first."""
+    under that name (its auto_boards), busiest first. Both leave out members'
+    tips (via "member"): a member types the employer's name (for an Ashby link
+    the member must), and a tip on a board the reader reads is on the page
+    without David looking at it, so a tip must not name a board, win a tie for
+    it, or put a board only it links to on the splat's daily list (review,
+    2026-11-12). Such a board has no name and is not read as a found board;
+    the census still reads it for its employer's facts (the third value counts
+    every card)."""
     by_emp: dict[str, set[str]] = {}
     boards: dict[str, dict] = {}
     cards: collections.Counter = collections.Counter()
+    feeds: collections.Counter = collections.Counter()
     names: dict[str, collections.Counter] = {}
     for j in rows:
         b = board_of(j.get("url"))
@@ -694,13 +702,15 @@ def page_boards(rows: list[dict], alias: dict[str, str]):
         boards.setdefault(b["key"], b)
         cards[b["key"]] += 1
         company = j.get("company")
-        if isinstance(company, str) and company.strip():
-            names.setdefault(b["key"], collections.Counter())[company.strip()[:200]] += 1
+        if j.get("via") != "member":
+            feeds[b["key"]] += 1
+            if isinstance(company, str) and company.strip():
+                names.setdefault(b["key"], collections.Counter())[company.strip()[:200]] += 1
         eid = alias.get(page_key(company))
         if eid:
             by_emp.setdefault(eid, set()).add(b["key"])
     for key, b in boards.items():
-        b["cards"] = cards[key]
+        b["cards"] = feeds[key]
         if key in names:
             b["name"] = min(names[key].items(), key=lambda x: (-x[1], x[0]))[0]
     return by_emp, boards, cards

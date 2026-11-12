@@ -1599,11 +1599,19 @@ def tech_source(sid: str) -> bool:
 # "company", the board's own dates), and its in-track jobs the aggregator missed
 # show up too. The boards are the ones company_check.py's census read
 # (boards.json), each with the card name that most often links to it (`name`)
-# and how many cards do (`cards`). Each is read by its vendor's own reader under
-# that name, so a row keys (company|title|where) and reads (read_key: the key
-# and the URL) as the aggregator's copy did, and a posting read before is not
-# read again. On 2026-11-12, 147 boards linked from aggregator rows were not
-# hand-kept (98 Greenhouse, 34 Ashby, 14 Lever, 1 Lever EU).
+# and how many cards do (`cards`), members' tips left out of both (a member
+# types the name). Each is read by its vendor's own reader under that name, so a
+# row keys (company|title|where) as the aggregator's copy did. Its read key (the
+# key and the URL) is the copy's too where the URL is (45 of 46 in a 2026-11-12
+# sample), so that posting is not read again. Its Jev key (title, company, place
+# as written) is not, for about 1 in 4 (12 of those 46: the board words the
+# place differently, "Remote" for Foorilla's "Remote · United States"), so
+# rules_pass hands the copy's Jev answer to the row that replaces it (jev_alt)
+# and Jev is not asked again. On 2026-11-12, 147 boards linked from
+# aggregator rows were not hand-kept (98 Greenhouse, 34 Ashby, 14 Lever, 1 Lever
+# EU). A posting whose board row fails a rule its copy passed (the copy had
+# Foorilla's infosec topic, or a remote Lever role names only a city) stays the
+# aggregator's copy, dated by the board (board_redate).
 #
 # - Read OK within AUTO_BOARD_DAYS. The census reads only the boards today's
 #   cards link to, and a found board's own rows link to it, so a board in use
@@ -1614,8 +1622,10 @@ def tech_source(sid: str) -> bool:
 #   more or one that is gone (its reads fail).
 # - Not hand-kept (GREENHOUSE, LEVER, ASHBY above; Lever EU is its own key).
 # - A usable name that is not a staffing firm's (AGENCY, on the token too: a
-#   recruiter's board carries other employers' jobs under its one name), on a
-#   board whose URLs pass MIDDLEMAN and NO_FETCH.
+#   recruiter's board carries other employers' jobs under its one name; the
+#   middlemen's own boards, jobgether, ladders, haystack, are in AGENCY). The
+#   only hosts read are the vendors' APIs (AUTO_API), never a MIDDLEMAN or
+#   NO_FETCH host; the ledger's link is never fetched, so it is not checked.
 # - At most AUTO_BOARD_MAX, the busiest (cards) first: twice the 2026-11-12
 #   count, and under the census's BOARD_MAX (400) so each one is read daily.
 #
@@ -1625,7 +1635,9 @@ def tech_source(sid: str) -> bool:
 # not a tech source either. So the titles that pass are the ones that passed
 # before; only where a row comes from changes. The family is "auto"
 # ("auto:ashby:horizon3ai"), an id that stays the same while the board is in
-# the ledger, so the failed-source grace (by label, the stored name) holds.
+# the ledger. The failed-source grace goes by that id (source_answered), not by
+# the label: a found board's label is its stored name, which can change and can
+# be another source's (Palantir's Lever EU board and its hand-kept Lever board).
 AUTO_BOARD_DAYS = 7
 AUTO_BOARD_MAX = 300
 AUTO_FETCH_MINUTES = 10   # no found board starts later in the run: the rest of RUN_BUDGET is Jev's and the reader's
@@ -1661,9 +1673,6 @@ def auto_boards(ledger: dict | None) -> list[tuple[str, str, str, str]]:
             continue
         name = rec.get("name").strip() if isinstance(rec.get("name"), str) else ""
         if not name or len(name) > 200 or AGENCY.search(name) or AGENCY.search(token):
-            continue
-        link = rec.get("link") if isinstance(rec.get("link"), str) else ""
-        if any(MIDDLEMAN.search(u) or NO_FETCH.search(u) for u in (f"https://{AUTO_API[ats]}/", link)):
             continue
         cards = rec.get("cards")
         cards = cards if isinstance(cards, int) and not isinstance(cards, bool) else 0
@@ -2718,20 +2727,36 @@ def drop_board_copies(cands: dict) -> int:
     Storage's "... Cyber Resilience - SLED West" was "... - West" on Foorilla,
     Temporal's US-remote role a Seattle copy, Fluidstack's Seattle-and-remote
     roles remote copies. A remote copy of a local row marks it also_remote, as
-    the remote fold would. Returns how many went."""
-    own: dict[tuple, dict] = {}
-    for p in cands.values():
+    the remote fold would.
+
+    A local copy of a remote board row is the other way round: local wins, as in
+    fold_remote_twins. The copy stays, marked also_remote, and the board's row
+    goes; the copy then stands for the posting against its other copies. A
+    remote row can still drop as not remote (not_remote: the posting says hybrid
+    or onsite) and a local row never does, so keeping the board's remote row
+    lost the job whenever that happened (review, 2026-11-12: an Ashby "Remote -
+    US" role with workplaceType Hybrid that Foorilla lists in Seattle). Returns
+    how many rows went."""
+    own: dict[tuple, str] = {}
+    for k, p in cands.items():
         if p.get("origin") == "company" and (bk := board_key(p.get("url"))):
-            own.setdefault(bk, p)
+            own.setdefault(bk, k)
     gone = 0
     for k in list(cands):
-        p = cands[k]
-        mine = own.get(board_key(p.get("url"))) if p.get("origin") == "aggregator" else None
-        if mine is None:
+        p = cands.get(k)
+        if p is None or p.get("origin") != "aggregator" or not (bk := board_key(p.get("url"))) or bk not in own:
             continue
-        if p.get("where") == "remote" and mine.get("where") != "remote":
-            mine["also_remote"] = True
-        del cands[k]
+        mk = own[bk]
+        mine = cands[mk]
+        if mine.get("where") == "remote" and p.get("where") != "remote":
+            p["also_remote"] = True
+            p["posted"] = p.get("posted") or mine.get("posted")
+            del cands[mk]
+            own[bk] = k
+        else:
+            if p.get("where") == "remote" and mine.get("where") != "remote":
+                mine["also_remote"] = True
+            del cands[k]
         gone += 1
     return gone
 
@@ -2799,8 +2824,62 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
         if not old or (old["origin"] != "company" and p["origin"] == "company"):
             if old and not p["posted"]:
                 p["posted"] = old["posted"]
+            if old:
+                # The copy's Jev key, for its answer (carry_jev): the board often
+                # words the place differently ("Remote" for "Remote · United States").
+                p["jev_alt"] = jev_key(old)
             cands[k] = p
     return cands, older_by_board, workday_30_plus
+
+
+def carry_jev(cands: dict, jev_cache: dict) -> int:
+    """A row that took an aggregator copy's place in rules_pass (a found board's,
+    mostly) takes the copy's cached Jev answer when it has none of its own. The
+    same company, title and place: Jev's key also holds the place as written,
+    which the board often words differently (about 1 in 4 on 2026-11-12), so
+    without this Jev was asked again the day a board took over, and a pm or se
+    row it could not confirm that day (Jev down) left the page though its copy
+    was confirmed. Stored under the row's own key, so the next days find it
+    there and the copy's key can age out. Returns how many were carried."""
+    n = 0
+    for p in cands.values():
+        alt = p.get("jev_alt")
+        if alt and alt in jev_cache and (k := jev_key(p)) not in jev_cache:
+            jev_cache[k] = dict(jev_cache[alt])
+            n += 1
+    return n
+
+
+def listed_answered(stats: dict) -> tuple[int, int]:
+    """(answered, all) over the listed sources. The found boards ("auto:") are
+    not counted: they are many small sources on three vendors' APIs, so one
+    vendor down, or the found boards' time running out, would read as the box
+    offline, and a lost network shows as plainly in the listed sources."""
+    core = [s for sid, s in stats.items() if not sid.startswith("auto:")]
+    return sum(1 for s in core if s["ok"]), len(core)
+
+
+def fails_closed(stats: dict, only) -> bool:
+    """Fewer than half the listed sources answered: the box lost its network, so
+    nothing is written. A partial run (--only) never writes anyway."""
+    ok, n = listed_answered(stats)
+    return not only and ok < n / 2
+
+
+def source_answered(j: dict, stats: dict) -> bool:
+    """Whether the source of a job on yesterday's page answered today: if so, a
+    job missing today was taken down; if not, it is carried for GRACE_DAYS. By
+    the source's id (sid, kept in the state since 2026-11-12), not its label: a
+    found board's label is its stored name, which the census can change and
+    which can be another source's ("Palantir" is the hand-kept Lever board's and
+    its Lever EU board's), and the first source with that label decided for
+    both. A source not read today (a found board off the list) answered nothing
+    for the job: it goes. A row from before the id goes by its label, as before."""
+    sid = j.get("sid")
+    if isinstance(sid, str) and sid:
+        s = stats.get(sid)
+        return s["ok"] if s else True
+    return next((s["ok"] for s in stats.values() if s["label"] == j.get("source")), True)
 
 
 def main() -> int:
@@ -2850,13 +2929,10 @@ def main() -> int:
             raw += [(sid, r) for r in rows]
             print(f"{sid:32} {'OK ' if err is None else 'ERR'} {len(rows):6} {err or ''}", file=sys.stderr)
 
-    # The found boards are not counted: they are many small sources on three
-    # vendors' APIs, so one vendor down would read as the box offline, and a
-    # lost network shows as plainly in the listed sources.
-    core = [s for sid, s in stats.items() if not sid.startswith("auto:")]
-    ok = sum(1 for s in core if s["ok"])
-    if not only and ok < len(core) / 2:
-        print(f"FAIL CLOSED: only {ok}/{len(core)} sources answered; leaving the page as it was", file=sys.stderr)
+    # The found boards are not counted (listed_answered).
+    if fails_closed(stats, only):
+        ok, n = listed_answered(stats)
+        print(f"FAIL CLOSED: only {ok}/{n} sources answered; leaving the page as it was", file=sys.stderr)
         return 2
 
     # Rules first: cheap, and they decide everything Jev does not. The employer's
@@ -2866,6 +2942,7 @@ def main() -> int:
     board_copies = drop_board_copies(cands)
     tip_twins = drop_tip_twins(cands)
     folded = fold_remote_twins(cands)
+    carry_jev(cands, jev_cache)   # a board row that replaced a copy takes its Jev answer
 
     # Jev refines track and level on postings it has not seen.
     jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "se_unconfirmed": 0,
@@ -2968,6 +3045,7 @@ def main() -> int:
             "posted": p["posted"], "first_seen": old.get("first_seen", TODAY), "last_seen": TODAY,
             "salary": p["salary"], "source": stats[p["source"]]["label"],
             "via": p["origin"], "clearance": p["clearance"], "checked": p["jev"],
+            "sid": p["source"],   # the state's, for source_answered; not on the page
         }
         # Only when true, so a day-old page and this one read the same.
         if p.get("gate"):
@@ -2986,8 +3064,7 @@ def main() -> int:
     for jid, j in prev_jobs.items():
         if jid in jobs:
             continue
-        src_ok = next((s["ok"] for s in stats.values() if s["label"] == j.get("source")), True)
-        if src_ok:
+        if source_answered(j, stats):
             continue  # the source answered and this job was not in it: removed
         if age_days(j.get("last_seen")) is not None and age_days(j["last_seen"]) <= GRACE_DAYS:
             jobs[jid] = {**j, "carried": True}
@@ -3012,7 +3089,8 @@ def main() -> int:
                    "older_by_board": older_by_board,
                    # Workday rows its own list calls "30+" days old, and their aggregator copies (rules_pass)
                    "workday_30_plus": workday_30_plus,
-                   # aggregator copies of a posting its own board row is on the page with (drop_board_copies)
+                   # second rows of one board posting under another key: aggregator copies, or the
+                   # board's remote row beside a local copy (drop_board_copies)
                    "board_copies": board_copies,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
@@ -3028,7 +3106,7 @@ def main() -> int:
         "sources": [{"id": sid, **{k: v for k, v in s.items() if k != "secs"}} for sid, s in sorted(stats.items())],
         "jev": jev_stats,
         "reader": read_stats,
-        "jobs": rows,
+        "jobs": [{k: v for k, v in j.items() if k != "sid"} for j in rows],
     }
     print(json.dumps({k: page[k] for k in ("counts", "jev", "reader")}, indent=1), file=sys.stderr)
     if args.dump:
