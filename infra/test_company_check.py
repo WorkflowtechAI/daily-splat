@@ -15,7 +15,7 @@ import sys
 import tempfile
 import time
 import urllib.parse
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +23,10 @@ spec = importlib.util.spec_from_file_location("company_check", ROOT / "company_c
 cc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cc)
 cc.COURT_GAP = 0   # no pacing in tests
+# splat.py, for the board patterns and keys the two files must share.
+spec_splat = importlib.util.spec_from_file_location("splat", ROOT / "splat.py")
+splat = importlib.util.module_from_spec(spec_splat)
+spec_splat.loader.exec_module(splat)
 
 bad = 0
 total = 0
@@ -365,6 +369,205 @@ check("violations: never through a subsidiary's legal name",
       cc.violations({**E, "names": ["Synopsys"], "legal": ["Synopsys, Inc.", "ANSYS, Inc."]}, {"ansys": "ansys"})["kind"], "search")
 check("violations: otherwise a name search", cc.violations({**E, "names": ["Zed"], "legal": ["Zed Holdings, Inc."]}, parents),
       {"link": "https://violationtracker.goodjobsfirst.org/?company_op=starts&company=Zed+Holdings+Inc", "kind": "search"})
+# Vultr's first legal name is also an unrelated company's and sits on its own avoid
+# list: neither the search nor a parent match may use it (2026-11-12).
+VULTR = {"id": "vultr", "names": ["Vultr"], "legal": ["The Constant Company, LLC", "Choopa, LLC"],
+         "avoid": ["The Constant Company, LLC of Lawrenceville GA", "Constant Contact, Inc.", "Vultron LLC",
+                   "The Constant Company, LLC"], "ueis": [], "vt": None}
+check("violations: the search uses the first legal name not avoided", cc.violations(VULTR, {}),
+      {"link": "https://violationtracker.goodjobsfirst.org/?company_op=starts&company=Choopa+LLC", "kind": "search"})
+check("violations: no parent matched through an avoided legal name", cc.violations(VULTR, {"constant": "constant-co"})["kind"],
+      "search")
+check("violations: every legal name avoided searches the board name",
+      cc.violations({**VULTR, "avoid": VULTR["legal"]}, {})["link"], "https://violationtracker.goodjobsfirst.org/?company_op=starts&company=Vultr")
+check("search_name: the first legal name not avoided", cc.search_name(VULTR), "Choopa")
+check("search_name: every legal name avoided, the board name", cc.search_name({**VULTR, "avoid": VULTR["legal"]}), "Vultr")
+check("search_name: no legal names, the board name", cc.search_name({"names": ["Tailscale"]}), "Tailscale")
+
+# ── Open roles on its own board: discovery ───────────────────────────────────
+
+for name in ("GH_URL", "LEVER_URL", "ASHBY_URL"):
+    check(f"{name} is splat.py's pattern", (getattr(cc, name).pattern, getattr(cc, name).flags),
+          (getattr(splat, name).pattern, getattr(splat, name).flags))
+U1, U2 = "9120a88b-06ce-403a-b7c9-0fba02756386", "215bd046-ace9-406b-baf7-5eb6c035bd8c"
+BOARD_URLS = [
+    (f"https://jobs.ashbyhq.com/Vultr/{U1}", "ashby:vultr", U1),
+    (f"https://jobs.ashbyhq.com/vultr/{U2.upper()}?src=x", "ashby:vultr", U2),       # Vultr and vultr: one board
+    (f"https://jobs.ashbyhq.com/PAR%20Technology/{U1}", "ashby:par technology", U1),
+    ("https://boards.greenhouse.io/okta/jobs/8093704", "greenhouse:okta", "8093704"),
+    ("https://job-boards.greenhouse.io/Okta/jobs/8093704?gh_src=li", "greenhouse:okta", "8093704"),
+    ("https://job-boards.eu.greenhouse.io/veeamsoftware/jobs/5001960101", "greenhouse:veeamsoftware", "5001960101"),
+    (f"https://jobs.lever.co/palantir/{U1}", "lever:palantir", U1),
+    (f"https://jobs.eu.lever.co/siteimprove/{U2}", "lever-eu:siteimprove", U2),
+    ("https://acme.wd5.myworkdayjobs.com/External/job/Portland/SRE_R1", None, None),
+    ("https://www.linkedin.com/jobs/view/4012345678/", None, None),
+    ("https://www.governmentjobs.com/careers/portlandor/jobs/1", None, None),
+    ("https://careers.example.com/jobs/42", None, None),
+    (f"https://evil.example/jobs.ashbyhq.com/vultr/{U1}", None, None),                  # the host decides, not the path
+    ("https://www.okta.com/company/careers/opportunity/8093704?gh_jid=8093704", None, None),  # never guessed
+]
+for url, key, pid in BOARD_URLS:
+    b = cc.board_of(url)
+    check(f"board_of({url!r})", (b["key"], b["id"]) if b else None, (key, pid) if key else None)
+    check(f"board_of and splat.board_key agree on {url!r}", splat.board_key(url), (b["key"], b["id"]) if b else None)
+check("board_of: Ashby's board link and API", {k: cc.board_of(BOARD_URLS[2][0])[k] for k in ("link", "api")},
+      {"link": "https://jobs.ashbyhq.com/par%20technology", "api": "https://api.ashbyhq.com/posting-api/job-board/par%20technology"})
+check("board_of: Greenhouse's board link and API, EU too", {k: cc.board_of(BOARD_URLS[5][0])[k] for k in ("link", "api")},
+      {"link": "https://job-boards.greenhouse.io/veeamsoftware", "api": "https://boards-api.greenhouse.io/v1/boards/veeamsoftware/jobs"})
+check("board_of: Lever EU's board link and API", {k: cc.board_of(BOARD_URLS[7][0])[k] for k in ("link", "api", "ats")},
+      {"link": "https://jobs.eu.lever.co/siteimprove", "api": "https://api.eu.lever.co/v0/postings/siteimprove?mode=json",
+       "ats": "lever-eu"})
+PAGE_ROWS = [
+    {"company": "Vultr", "url": f"https://jobs.ashbyhq.com/Vultr/{U1}"},
+    {"company": "Vultr", "url": f"https://jobs.ashbyhq.com/vultr/{U2}"},
+    {"company": "Acme", "url": "https://boards.greenhouse.io/acme/jobs/101"},
+    {"company": "ACME", "url": f"https://jobs.lever.co/acme/{U1}"},             # the same employer by its page key
+    {"company": "Zed & Co", "url": "https://acme.wd5.myworkdayjobs.com/External/job/Portland/SRE_R1"},
+    {"company": "Nobody", "url": f"https://jobs.lever.co/nobody/{U2}"},          # no employer record: a board, no facts
+]
+by_emp, found_boards, card_n = cc.page_boards(PAGE_ROWS, {"vultr": "vultr", "acme": "acme", "zed and co": "zed"})
+check("page_boards: each employer's boards through the aliases; a Workday link adds none",
+      by_emp, {"vultr": {"ashby:vultr"}, "acme": {"greenhouse:acme", "lever:acme"}})
+check("page_boards: every board found, with its cards", (sorted(found_boards), card_n["ashby:vultr"]),
+      (["ashby:vultr", "greenhouse:acme", "lever:acme", "lever:nobody"], 2))
+
+# ── Open roles on its own board: reading a board ─────────────────────────────
+
+LEVER_MS = int(datetime(2026, 9, 15, 12, tzinfo=timezone.utc).timestamp() * 1000)
+BOARD_JSON = {
+    "https://api.ashbyhq.com/posting-api/job-board/vultr": {"apiVersion": "1", "jobs": [
+        {"id": U1.upper(), "title": "RMA Systems Engineer", "location": "Remote - US", "isListed": True,
+         "publishedAt": "2026-04-30T13:16:29.503+00:00", "descriptionHtml": "<p>...</p>"},
+        {"id": U2, "title": "Technical Support Specialist", "location": "Remote - US", "isListed": True},
+        {"id": "33333333-2222-3333-4444-555555555555", "title": "Hidden", "location": "Remote", "isListed": False,
+         "publishedAt": "2026-01-01T00:00:00+00:00"}]},
+    "https://boards-api.greenhouse.io/v1/boards/acme/jobs": {"meta": {"total": 3}, "jobs": [
+        {"id": 101, "internal_job_id": 9001, "title": "SRE", "location": {"name": "Portland, OR"},
+         "first_published": "2026-10-01T07:27:07-04:00", "updated_at": "2026-11-11T12:43:00-04:00"},
+        {"id": 102, "internal_job_id": 9002, "title": "SOC Analyst", "location": {"name": "Remote"},
+         "updated_at": "2026-11-11T12:43:00-04:00"},                                   # no first_published: undated
+        {"id": 103, "internal_job_id": None, "title": "Join our talent community", "location": {"name": "Anywhere"},
+         "first_published": "2025-01-01T00:00:00-04:00"}]},                            # a prospect post
+    "https://api.lever.co/v0/postings/acme?mode=json": [
+        {"id": U1, "text": "Cloud Engineer", "categories": {"location": "Seattle, WA"}, "createdAt": LEVER_MS}],
+    "https://api.eu.lever.co/v0/postings/siteimprove?mode=json": {"ok": False, "error": "Document not found"},
+}
+board_calls = []
+
+
+def fake_boards(url, data=None, headers=None, timeout=60):
+    board_calls.append(url)
+    if url.endswith("/api/v2/recipient/") or "spending_by_category" in url:
+        return fake_auto(url, data, headers, timeout)
+    if url not in BOARD_JSON:
+        raise RuntimeError("HTTPError: HTTP Error 404: Not Found")
+    return json.loads(json.dumps(BOARD_JSON[url]))
+
+
+cc.fetch_json = fake_boards
+got = cc.read_board(cc.board_of(f"https://jobs.ashbyhq.com/Vultr/{U1}"))
+check("read_board ashby: listed jobs only, ids without case, publishedAt",
+      got, {"prospect": 0, "postings": {U1: {"t": "RMA Systems Engineer", "l": "Remote - US", "d": "2026-04-30"},
+                                        U2: {"t": "Technical Support Specialist", "l": "Remote - US", "d": None}}})
+got = cc.read_board(cc.board_of("https://boards.greenhouse.io/acme/jobs/101"))
+check("read_board greenhouse: first_published, never updated_at; a prospect post counted apart",
+      got, {"prospect": 1, "postings": {"101": {"t": "SRE", "l": "Portland, OR", "d": "2026-10-01"},
+                                        "102": {"t": "SOC Analyst", "l": "Remote", "d": None}}})
+got = cc.read_board(cc.board_of(f"https://jobs.lever.co/acme/{U1}"))
+check("read_board lever: createdAt in milliseconds, categories.location",
+      got, {"prospect": 0, "postings": {U1: {"t": "Cloud Engineer", "l": "Seattle, WA", "d": "2026-09-15"}}})
+for label, url in (("an answer of the wrong shape", f"https://jobs.eu.lever.co/siteimprove/{U2}"),
+                   ("a board that is not there", "https://boards.greenhouse.io/nosuchboard/jobs/1")):
+    try:
+        cc.read_board(cc.board_of(url))
+        check(f"read_board: {label} raises", "no error", "error")
+    except (RuntimeError, ValueError):
+        check(f"read_board: {label} raises", "error", "error")
+check("read_board: through fetch_json, one call a board", board_calls,
+      ["https://api.ashbyhq.com/posting-api/job-board/vultr", "https://boards-api.greenhouse.io/v1/boards/acme/jobs",
+       "https://api.lever.co/v0/postings/acme?mode=json", "https://api.eu.lever.co/v0/postings/siteimprove?mode=json",
+       "https://boards-api.greenhouse.io/v1/boards/nosuchboard/jobs"])
+
+# ── Open roles on its own board: the ledger across days ──────────────────────
+
+D0 = date(2026, 1, 1)
+day = lambda n: D0 + timedelta(days=n)   # noqa: E731
+VB = cc.board_of(f"https://jobs.ashbyhq.com/vultr/{U1}")
+
+
+def census(ledger, n, *rows, prospect=0):
+    cc.ledger_update(ledger, VB, {"postings": {pid: {"t": t, "l": l, "d": d} for pid, t, l, d in rows},
+                                  "prospect": prospect}, day(n))
+
+
+L = {"version": 1, "boards": {}}
+census(L, 0, ("a", "SRE", "Portland, OR", "2025-12-01"), ("b", "SOC Analyst", "Remote", None),
+       ("c", "Help Desk", "Boise, ID", "2025-12-20"))
+rec = L["boards"]["ashby:vultr"]
+check("ledger: the first run sets f and s to today",
+      (rec["first_ok"], rec["last_ok"], rec["link"], rec["postings"]["a"]),
+      ("2026-01-01", "2026-01-01", "https://jobs.ashbyhq.com/vultr",
+       {"t": "SRE", "l": "Portland, OR", "d": "2025-12-01", "f": "2026-01-01", "s": "2026-01-01"}))
+census(L, 29, ("a", "SRE", "Portland, OR", "2025-12-01"), ("b", "SOC Analyst", "Remote", None),
+       ("c", "Help Desk", "Boise, ID", "2025-12-20"))
+# Day 40: a is gone and a new listing, d, has its title and place; e opens beside
+# c, the same role while c is still up (two openings).
+census(L, 40, ("b", "SOC Analyst", "Remote", None), ("c", "Help Desk", "Boise, ID", "2025-12-20"),
+       ("d", "SRE", "Portland, OR", "2026-02-10"), ("e", "Help Desk", "Boise, ID", "2026-02-10"))
+check("ledger: an absent listing keeps its last day seen", (rec["postings"]["a"]["s"], rec["postings"]["d"]["f"]),
+      ("2026-01-30", "2026-02-10"))
+census(L, 50, ("c", "Help Desk", "Boise, ID", "2025-12-20"), ("d", "SRE", "Portland, OR", "2026-02-10"),
+       ("e", "Help Desk", "Boise, ID", "2026-02-10"))
+# Day 60: b comes back under the same id; f opens with b's title somewhere else.
+census(L, 60, ("b", "SOC Analyst", "Remote", None), ("c", "Help Desk", "Boise, ID", "2025-12-20"),
+       ("d", "SRE", "Portland, OR", "2026-02-10"), ("e", "Help Desk", "Boise, ID", "2026-02-10"),
+       ("f", "SOC Analyst", "Seattle, WA", "2026-03-02"))
+check("ledger: the same id back keeps its first day seen", (rec["postings"]["b"]["f"], rec["postings"]["b"]["s"]),
+      ("2026-01-01", "2026-03-02"))
+check("relisted: none before 90 days of watching", cc.hiring_facts(rec, day(60))["relisted"], None)
+census(L, 100, ("b", "SOC Analyst", "Remote", None), ("c", "Help Desk", "Boise, ID", "2025-12-20"),
+       ("d", "SRE", "Portland, OR", "2026-02-10"), ("e", "Help Desk", "Boise, ID", "2026-02-10"),
+       ("f", "SOC Analyst", "Seattle, WA", "2026-03-02"), prospect=2)
+facts = cc.hiring_facts(rec, day(100))
+check("relisted: only the new listing after the old one's last day, not two up at once or an id come back",
+      facts["relisted"], {"roles": 1, "window_days": 90,
+                          "examples": [{"title": "SRE", "link": "https://jobs.ashbyhq.com/vultr/d"}]})
+check("hiring_facts: the board's numbers today", {k: facts[k] for k in ("state", "ats", "open", "dated", "watching_since", "prospect")},
+      {"state": "ok", "ats": "ashby", "open": 5, "dated": 4, "watching_since": "2026-01-01", "prospect": 2})
+census(L, 101, ("b", "SOC Analyst", "Remote", None))
+check("relisted: an example no longer listed links to the board",
+      cc.hiring_facts(rec, day(101))["relisted"]["examples"], [{"title": "SRE", "link": "https://jobs.ashbyhq.com/vultr"}])
+# Outside the window: a listing new on day 5 that replaced one gone on day 0 is
+# older than 90 days by day 100.
+L2 = {"version": 1, "boards": {}}
+census(L2, 0, ("x", "NOC Engineer", "Hillsboro, OR", None))
+census(L2, 5, ("y", "NOC Engineer", "Hillsboro, OR", None))
+census(L2, 100, ("y", "NOC Engineer", "Hillsboro, OR", None))
+check("relisted: only roles listed again within the window", cc.hiring_facts(L2["boards"]["ashby:vultr"], day(100))["relisted"]["roles"], 0)
+# Pruning: listings not seen for 180 days, and boards not read for 180 days.
+L["boards"]["lever:gone"] = {"ats": "lever", "token": "gone", "link": "https://jobs.lever.co/gone", "first_ok": "2026-01-01",
+                             "last_ok": "2026-01-01", "postings": {}}
+census(L, 250, ("d", "SRE", "Portland, OR", "2026-02-10"))
+check("ledger_prune: what is gone 180 days leaves", (cc.ledger_prune(L, day(250)), sorted(rec["postings"]), sorted(L["boards"])),
+      (2, ["b", "c", "d", "e", "f"], ["ashby:vultr"]))
+bad_file, no_file = tmp / "boards-bad.json", tmp / "boards-none.json"
+bad_file.write_text('{"version": 1, "boards": ', encoding="utf-8")
+check("load_ledger: a corrupt file starts empty", cc.load_ledger(bad_file), {"version": 1, "boards": {}})
+check("load_ledger: no file starts empty", cc.load_ledger(no_file), {"version": 1, "boards": {}})
+
+# Age bands and the median, by the board's own dates, over what is listed today.
+T = date(2026, 11, 12)
+AGES = {"p0": 0, "p29": 29, "p30": 30, "p89": 89, "p90": 90, "p200": 200}
+BANDS = {"ats": "greenhouse", "link": "https://job-boards.greenhouse.io/acme", "first_ok": "2026-10-01", "last_ok": "2026-11-12",
+         "prospect": 0, "postings": {**{pid: {"t": pid, "l": "", "d": (T - timedelta(days=a)).isoformat(), "f": "2026-10-01",
+                                              "s": "2026-11-12"} for pid, a in AGES.items()},
+                                     "undated": {"t": "u", "l": "", "d": None, "f": "2026-10-01", "s": "2026-11-12"},
+                                     "gone": {"t": "g", "l": "", "d": "2020-01-01", "f": "2026-10-01", "s": "2026-11-01"}}}
+facts = cc.hiring_facts(BANDS, T)
+check("hiring_facts: age bands, the oldest and the median on fixed dates",
+      {k: facts[k] for k in ("open", "dated", "under_30", "d30_89", "d90_plus", "oldest", "median_days", "relisted")},
+      {"open": 7, "dated": 6, "under_30": 2, "d30_89": 2, "d90_plus": 2, "oldest": "2026-04-26", "median_days": 30,
+       "relisted": None})
 
 # ── A whole run ──────────────────────────────────────────────────────────────
 
@@ -375,6 +578,7 @@ ZED = {"id": "zed", "names": ["Zed & Co"], "legal": ["Zed Holdings, Inc."],
        "ueis": [{"uei": "OOOOOOOOOOOO", "name": "ZED UNIT", "level": "C"}]}
 cc.TABLE.write_text(json.dumps({"employers": [E, ZED]}), encoding="utf-8")
 cc.STATE_DIR, cc.DATA, cc.CACHE, cc.OUT = state, state / "company-data", state / "companies.json", tmp / "out" / "companies.json"
+cc.BOARDS = state / "boards.json"
 cc.OUT.parent.mkdir()
 cc.DATA.mkdir(parents=True)
 (cc.DATA / "nlrb.db").write_bytes(db_path.read_bytes())
@@ -529,6 +733,90 @@ cc.main()
 check("auto: a name looked up this week is not looked up again",
       [d["keyword"] for u, d in auto_calls if u.endswith("/api/v2/recipient/") and d["keyword"] in ("AttainX", "Knock")], [])
 cc.JOBS = tmp / "no-page.json"
+
+# ── Open roles on its own board: a whole run ─────────────────────────────────
+
+U3 = "44444444-2222-3333-4444-555555555555"
+BOARD_JSON["https://api.ashbyhq.com/posting-api/job-board/attainx"] = {"jobs": [
+    {"id": U3, "title": "Cloud Engineer", "location": "Remote", "isListed": True, "publishedAt": "2026-11-01T00:00:00+00:00"}]}
+cc.TABLE.write_text(json.dumps({"employers": [E, ZED, VULTR]}), encoding="utf-8")
+cc.JOBS = tmp / "jobs-boards.json"
+cc.JOBS.write_text(json.dumps({"jobs": PAGE_ROWS + [{"company": "AttainX", "url": f"https://jobs.ashbyhq.com/AttainX/{U3}"}]}),
+                   encoding="utf-8")
+cc.CACHE.unlink(missing_ok=True)
+cc.BOARDS.unlink(missing_ok=True)
+cc.fetch_json = fake_boards
+board_calls.clear()
+sys.argv = ["company_check.py", "--only", "hiring"]
+cc.main()
+out = json.loads(cc.OUT.read_text(encoding="utf-8"))
+co = out["companies"]
+today_s = cc.TODAY.isoformat()
+vh = co["vultr"].get("hiring") or {}
+check("hiring run: a card's Ashby link gives its employer the board's numbers",
+      {k: vh.get(k) for k in ("state", "ats", "link", "open", "dated", "oldest", "watching_since", "relisted", "prospect")},
+      {"state": "ok", "ats": "ashby", "link": "https://jobs.ashbyhq.com/vultr", "open": 2, "dated": 1, "oldest": "2026-04-30",
+       "watching_since": today_s, "relisted": None, "prospect": 0})
+check("hiring run: checked today, like the other sources", co["vultr"]["checked"].get("hiring"), today_s)
+check("hiring run: Vultr's search name is not the name it avoids", co["vultr"]["search_name"], "Choopa")
+check("hiring run: cards on two boards give no numbers", co["acme"].get("hiring"),
+      {"state": "several", "boards": ["https://job-boards.greenhouse.io/acme", "https://jobs.lever.co/acme"]})
+check("hiring run: cards on no board read here", co["zed"].get("hiring"), {"state": "none"})
+check("hiring run: an automatic employer gets it by its links too",
+      ((co.get("auto-attainx") or {}).get("hiring") or {}).get("open"), 1)
+check("hiring run: a new board that fails gives no facts yet", "hiring" in (co.get("auto-nobody") or {"hiring": 1}), False)
+check("hiring run: the census in the stats", (out["stats"]["hiring"]["boards"], out["stats"]["hiring"]["failed"]),
+      ({"found": 5, "read": 4, "failed": 1, "skipped": 0}, 1))
+ledger_now = json.loads(cc.BOARDS.read_text(encoding="utf-8"))
+check("hiring run: boards.json holds every board read, several's too",
+      (ledger_now["version"], sorted(ledger_now["boards"])), (1, ["ashby:attainx", "ashby:vultr", "greenhouse:acme", "lever:acme"]))
+check("hiring run: the ledger keeps the listing, not its text",
+      ledger_now["boards"]["ashby:vultr"]["postings"][U1], {"t": "RMA Systems Engineer", "l": "Remote - US", "d": "2026-04-30",
+                                                           "f": today_s, "s": today_s})
+board_calls.clear()
+cc.main()
+check("hiring run: a board read today is not read again; one that failed is",
+      board_calls, ["https://api.lever.co/v0/postings/nobody?mode=json"])
+# A dry run reads the boards and writes no ledger.
+kept_ledger = cc.BOARDS.read_text(encoding="utf-8")
+cc.BOARDS.unlink()
+sys.argv = ["company_check.py", "--dry-run", "--refresh", "--only", "hiring"]
+board_calls.clear()
+cc.main()
+check("hiring run: a dry run writes no boards.json", (len(board_calls) > 0, cc.BOARDS.exists()), (True, False))
+# The next day the Vultr board fails: its ledger stays as it was, its facts stay.
+# (The run is today, so the ledger is set back a day: Vultr's board last read yesterday.)
+yesterday = (cc.TODAY - timedelta(days=1)).isoformat()
+ledger_before = json.loads(kept_ledger)
+vrec = ledger_before["boards"]["ashby:vultr"]
+vrec["first_ok"] = vrec["last_ok"] = yesterday
+for p in vrec["postings"].values():
+    p["f"] = p["s"] = yesterday
+cc.BOARDS.write_text(json.dumps(ledger_before), encoding="utf-8")
+vultr_api = "https://api.ashbyhq.com/posting-api/job-board/vultr"
+vultr_json = BOARD_JSON.pop(vultr_api)
+sys.argv = ["company_check.py", "--refresh", "--only", "hiring"]
+cc.main()
+out2 = json.loads(cc.OUT.read_text(encoding="utf-8"))
+ledger2 = json.loads(cc.BOARDS.read_text(encoding="utf-8"))
+check("hiring run: a failed board keeps its ledger", ledger2["boards"]["ashby:vultr"], vrec)
+check("hiring run: and its employer's last facts", out2["companies"]["vultr"]["hiring"], vh)
+check("hiring run: and says it failed", (out2["stats"]["hiring"]["failed"], "ashby:vultr" in (out2["stats"]["hiring"]["error"] or "")),
+      (2, True))
+BOARD_JSON[vultr_api] = vultr_json
+cc.JOBS = tmp / "no-page.json"
+
+# ── The page's hiring section ────────────────────────────────────────────────
+
+html = (ROOT / "index.html").read_text(encoding="utf-8")
+start, end = html.find('head("Open roles on its own board")'), html.find('head("Federal contracts")')
+check("page: the hiring section comes first, under its heading", 0 < start < end, True)
+for word in ("ghost", "fake listing", "suspicious", "red flag"):
+    check(f"page: never {word!r}", word in html.lower(), False)
+block = html[start:end]
+check("page: the hiring section never says repost", "repost" in block.lower(), False)
+for word in ("ghost", "fake", "stale", "suspicious", "red flag", "real", "placeholder", "verdict", "score"):
+    check(f"page: the hiring section never says {word!r}", bool(re.search(rf"\b{word}\b", block, re.I)), False)
 
 # ── The reviewed table ───────────────────────────────────────────────────────
 
