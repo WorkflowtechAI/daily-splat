@@ -754,12 +754,14 @@ def check_tips() -> int:
 
 
 def check_board_dates() -> tuple[int, int]:
-    """The employer's own board date on an aggregator's copy (apply_board_dates),
-    from company_check.py's census ledger. Today is fixed at 2026-11-12."""
+    """The employer's own board date on an aggregator's copy (board_redate, inside
+    rules_pass), from company_check.py's census ledger. The rules' age check counts
+    from the run's day, so the dates in the rules_pass cases are days before it."""
+    import inspect as _inspect
     import json as _json
     import tempfile as _tempfile
+    from datetime import timedelta as _td
     from pathlib import Path as _Path
-    today = "2026-11-12"
     vultr = "https://jobs.ashbyhq.com/Vultr/"   # the cards' case; the ledger keys "vultr"
     ledger = {
         "ashby:vultr": {"postings": {
@@ -767,50 +769,101 @@ def check_board_dates() -> tuple[int, int]:
             "11111111-2222-3333-4444-555555555555": {"t": "Technical Support Specialist", "d": "2026-03-31"},
             "22222222-2222-3333-4444-555555555555": {"t": "Senior Platform Engineer", "d": "2026-11-01"},
             "33333333-2222-3333-4444-555555555555": {"t": "Cloud Engineer", "d": "2026-11-09"},
-            "44444444-2222-3333-4444-555555555555": {"t": "SRE", "d": "2026-10-25"},
-            "55555555-2222-3333-4444-555555555555": {"t": "Network Engineer", "d": "2026-10-25"},
             "66666666-2222-3333-4444-555555555555": {"t": "NOC Engineer", "d": "2026-10-20"},
-            "77777777-2222-3333-4444-555555555555": {"t": "Help Desk", "d": None}}},
+            "77777777-2222-3333-4444-555555555555": {"t": "Help Desk", "d": None},
+            "88888888-2222-3333-4444-555555555555": {"t": "Hand edit", "d": "2026-02-30"}}},
         "greenhouse:veeamsoftware": {"postings": {"5001960101": {"d": "2026-09-01"}}},
         "lever-eu:siteimprove": {"postings": {"adcd50b8-cf2e-426f-890d-44d037d84cd4": {"d": "2026-10-19"}}},
+        "ashby:broken": ["not", "a", "board"],
     }
 
-    def row(uid, posted, where="oregon", origin="aggregator", url=None):
-        return {"url": url or vultr + uid, "posted": posted, "where": where, "origin": origin}
-    cands = {
+    def row(uid, posted, origin="aggregator", url=None):
+        return {"url": url or vultr + uid, "posted": posted, "origin": origin}
+    rows = {
         "older": row("22222222-2222-3333-4444-555555555555", "2026-11-06"),              # board's older date replaces
         "newer": row("33333333-2222-3333-4444-555555555555", "2026-11-03"),              # never moved forward
         "own": row("11111111-2222-3333-4444-555555555555", "2026-11-06", origin="company"),  # the employer's own board row
         "tip": row("11111111-2222-3333-4444-555555555555", None, origin="member"),       # a member's tip: its own rule
-        "old": row("11111111-2222-3333-4444-555555555555", "2026-11-06"),                # months old by Ashby: dropped
-        "rma": row("6e0fea62-a9b8-4b06-a434-79968877f510", None),                        # no date given, too old by the board
-        "remote": row("44444444-2222-3333-4444-555555555555", "2026-11-10", "remote"),   # 18 days: past remote's 14
-        "local": row("55555555-2222-3333-4444-555555555555", "2026-11-10"),              # 18 days: within 30
         "fill": row("66666666-2222-3333-4444-555555555555", None),                       # no date given: the board's fills it
         "undated": row("77777777-2222-3333-4444-555555555555", "2026-11-05"),            # the board has no date
+        "unreal": row("88888888-2222-3333-4444-555555555555", "2026-11-05"),             # not a real day: none
         "unknown": row("99999999-2222-3333-4444-555555555555", "2026-11-05"),            # not in the ledger
         "workday": row("", "2026-11-05", url="https://acme.wd5.myworkdayjobs.com/External/job/Portland/SRE_R1"),
+        "broken": row("", "2026-11-05", url="https://jobs.ashbyhq.com/broken/6e0fea62-a9b8-4b06-a434-79968877f510"),
     }
-    before = set(cands)
-    dropped = splat.apply_board_dates(cands, ledger, today)
-    posted = {k: p["posted"] for k, p in cands.items()}
-    same = {k: dict(p) for k, p in cands.items()}
+    moved = sorted(k for k, p in rows.items() if splat.board_redate(p, ledger))
+    posted = {k: p["posted"] for k, p in rows.items()}
+    same = [row("22222222-2222-3333-4444-555555555555", "2026-11-06"), row("66666666-2222-3333-4444-555555555555", None)]
+
+    # rules_pass: the board's date goes on each fetched row before the rows are
+    # picked, so an old copy never wins the pick, a tip's twin check or the remote
+    # fold and takes a fresh row down with it (review, 2026-11-12).
+    today = splat.NOW.date()
+    ago = lambda n: (today - _td(days=n)).isoformat()   # noqa: E731
+    OLD, NEW = "11111111-2222-3333-4444-555555555555", "22222222-2222-3333-4444-555555555555"
+    led = {"ashby:vultr": {"postings": {OLD: {"d": ago(226)}, NEW: {"d": ago(7)}, **{
+        f"{n:08d}-2222-3333-4444-555555555555": {"d": ago(n)} for n in (14, 15, 30, 31, 50)}}},
+        "ashby:broken": {"postings": {OLD: {"d": "2026-02-30"}}}}
+
+    def agg(uid, title, loc, posted, remote=False, board="Vultr", sid="foorilla", origin="aggregator", **kw):
+        return sid, splat.posting(title=title, company="Vultr", url=f"https://jobs.ashbyhq.com/{board}/{uid}", location=loc,
+                                  remote=remote, posted=posted, origin=origin, **kw)
+    tss = "Technical Support Specialist"
+    # Two copies of one remote role, the months-old one first: the fresh one shows.
+    dedupe, dedupe_n = splat.rules_pass([agg(OLD, tss, "Remote - US", ago(6), True), agg(NEW, tss, "Remote - US", ago(6), True)], led)
+    # A Portland copy of the old listing, and the employer's own remote row: the
+    # employer's row is not folded into a copy that then drops.
+    fold, fold_n = splat.rules_pass([agg(OLD, tss, "Portland, OR", ago(6)),
+                                     agg(NEW, tss, "Remote - US", ago(7), True, sid="ashby:vultr", origin="company")], led)
+    folded = splat.fold_remote_twins(fold)
+    # A member's Portland tip of the same role: not dropped as the twin of a copy that drops.
+    tips, tips_n = splat.rules_pass([agg(OLD, tss, "Remote - US", ago(6), True),
+                                     ("tips", splat.posting(title=tss, company="Vultr", url="https://www.linkedin.com/jobs/view/4012345678/",
+                                                            location="Portland, OR", posted=ago(3), origin="member", gate="linkedin"))], led)
+    tip_twins = splat.drop_tip_twins(tips)
+    # The age rule at its edges, on the board's date: 30 days stays and 31 drops
+    # locally, 14 stays and 15 drops remote, the same rule as the aggregator's date.
+    uid = lambda n: f"{n:08d}-2222-3333-4444-555555555555"   # noqa: E731
+    edges, edges_n = splat.rules_pass([
+        agg(uid(30), "Cloud Engineer", "Portland, OR", ago(2)), agg(uid(31), "Network Engineer", "Portland, OR", ago(2)),
+        agg(uid(14), "Systems Engineer", "Remote - US", ago(2), True), agg(uid(15), "Site Reliability Engineer", "Remote - US", ago(2), True),
+        agg(uid(50), "SOC Analyst", "Portland, OR", ago(40)),          # too old by its own date: not the board's doing
+        agg(OLD, "Help Desk Technician", "Portland, OR", ago(2), board="broken"),   # an impossible ledger date
+    ], led)
+    edge_dates = {p["title"]: p["posted"] for p in edges.values()}
+    main_src = _inspect.getsource(splat.main)
+    at = lambda s: main_src.find(s)   # noqa: E731
+
     tmp = _Path(_tempfile.mkdtemp())
     (tmp / "bad.json").write_text("{not json", encoding="utf-8")
     (tmp / "good.json").write_text(_json.dumps({"version": 1, "boards": ledger}), encoding="utf-8")
+    (tmp / "list.json").write_text(_json.dumps({"version": 1, "boards": ["ashby:vultr"]}), encoding="utf-8")
     checks = [
-        ("apply_board_dates: too-old rows dropped and counted", (dropped, sorted(before - set(cands))),
-         (3, ["old", "remote", "rma"])),
-        ("apply_board_dates: an older board date replaces the aggregator's", posted["older"], "2026-11-01"),
-        ("apply_board_dates: a newer board date never moves posted forward", posted["newer"], "2026-11-03"),
-        ("apply_board_dates: the employer's own board row is untouched", posted["own"], "2026-11-06"),
-        ("apply_board_dates: a member's tip is untouched", posted["tip"], None),
-        ("apply_board_dates: a local row 18 days old stays (30-day rule)", posted["local"], "2026-10-25"),
-        ("apply_board_dates: an empty posted takes the board's date", posted["fill"], "2026-10-20"),
-        ("apply_board_dates: no board date, no change", (posted["undated"], posted["unknown"], posted["workday"]),
-         ("2026-11-05", "2026-11-05", "2026-11-05")),
-        ("apply_board_dates: a missing ledger is a no-op",
-         (splat.apply_board_dates(same, {}, today), {k: p["posted"] for k, p in same.items()} == posted), (0, True)),
+        ("board_redate: only an older board date moves posted", moved, ["fill", "older"]),
+        ("board_redate: an older board date replaces the aggregator's", posted["older"], "2026-11-01"),
+        ("board_redate: a newer board date never moves posted forward", posted["newer"], "2026-11-03"),
+        ("board_redate: the employer's own board row is untouched", posted["own"], "2026-11-06"),
+        ("board_redate: a member's tip is untouched", posted["tip"], None),
+        ("board_redate: an empty posted takes the board's date", posted["fill"], "2026-10-20"),
+        ("board_redate: no board date, no change",
+         (posted["undated"], posted["unreal"], posted["unknown"], posted["workday"], posted["broken"]), ("2026-11-05",) * 5),
+        ("board_redate: a missing ledger is a no-op",
+         ([splat.board_redate(p, {}) for p in same], [p["posted"] for p in same]), ([False, False], ["2026-11-06", None])),
+        ("rules_pass: of two copies, the old one does not win and drop the fresh one",
+         ([p["url"].rsplit("/", 1)[1] for p in dedupe.values()], dedupe_n), ([NEW], 1)),
+        ("rules_pass: the employer's own remote row is not folded into a copy that drops",
+         ([(p["origin"], p["where"]) for p in fold.values()], fold_n, folded), ([("company", "remote")], 1, 0)),
+        ("rules_pass: a member's tip is not dropped as the twin of a copy that drops",
+         ([p["origin"] for p in tips.values()], tips_n, tip_twins), (["member"], 1, 0)),
+        ("rules_pass: the age rule on the board's date, at its edges",
+         (sorted(edge_dates), edges_n),
+         (["Cloud Engineer", "Help Desk Technician", "Systems Engineer"], 2)),
+        ("rules_pass: a kept row carries the board's date", (edge_dates.get("Cloud Engineer"), edge_dates.get("Systems Engineer")),
+         (ago(30), ago(14))),
+        ("rules_pass: an impossible ledger date is no date", edge_dates.get("Help Desk Technician"), ago(2)),
+        ("main: board dates go on in the rules pass, before the twin steps and Jev, and are counted",
+         (0 < at("rules_pass(raw, board_ledger)") < at("drop_tip_twins(") < at("fold_remote_twins(") < at("jev_stats ="),
+          '"older_by_board": older_by_board' in main_src, at("board_ledger = load_board_ledger()") > 0), (True, True, True)),
         ("board_key: Ashby, the token without case", splat.board_key(vultr + "6E0FEA62-a9b8-4b06-a434-79968877f510"),
          ("ashby:vultr", "6e0fea62-a9b8-4b06-a434-79968877f510")),
         ("board_key: a board name with a space", splat.board_key("https://jobs.ashbyhq.com/PAR%20Technology/6e0fea62-a9b8-4b06-a434-79968877f510"),
@@ -822,8 +875,12 @@ def check_board_dates() -> tuple[int, int]:
         ("board_date: Lever's US key is another board", splat.board_date("https://jobs.lever.co/siteimprove/adcd50b8-cf2e-426f-890d-44d037d84cd4", ledger),
          None),
         ("board_date: not a board posting", splat.board_date("https://www.linkedin.com/jobs/view/1/", ledger), None),
+        ("board_date: a date that is not a real day", splat.board_date(vultr + "88888888-2222-3333-4444-555555555555", ledger), None),
+        ("board_date: a board that is not a board", splat.board_date("https://jobs.ashbyhq.com/broken/6e0fea62-a9b8-4b06-a434-79968877f510", ledger),
+         None),
         ("load_board_ledger: missing file", splat.load_board_ledger(tmp / "none.json"), {}),
         ("load_board_ledger: corrupt file", splat.load_board_ledger(tmp / "bad.json"), {}),
+        ("load_board_ledger: valid JSON, not a ledger", splat.load_board_ledger(tmp / "list.json"), {}),
         ("load_board_ledger: the boards", sorted(splat.load_board_ledger(tmp / "good.json")), sorted(ledger)),
     ]
     bad = 0

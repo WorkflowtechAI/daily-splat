@@ -82,13 +82,17 @@ a wrong token shows up as a failed source, it does not break the run.
    rule and read "posted 6 days ago". When the Company check's census
    (`boards.json`) has the board an aggregator row links to, the card takes
    the board's date for that posting if it is older (never a later one), and
-   the age rule runs again on it, before Jev and the reader so a dropped row
-   costs neither (`apply_board_dates`). A row then too old drops and is
-   counted in `counts.older_by_board`. The employer's own board rows already
-   carry the board's date, and members' tips keep their own 30-day life; both
-   are left alone. The census is from the day before (the check runs after the
-   splat); a posting's date does not change, and a board new today dates its
-   cards from tomorrow.
+   the age rule runs again on it (`board_redate` in `rules_pass`). That
+   happens on each fetched row, before rows are picked one per role: an old
+   copy that won the pick, a tip's twin check or the remote fold and then
+   dropped would take a fresh copy, the employer's own row or the tip with it.
+   It is before Jev and the reader too, so a dropped row costs neither. A row
+   then too old drops and is counted in `counts.older_by_board`. The
+   employer's own board rows already carry the board's date, and members' tips
+   keep their own 30-day life; both are left alone. The census is from the day
+   before (the check runs after the splat); that is fine because a card only
+   ever takes an earlier date, and a board new today dates its cards from
+   tomorrow.
    The PM track (added 2026-11-03 at the group's request): project, program
    and technical program managers, project coordinators, and product managers
    and owners, when the work is technology, IT or security (`pm_track`). The

@@ -71,7 +71,7 @@ STATE_DIR = Path(os.environ.get("STATE_DIRECTORY") or HERE / ".state")
 STATE = STATE_DIR / "state.json"
 # company_check.py's daily census of the Ashby, Greenhouse and Lever boards the
 # cards link to (both units share StateDirectory=daily-splat). Read only, for
-# the employer's own posting dates; see apply_board_dates.
+# the employer's own posting dates; see board_redate and rules_pass.
 BOARDS = STATE_DIR / "boards.json"
 
 NOW = datetime.now(timezone.utc)
@@ -2529,39 +2529,81 @@ def load_board_ledger(path: Path | None = None) -> dict:
 
 
 def board_date(url: str | None, ledger: dict) -> str | None:
-    """The date the employer's own board gives the posting a link points to, or None."""
+    """The date the employer's own board gives the posting a link points to, or
+    None. A date that is not a real day ("2026-02-30", a hand edit) is none: it
+    would stop the run where the rules read it."""
     k = board_key(url)
     rec = ledger.get(k[0]) if k else None
     posts = rec.get("postings") if isinstance(rec, dict) else None
     p = posts.get(k[1]) if isinstance(posts, dict) else None
     d = p.get("d") if isinstance(p, dict) else None
-    return d if isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) else None
+    if not (isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d)):
+        return None
+    try:
+        datetime.fromisoformat(d)
+    except ValueError:
+        return None
+    return d
 
 
-def apply_board_dates(cands: dict, ledger: dict, today: str = TODAY) -> int:
+def board_redate(p: dict, ledger: dict) -> bool:
     """An aggregator's copy of a posting on an employer's Ashby, Greenhouse or
     Lever board takes the board's date when it is older than the aggregator's
-    (or the aggregator gave none); a date never moves forward. Then the age rule
-    runs again on the board's date, and a row now too old is dropped. Before Jev
-    and the reader, so a dropped row costs neither. Returns how many dropped.
+    (or the aggregator gave none); a date never moves forward. Returns whether
+    it moved; rules_pass() then runs the age rule again on it.
 
     The employer's own board rows are left alone: their date already is the
     board's. So are members' tips: a tip lives 30 days from the day it was shared
     (src_tips), whatever the posting's age."""
-    t = datetime.fromisoformat(today).date()
-    dropped = 0
-    for k in list(cands):
-        p = cands[k]
-        if p.get("origin") != "aggregator":
+    if p.get("origin") != "aggregator":
+        return False
+    d = board_date(p.get("url"), ledger)
+    if not d or (p.get("posted") and p["posted"] <= d):
+        return False
+    p["posted"] = d
+    return True
+
+
+def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, int]:
+    """The rules over every fetched row, one row per company|title|where: (the
+    rows kept, how many aggregator rows the employer's own board date made too
+    old). Cheap, and they decide everything Jev does not."""
+    cands: dict[str, dict] = {}
+    older_by_board = 0
+    for sid, p in raw:
+        if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
+                or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
             continue
-        d = board_date(p.get("url"), ledger)
-        if not d or (p.get("posted") and p["posted"] <= d):
+        w = where(p["location"], p["remote"])
+        if not w:
             continue
-        p["posted"] = d
-        if (t - datetime.fromisoformat(d).date()).days > (REMOTE_MAX_AGE_DAYS if p.get("where") == "remote" else MAX_AGE_DAYS):
-            del cands[k]
-            dropped += 1
-    return dropped
+        max_age = REMOTE_MAX_AGE_DAYS if w == "remote" else MAX_AGE_DAYS
+        a = age_days(p["posted"])
+        if a is not None and a > max_age:
+            continue
+        track = rule_track(p["title"], p["sec_topic"], tech_source(sid), tech_source(sid) or sid == "amazon")
+        level = rule_level(p["title"], p["hint"], track)
+        if not track or not level:
+            continue
+        # The employer's own date, here and not once the rows are picked: an old
+        # aggregator copy that won the pick below (or a tip's twin check, or the
+        # remote fold) and dropped after took the row it beat with it, a fresh
+        # copy or the employer's own row (review, 2026-11-12). Counted only when
+        # the board's date is what made the row too old.
+        if board_redate(p, board_ledger) and (age_days(p["posted"]) or 0) > max_age:
+            older_by_board += 1
+            continue
+        p.update(where=w, track=track, level=level, source=sid,
+                 clearance=bool(CLEARANCE.search(p["title"] + " " + p["desc"][:600])),
+                 clearance_check=bool(FEDERAL.search(p["company"])))
+        k = f"{norm(p['company'])}|{norm(p['title'])}|{w}"
+        old = cands.get(k)
+        # One row per role: the company's own board beats an aggregator's copy.
+        if not old or (old["origin"] != "company" and p["origin"] == "company"):
+            if old and not p["posted"]:
+                p["posted"] = old["posted"]
+            cands[k] = p
+    return cands, older_by_board
 
 
 def main() -> int:
@@ -2615,35 +2657,12 @@ def main() -> int:
         print(f"FAIL CLOSED: only {ok}/{len(stats)} sources answered; leaving the page as it was", file=sys.stderr)
         return 2
 
-    # Rules first: cheap, and they decide everything Jev does not.
-    cands: dict[str, dict] = {}
-    for sid, p in raw:
-        if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
-                or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
-            continue
-        w = where(p["location"], p["remote"])
-        if not w:
-            continue
-        a = age_days(p["posted"])
-        if a is not None and a > (REMOTE_MAX_AGE_DAYS if w == "remote" else MAX_AGE_DAYS):
-            continue
-        track = rule_track(p["title"], p["sec_topic"], tech_source(sid), tech_source(sid) or sid == "amazon")
-        level = rule_level(p["title"], p["hint"], track)
-        if not track or not level:
-            continue
-        p.update(where=w, track=track, level=level, source=sid,
-                 clearance=bool(CLEARANCE.search(p["title"] + " " + p["desc"][:600])),
-                 clearance_check=bool(FEDERAL.search(p["company"])))
-        k = f"{norm(p['company'])}|{norm(p['title'])}|{w}"
-        old = cands.get(k)
-        # One row per role: the company's own board beats an aggregator's copy.
-        if not old or (old["origin"] != "company" and p["origin"] == "company"):
-            if old and not p["posted"]:
-                p["posted"] = old["posted"]
-            cands[k] = p
+    # Rules first: cheap, and they decide everything Jev does not. The employer's
+    # own board dates go in there too, before Jev and the reader, so a row they
+    # drop costs neither.
+    cands, older_by_board = rules_pass(raw, board_ledger)
     tip_twins = drop_tip_twins(cands)
     folded = fold_remote_twins(cands)
-    older_by_board = apply_board_dates(cands, board_ledger)
 
     # Jev refines track and level on postings it has not seen.
     jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "se_unconfirmed": 0,
@@ -2786,7 +2805,7 @@ def main() -> int:
         "counts": {"total": len(rows), "new_today": sum(1 for j in rows if j["first_seen"] == TODAY),
                    "dropped_since_last_run": len(set(prev_jobs) - set(jobs)), "carried": carried,
                    "remote_twins_folded": folded, "tip_twins": tip_twins,
-                   # aggregator copies too old by the employer's own board date (apply_board_dates)
+                   # aggregator copies too old by the employer's own board date (rules_pass)
                    "older_by_board": older_by_board,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
