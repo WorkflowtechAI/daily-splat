@@ -23,7 +23,9 @@ Runs once a day on the Foundry VPS (infra/daily-splat). Each run:
      from the page that day; that is how removed jobs drop. A source that
      FAILED this run keeps yesterday's postings for GRACE_DAYS, so one flaky
      board does not empty its section. Anything posted more than MAX_AGE_DAYS
-     ago drops regardless.
+     ago drops regardless; an aggregator's copy of an Ashby, Greenhouse or
+     Lever posting is dated by the employer's own board where company_check.py's
+     census has it (boards.json).
 
 It fails closed: if fewer than half the sources answer, it assumes the box lost
 network, writes nothing, and exits non-zero. Yesterday's page stands.
@@ -67,6 +69,10 @@ HERE = Path(__file__).resolve().parent
 OUT = Path(os.environ.get("SPLAT_OUT") or HERE / "jobs.json")
 STATE_DIR = Path(os.environ.get("STATE_DIRECTORY") or HERE / ".state")
 STATE = STATE_DIR / "state.json"
+# company_check.py's daily census of the Ashby, Greenhouse and Lever boards the
+# cards link to (both units share StateDirectory=daily-splat). Read only, for
+# the employer's own posting dates; see apply_board_dates.
+BOARDS = STATE_DIR / "boards.json"
 
 NOW = datetime.now(timezone.utc)
 _T0 = time.monotonic()  # the run's start, for RUN_BUDGET
@@ -2488,6 +2494,76 @@ def age_days(d: str | None) -> int | None:
         return None
 
 
+# ── The employer's own date on an aggregator's copy ─────────────────────────
+#
+# An aggregator's date can move while the employer's posting keeps its own
+# (2026-11-12: Foorilla had Vultr's "Technical Support Specialist" posted
+# 2026-11-06, Ashby's publishedAt was 2026-03-31, the same posting id), so a
+# months-old role passed the age rule and showed "posted 6 days ago". 134 live
+# rows had a posted date later than the day the Splat first saw them.
+
+def board_key(url: str | None) -> tuple[str, str] | None:
+    """(board key, posting id) for a posting on an Ashby, Greenhouse or Lever
+    board, keyed as company_check.py's board_of() keys its census ledger:
+    "ashby:vultr", "greenhouse:okta", "lever-eu:siteimprove". Tokens without case;
+    Greenhouse's EU boards share its one API, so they key as greenhouse."""
+    url = url or ""
+    if m := GH_URL.search(url):
+        return f"greenhouse:{m[1].lower()}", m[2]
+    if m := LEVER_URL.search(url):
+        return f"{'lever-eu' if m[1] else 'lever'}:{m[2].lower()}", m[3].lower()
+    if m := ASHBY_URL.search(url):
+        return f"ashby:{urllib.parse.unquote(m[1]).lower()}", m[2].lower()
+    return None
+
+
+def load_board_ledger(path: Path | None = None) -> dict:
+    """The census ledger's boards, read only. Missing or unreadable is an empty
+    ledger, never fatal: the cards keep the dates their sources gave."""
+    try:
+        d = json.loads((path or BOARDS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    boards = d.get("boards") if isinstance(d, dict) else None
+    return boards if isinstance(boards, dict) else {}
+
+
+def board_date(url: str | None, ledger: dict) -> str | None:
+    """The date the employer's own board gives the posting a link points to, or None."""
+    k = board_key(url)
+    rec = ledger.get(k[0]) if k else None
+    posts = rec.get("postings") if isinstance(rec, dict) else None
+    p = posts.get(k[1]) if isinstance(posts, dict) else None
+    d = p.get("d") if isinstance(p, dict) else None
+    return d if isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) else None
+
+
+def apply_board_dates(cands: dict, ledger: dict, today: str = TODAY) -> int:
+    """An aggregator's copy of a posting on an employer's Ashby, Greenhouse or
+    Lever board takes the board's date when it is older than the aggregator's
+    (or the aggregator gave none); a date never moves forward. Then the age rule
+    runs again on the board's date, and a row now too old is dropped. Before Jev
+    and the reader, so a dropped row costs neither. Returns how many dropped.
+
+    The employer's own board rows are left alone: their date already is the
+    board's. So are members' tips: a tip lives 30 days from the day it was shared
+    (src_tips), whatever the posting's age."""
+    t = datetime.fromisoformat(today).date()
+    dropped = 0
+    for k in list(cands):
+        p = cands[k]
+        if p.get("origin") != "aggregator":
+            continue
+        d = board_date(p.get("url"), ledger)
+        if not d or (p.get("posted") and p["posted"] <= d):
+            continue
+        p["posted"] = d
+        if (t - datetime.fromisoformat(d).date()).days > (REMOTE_MAX_AGE_DAYS if p.get("where") == "remote" else MAX_AGE_DAYS):
+            del cands[k]
+            dropped += 1
+    return dropped
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -2498,6 +2574,10 @@ def main() -> int:
     ap.add_argument("--only", help="comma list of source ids or families (greenhouse, workday, foorilla, ...)")
     args = ap.parse_args()
     only = set(args.only.split(",")) if args.only else None
+    # Yesterday's board census (company_check.py runs after the splat): a
+    # posting's date is fixed, so a day old is fine. A board new today is read
+    # later this morning and dates its cards from tomorrow.
+    board_ledger = load_board_ledger()
 
     prev = {}
     if STATE.exists():
@@ -2563,6 +2643,7 @@ def main() -> int:
             cands[k] = p
     tip_twins = drop_tip_twins(cands)
     folded = fold_remote_twins(cands)
+    older_by_board = apply_board_dates(cands, board_ledger)
 
     # Jev refines track and level on postings it has not seen.
     jev_stats = {"asked": 0, "failed": 0, "cached": 0, "dropped": 0, "pm_unconfirmed": 0, "se_unconfirmed": 0,
@@ -2705,6 +2786,8 @@ def main() -> int:
         "counts": {"total": len(rows), "new_today": sum(1 for j in rows if j["first_seen"] == TODAY),
                    "dropped_since_last_run": len(set(prev_jobs) - set(jobs)), "carried": carried,
                    "remote_twins_folded": folded, "tip_twins": tip_twins,
+                   # aggregator copies too old by the employer's own board date (apply_board_dates)
+                   "older_by_board": older_by_board,
                    "cyber": sum(1 for j in rows if j["track"] == "cyber"),
                    "entry": sum(1 for j in rows if j["level"] == "entry"),
                    "eng": sum(1 for j in rows if j["track"] == "eng"),

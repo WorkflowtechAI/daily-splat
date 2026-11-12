@@ -753,6 +753,87 @@ def check_tips() -> int:
     return bad
 
 
+def check_board_dates() -> tuple[int, int]:
+    """The employer's own board date on an aggregator's copy (apply_board_dates),
+    from company_check.py's census ledger. Today is fixed at 2026-11-12."""
+    import json as _json
+    import tempfile as _tempfile
+    from pathlib import Path as _Path
+    today = "2026-11-12"
+    vultr = "https://jobs.ashbyhq.com/Vultr/"   # the cards' case; the ledger keys "vultr"
+    ledger = {
+        "ashby:vultr": {"postings": {
+            "6e0fea62-a9b8-4b06-a434-79968877f510": {"t": "RMA Systems Engineer", "d": "2026-04-30"},
+            "11111111-2222-3333-4444-555555555555": {"t": "Technical Support Specialist", "d": "2026-03-31"},
+            "22222222-2222-3333-4444-555555555555": {"t": "Senior Platform Engineer", "d": "2026-11-01"},
+            "33333333-2222-3333-4444-555555555555": {"t": "Cloud Engineer", "d": "2026-11-09"},
+            "44444444-2222-3333-4444-555555555555": {"t": "SRE", "d": "2026-10-25"},
+            "55555555-2222-3333-4444-555555555555": {"t": "Network Engineer", "d": "2026-10-25"},
+            "66666666-2222-3333-4444-555555555555": {"t": "NOC Engineer", "d": "2026-10-20"},
+            "77777777-2222-3333-4444-555555555555": {"t": "Help Desk", "d": None}}},
+        "greenhouse:veeamsoftware": {"postings": {"5001960101": {"d": "2026-09-01"}}},
+        "lever-eu:siteimprove": {"postings": {"adcd50b8-cf2e-426f-890d-44d037d84cd4": {"d": "2026-10-19"}}},
+    }
+
+    def row(uid, posted, where="oregon", origin="aggregator", url=None):
+        return {"url": url or vultr + uid, "posted": posted, "where": where, "origin": origin}
+    cands = {
+        "older": row("22222222-2222-3333-4444-555555555555", "2026-11-06"),              # board's older date replaces
+        "newer": row("33333333-2222-3333-4444-555555555555", "2026-11-03"),              # never moved forward
+        "own": row("11111111-2222-3333-4444-555555555555", "2026-11-06", origin="company"),  # the employer's own board row
+        "tip": row("11111111-2222-3333-4444-555555555555", None, origin="member"),       # a member's tip: its own rule
+        "old": row("11111111-2222-3333-4444-555555555555", "2026-11-06"),                # months old by Ashby: dropped
+        "rma": row("6e0fea62-a9b8-4b06-a434-79968877f510", None),                        # no date given, too old by the board
+        "remote": row("44444444-2222-3333-4444-555555555555", "2026-11-10", "remote"),   # 18 days: past remote's 14
+        "local": row("55555555-2222-3333-4444-555555555555", "2026-11-10"),              # 18 days: within 30
+        "fill": row("66666666-2222-3333-4444-555555555555", None),                       # no date given: the board's fills it
+        "undated": row("77777777-2222-3333-4444-555555555555", "2026-11-05"),            # the board has no date
+        "unknown": row("99999999-2222-3333-4444-555555555555", "2026-11-05"),            # not in the ledger
+        "workday": row("", "2026-11-05", url="https://acme.wd5.myworkdayjobs.com/External/job/Portland/SRE_R1"),
+    }
+    before = set(cands)
+    dropped = splat.apply_board_dates(cands, ledger, today)
+    posted = {k: p["posted"] for k, p in cands.items()}
+    same = {k: dict(p) for k, p in cands.items()}
+    tmp = _Path(_tempfile.mkdtemp())
+    (tmp / "bad.json").write_text("{not json", encoding="utf-8")
+    (tmp / "good.json").write_text(_json.dumps({"version": 1, "boards": ledger}), encoding="utf-8")
+    checks = [
+        ("apply_board_dates: too-old rows dropped and counted", (dropped, sorted(before - set(cands))),
+         (3, ["old", "remote", "rma"])),
+        ("apply_board_dates: an older board date replaces the aggregator's", posted["older"], "2026-11-01"),
+        ("apply_board_dates: a newer board date never moves posted forward", posted["newer"], "2026-11-03"),
+        ("apply_board_dates: the employer's own board row is untouched", posted["own"], "2026-11-06"),
+        ("apply_board_dates: a member's tip is untouched", posted["tip"], None),
+        ("apply_board_dates: a local row 18 days old stays (30-day rule)", posted["local"], "2026-10-25"),
+        ("apply_board_dates: an empty posted takes the board's date", posted["fill"], "2026-10-20"),
+        ("apply_board_dates: no board date, no change", (posted["undated"], posted["unknown"], posted["workday"]),
+         ("2026-11-05", "2026-11-05", "2026-11-05")),
+        ("apply_board_dates: a missing ledger is a no-op",
+         (splat.apply_board_dates(same, {}, today), {k: p["posted"] for k, p in same.items()} == posted), (0, True)),
+        ("board_key: Ashby, the token without case", splat.board_key(vultr + "6E0FEA62-a9b8-4b06-a434-79968877f510"),
+         ("ashby:vultr", "6e0fea62-a9b8-4b06-a434-79968877f510")),
+        ("board_key: a board name with a space", splat.board_key("https://jobs.ashbyhq.com/PAR%20Technology/6e0fea62-a9b8-4b06-a434-79968877f510"),
+         ("ashby:par technology", "6e0fea62-a9b8-4b06-a434-79968877f510")),
+        ("board_date: Greenhouse's EU board is its one API", splat.board_date("https://job-boards.eu.greenhouse.io/veeamsoftware/jobs/5001960101", ledger),
+         "2026-09-01"),
+        ("board_date: Lever's EU board keeps its own key", splat.board_date("https://jobs.eu.lever.co/siteimprove/adcd50b8-cf2e-426f-890d-44d037d84cd4", ledger),
+         "2026-10-19"),
+        ("board_date: Lever's US key is another board", splat.board_date("https://jobs.lever.co/siteimprove/adcd50b8-cf2e-426f-890d-44d037d84cd4", ledger),
+         None),
+        ("board_date: not a board posting", splat.board_date("https://www.linkedin.com/jobs/view/1/", ledger), None),
+        ("load_board_ledger: missing file", splat.load_board_ledger(tmp / "none.json"), {}),
+        ("load_board_ledger: corrupt file", splat.load_board_ledger(tmp / "bad.json"), {}),
+        ("load_board_ledger: the boards", sorted(splat.load_board_ledger(tmp / "good.json")), sorted(ledger)),
+    ]
+    bad = 0
+    for label, g, w in checks:
+        if g != w:
+            print(f"{label} = {g!r}, want {w!r}")
+            bad += 1
+    return bad, len(checks)
+
+
 def check_eightfold() -> int:
     rows = splat.eightfold_rows(EIGHTFOLD_POSITIONS, "jobs.autodesk.com", "Autodesk")
     got = [(r["title"], r["url"], splat.where(r["location"], r["remote"]), r["remote"], r["posted"]) for r in rows]
@@ -1014,7 +1095,8 @@ REVIEW_DAYS = [
 
 def main() -> int:
     reader_bad, reader_total = check_reader()
-    bad = check_eightfold() + check_usajobs() + check_tips() + check_fold_remote_twins() + reader_bad
+    board_bad, board_total = check_board_dates()
+    bad = check_eightfold() + check_usajobs() + check_tips() + check_fold_remote_twins() + reader_bad + board_bad
     for args, want in MONEY:
         if splat.money(*args) != want:
             bad += 1
@@ -1136,6 +1218,7 @@ def main() -> int:
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
              + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(AGENCY) + len(FEDERAL) + 4 + reader_total
+             + board_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES) + len(NOT_REMOTE) + len(MIDDLEMAN_URLS))
     print(f"{total - bad}/{total} passed")
     return 1 if bad else 0
