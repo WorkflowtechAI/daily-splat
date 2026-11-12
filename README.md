@@ -241,14 +241,21 @@ none.
 | [CourtListener](https://www.courtlistener.com/help/api/) | Federal employment civil-rights cases (nature of suit 442 and 445) | A docket party equals a reviewed legal name |
 | [FEC bulk files](https://www.fec.gov/data/browse-data/?tab=bulk-data) | What the employer's connected PAC gave federal candidates, by party | The PAC's connected organization equals a reviewed legal name |
 | [Violation Tracker](https://violationtracker.goodjobsfirst.org/) | A link only: its terms allow linking, not copying | Its parent list, else a name search (the first legal name its `avoid` list leaves) |
-| The employer's own job board (`hiring`): the public, keyless board APIs of [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api), [Greenhouse](https://docs.greenhouse.io/job-board.html) and [Lever](https://github.com/lever/postings-api) | Open listings today, across all teams and places; their ages by the board's own date (under 30 days, 30 to 89, 90 or more, the oldest, the median); after 90 days of watching, roles taken down and listed again under a new listing; Greenhouse prospect posts counted apart | By URL, not by name: the board the employer's Splat cards link to, with `splat.py`'s posting patterns. Cards on two or more boards give no numbers; cards on none (Workday, LinkedIn, an employer's own site) say so |
+| The employer's own job board (`hiring`): the public, keyless board APIs of [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api), [Greenhouse](https://docs.greenhouse.io/job-board.html) and [Lever](https://github.com/lever/postings-api) | Open listings today, across all teams and places; their ages by the board's own date (under 30 days, 30 to 89, 90 or more, and the oldest; `companies.json` also holds the median, which the panel does not show); after 90 days of daily reading, roles taken down and listed again under a new listing; Greenhouse prospect posts counted apart | By URL, not by name: the board the employer's Splat cards link to, with `splat.py`'s posting patterns. Cards on two or more boards give no numbers; cards on none (Workday, LinkedIn, an employer's own site) say so |
 
 The hiring source, added 2026-11-12 after the group argued whether Vultr's
 ~62 open roles on its Ashby board were hiring:
 
 - **The census.** Every run (daily, not weekly), each board found on today's
-  cards is read once (400 a run, 15 minutes at most; three failures in a row
-  stop that vendor for the day). Dates: Ashby's `publishedAt` (Ashby documents
+  cards is read once (400 a run, busiest first, 15 minutes at most; three
+  failures in a row stop that vendor for the day, but a board the vendor says
+  is not there, a 404 or 410, does not count toward them: the boards go in the
+  same order every day, so three dead ones would stop the rest for good). An
+  employer whose one board has not been read yet, or whose cards moved to a
+  board not read yet, says so (`"state": "unread"`) instead of showing another
+  board's numbers or promising a day; one whose board failed today keeps its
+  last numbers, and the panel gives the day they were read
+  (`checked.hiring`). Dates: Ashby's `publishedAt` (Ashby documents
   it as when the job was last published), Greenhouse's `first_published`
   (never `updated_at`, the last edit), Lever's `createdAt`; a listing without
   one counts as undated. Ashby's unlisted jobs are left out. A Greenhouse
@@ -257,17 +264,28 @@ The hiring source, added 2026-11-12 after the group argued whether Vultr's
   boards answer on its one API host; Lever's EU boards are their own.
 - **The ledger**, `boards.json` in the state directory (not `company-data`,
   which holds downloads that can be fetched again): per board, the first and
-  last day it was read, and per listing its title, place, board date, and the
-  first and last day the census saw it. No descriptions. A listing not seen
-  for 180 days, and a board not read for 180 days, are pruned. A board that
-  fails leaves its ledger as it was and its employers keep their last facts;
-  a dry run writes no ledger.
-- **Taken down and listed again** shows only after the board has been watched
-  90 days. A role counts when a listing first seen in the last 90 days (after
-  the first census) has the same title and place as a different listing on the
-  same board whose last day seen came before the new one's first. Two listings
-  up at once are several openings, not this; a listing that leaves and comes
-  back under the same id is the same listing; two boards never match.
+  last day it was read and every day it was read (`reads`, as runs of days in
+  a row), and per listing its title, place, board date, and the first and
+  last day the census saw it. No descriptions. A listing not seen for 180
+  days, a board not read for 180 days, and read days as old are pruned. A
+  board that fails leaves its ledger as it was and its employers keep their
+  last facts; a dry run writes no ledger.
+- **Taken down and listed again** shows only after 90 days of daily reading.
+  The census reads only the boards today's cards link to, so a board goes
+  unread while its employer has no card on the page; a gap of more than three
+  days starts the watch again (`READ_GAP`, `watch_start`), and the panel's
+  "reading this board daily since" is that start. A role counts when a new
+  listing has the same title and place as a different listing on the same
+  board that the read days show was gone before the new one was up: on the
+  last day the census read the board before the new listing's first day, the
+  old one was already gone, or that read was the day before and the old one
+  was still there (a handover overnight). That read must fall in the last 90
+  days, and so must the new listing's own board date when it has one (and not
+  before the old one's last day seen). Two listings up at once are several
+  openings, not this, and so are two that may have been up together while
+  nobody read the board; a listing that leaves and comes back under the same
+  id is the same listing; two boards never match. Counted once per title and
+  place, up to three examples with their place.
 - **Wording**, for the page and anything written about it: counts and the
   board's own dates, each number linked to the board, and no verdict. Never
   "ghost", "fake", "stale", "suspicious", "red flag", "real", "placeholder",

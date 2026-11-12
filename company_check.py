@@ -95,6 +95,7 @@ BOARD_MAX = 400           # boards the census reads a run (2026-11-06's page lin
 BOARD_MINUTES = 15        # the census's share of the run; the boards it did not reach wait a day
 LEDGER_DAYS = 180         # a listing (or board) not seen for this long leaves the ledger
 RELIST_DAYS = 90          # the window for roles taken down and listed again, and the watching it needs first
+READ_GAP = 3              # days a board can go unread inside one watch (a vendor down); longer starts the watch again
 SINCE =(TODAY - timedelta(days=365 * SINCE_YEARS)).isoformat()
 START = time.monotonic()
 
@@ -160,10 +161,18 @@ def first_legal(e: dict) -> str | None:
     return next((x for x in e.get("legal") or [] if norm_entity(x) in keys), None)
 
 
+def board_name(e: dict) -> str:
+    """The employer's first board name without a note in parentheses (auto_name):
+    what a search uses when no legal name is left to use. An ambiguous automatic
+    employer avoids its one legal name (auto_entry), and its card name's "(SSG)"
+    matches no record system's name (review, 2026-11-12)."""
+    return auto_name((e.get("names") or [""])[0])
+
+
 def search_name(e: dict) -> str:
     """The name the page's search links use: the first legal name that survives
     the avoid list, else the board name, as for an entry with no legal names."""
-    return core_name(first_legal(e) or (e.get("names") or [""])[0])
+    return core_name(first_legal(e) or board_name(e))
 
 
 # What a name-matched source reports when every legal name of the employer is
@@ -602,7 +611,7 @@ def violations(e: dict, parents: dict[str, str]) -> dict:
                 break
     if vt:
         return {"link": f"{VT}/parent/{vt}", "kind": "parent"}
-    name = first or (e.get("names") or [""])[0]
+    name = first or board_name(e)
     return {"link": f"{VT}/?" + urllib.parse.urlencode({"company_op": "starts", "company": re.sub(r"[,.]", "", name)}),
             "kind": "search"}
 
@@ -743,6 +752,15 @@ def read_board(b: dict) -> dict:
     return {"postings": postings, "prospect": prospect}
 
 
+def board_gone(err: Exception) -> bool:
+    """A read that failed because the vendor answered that this one board is not
+    there (404, 410; Lever's unknown site is a 404) or not a job list. Anything else
+    (a timeout, a 5xx, a 429, a page that is not JSON) may be the vendor down."""
+    if isinstance(err, ValueError) and not isinstance(err, json.JSONDecodeError):
+        return True
+    return bool(re.search(r"HTTP Error (?:404|410)\b", str(err)))
+
+
 def load_ledger(path: Path) -> dict:
     """The census ledger; missing or unreadable starts empty, and says so."""
     try:
@@ -760,13 +778,37 @@ def load_ledger(path: Path) -> dict:
     return {"version": 1, "boards": {}}
 
 
+def shift(d: str, days: int) -> str:
+    return (date.fromisoformat(d) + timedelta(days=days)).isoformat()
+
+
+def read_runs(rec: dict) -> list[list[str]]:
+    """The days the census read this board, as runs of days in a row: [[first,
+    last], ...], oldest first. The census reads only the boards today's cards link
+    to, so a board can go unread for weeks; what changed on it then is not known.
+    A ledger entry without them (none was written so) knows only its last day."""
+    runs = rec.get("reads")
+    if isinstance(runs, list) and runs and all(
+            isinstance(r, list) and len(r) == 2 and board_day(r[0]) == r[0] and board_day(r[1]) == r[1] and r[0] <= r[1]
+            for r in runs):
+        return sorted(runs)
+    last = board_day(rec.get("last_ok"))
+    return [[last, last]] if last else []
+
+
 def ledger_update(ledger: dict, b: dict, got: dict, today: date) -> None:
     """A successful read onto the ledger. Every listing present gets today as its
     last day seen (s), and a new one today as its first (f). One absent is left
-    as it was: its s falls behind, which is what taken down means here."""
+    as it was: its s falls behind, which is what taken down means here. Today
+    goes on the board's read days."""
     t = today.isoformat()
     rec = ledger["boards"].setdefault(b["key"], {"first_ok": t, "postings": {}})
-    rec.update(ats=b["ats"], token=b["token"], link=b["link"], last_ok=t, prospect=got.get("prospect", 0))
+    runs = read_runs(rec) if rec.get("last_ok") else []
+    if runs and runs[-1][1] >= shift(t, -1):
+        runs[-1][1] = max(runs[-1][1], t)
+    else:
+        runs.append([t, t])
+    rec.update(ats=b["ats"], token=b["token"], link=b["link"], last_ok=t, prospect=got.get("prospect", 0), reads=runs)
     for pid, x in got["postings"].items():
         p = rec["postings"].get(pid)
         if isinstance(p, dict):
@@ -789,6 +831,7 @@ def ledger_prune(ledger: dict, today: date) -> int:
         keep = {pid: p for pid, p in rec["postings"].items() if isinstance(p, dict) and (p.get("s") or "") >= cut}
         gone += len(rec["postings"]) - len(keep)
         rec["postings"] = keep
+        rec["reads"] = [r for r in read_runs(rec) if r[1] >= cut]
     return gone
 
 
@@ -796,21 +839,51 @@ def posting_link(rec: dict, pid: str) -> str:
     return f"{rec['link']}/jobs/{pid}" if rec.get("ats") == "greenhouse" else f"{rec['link']}/{pid}"
 
 
+def watch_start(rec: dict) -> str:
+    """The first day of the board's current watch: back from its last read day
+    through its read days, across gaps of at most READ_GAP days not read (a
+    vendor down a day or two). A longer gap starts the watch again."""
+    runs = read_runs(rec)
+    if not runs:
+        return rec.get("last_ok") or rec.get("first_ok") or ""
+    start = runs[-1][0]
+    for a, b in reversed(runs[:-1]):
+        if (date.fromisoformat(start) - date.fromisoformat(b)).days - 1 > READ_GAP:
+            break
+        start = a
+    return start
+
+
+def read_before(runs: list[list[str]], f: str) -> str | None:
+    """The last day the census read the board before day f, or None."""
+    best = None
+    for a, b in runs:
+        if a < f:
+            best = max(best or "", min(b, shift(f, -1)))
+    return best
+
+
 def relisted(rec: dict, today: date) -> dict | None:
     """Roles taken down and listed again under a new listing in the last
-    RELIST_DAYS, or None until the board has been watched that long.
+    RELIST_DAYS, or None until the board's current watch (watch_start) is that long.
 
-    A role counts when a listing first seen in the window, and after the first
-    census (whose listings were all new to it), has the same title and place as
-    a different listing on this board whose last day seen came before the new
-    one's first. Two listings up at once are several openings, not this; one id
-    that leaves and comes back is the same listing. Counted once per title and
+    A role counts when a new listing has the same title and place as a different
+    listing on this board that was gone before the new one was up, as the read
+    days show: on r, the census's last read before the new listing's first day,
+    the old one was already gone (its last day seen is before r), or r is the day
+    before and the old one was there then (a handover overnight). r must fall in
+    the window, so the change did. A gap in the reads hides what happened in it,
+    so two listings up at once while nobody read the board never count, and the
+    first read of a board (or the first after a gap) only sets what is there. One
+    id that leaves and comes back is the same listing. A new listing whose own
+    board date is before the window, or before the old one's last day seen, was up
+    (perhaps unlisted) before and does not count. Counted once per title and
     place, with the newest new listing as the example (linked to the board when
     it is no longer listed)."""
-    first = rec["first_ok"]
-    if (today - date.fromisoformat(first)).days < RELIST_DAYS:
+    if (today - date.fromisoformat(watch_start(rec))).days < RELIST_DAYS:
         return None
     since = (today - timedelta(days=RELIST_DAYS)).isoformat()
+    runs = read_runs(rec)
     by_role: dict[tuple, list] = {}
     for pid, p in rec["postings"].items():
         role = (page_key(p.get("t")), page_key(p.get("l")))
@@ -820,15 +893,20 @@ def relisted(rec: dict, today: date) -> dict | None:
     for role, ps in by_role.items():
         for pid, p in ps:
             f = p.get("f") or ""
-            if f < since or f <= first:
+            r = read_before(runs, f) if board_day(f) else None
+            d = board_day(p.get("d"))
+            if not r or r < since or (d and d < since):
                 continue
-            if any((q.get("s") or "") < f for qid, q in ps if qid != pid) and \
+            overnight = r == shift(f, -1)
+            olds = [s for s in (board_day(q.get("s")) for qid, q in ps if qid != pid) if s]
+            if any((s < r or (s == r and overnight)) and not (d and d < s) for s in olds) and \
                     (role not in found or f > found[role][1]["f"]):
                 found[role] = (pid, p)
     newest = sorted(found.values(), key=lambda x: (x[1]["f"], x[0]), reverse=True)[:3]
     return {"roles": len(found), "window_days": RELIST_DAYS,
-            "examples": [{"title": p.get("t") or "", "link": posting_link(rec, pid) if p.get("s") == rec["last_ok"]
-                          else rec["link"]} for pid, p in newest]}
+            "examples": [{"title": p.get("t") or "", "place": p.get("l") or "",
+                          "link": posting_link(rec, pid) if p.get("s") == rec["last_ok"] else rec["link"]}
+                         for pid, p in newest]}
 
 
 def hiring_facts(rec: dict, today: date) -> dict:
@@ -842,7 +920,7 @@ def hiring_facts(rec: dict, today: date) -> dict:
             "d90_plus": sum(1 for a in ages if a >= 90), "oldest": dates[0] if dates else None,
             # median_low: an even count gives the younger middle listing's age, a whole day.
             "median_days": statistics.median_low(ages) if ages else None,
-            "watching_since": rec["first_ok"], "relisted": relisted(rec, today),
+            "watching_since": watch_start(rec), "relisted": relisted(rec, today),
             "prospect": int(rec.get("prospect") or 0)}
 
 
@@ -1057,11 +1135,16 @@ def main() -> int:
         """The daily board census and each employer's hiring facts. Not stage():
         it reads boards, not employers, and one board that fails is not a streak
         of failed employers. A board that fails, or that the cap or the clock left
-        for tomorrow, keeps its ledger as it was and its employers' last facts."""
+        for tomorrow, keeps its ledger as it was and its employers' last facts
+        when they are that board's (the page dates them by checked.hiring); an
+        employer with none of that board's facts gets {"state": "unread"}."""
         src = "hiring"
         if src not in only:
             return
-        todo = [e for e in everyone if args.refresh or due(cache, e, src)]
+        # An employer whose board has not been read yet is due every run, so a
+        # second run the same day tries the board again.
+        todo = [e for e in everyone if args.refresh or due(cache, e, src)
+                or (((cache.get(e["id"]) or {}).get(src) or {}).get("facts") or {}).get("state") == "unread"]
         stats[src]["kept"] = len(everyone) - len(todo)
         if not todo:
             return
@@ -1102,7 +1185,12 @@ def main() -> int:
             except Exception as err:  # noqa: BLE001 - one board never fails the census
                 tally["failed"] += 1
                 errors[key] = str(err)[:160]
-                streak[b["ats"]] = streak.get(b["ats"], 0) + 1
+                # A board the vendor says is not there means the vendor answered:
+                # that board's trouble, not the vendor's. When it counted toward
+                # the streak, three dead Lever sites in a row stopped every Lever
+                # board after them, every day, since the boards go in the same
+                # order (review, 2026-11-12).
+                streak[b["ats"]] = 0 if board_gone(err) else streak.get(b["ats"], 0) + 1
         if tally["skipped"]:
             print(f"{src}: {tally['skipped']} boards not read today (the cap, the clock or a vendor down)", file=sys.stderr)
         if ledger_prune(ledger, TODAY):
@@ -1117,7 +1205,15 @@ def main() -> int:
                 put(e, src, hiring_facts(rec, TODAY))
             else:
                 key = next(iter(keys))
-                stats[src]["kept"] += 1
+                last = ((cache.get(e["id"]) or {}).get(src) or {}).get("facts") or {}
+                if last.get("state") == "ok" and last.get("link") == boards[key]["link"]:
+                    # Its board's last numbers stay; checked.hiring dates them on the page.
+                    stats[src]["kept"] += 1
+                else:
+                    # Never read, or the numbers are another board's (its cards moved):
+                    # say the board is not read yet, with no promise of when (a board
+                    # that fails every day would make "tomorrow" false for good).
+                    put(e, src, {"state": "unread", "link": boards[key]["link"]})
                 if key in errors:
                     stats[src]["failed"] += 1
                     stats[src]["error"] = stats[src]["error"] or f"{key}: {errors[key]}"[:160]

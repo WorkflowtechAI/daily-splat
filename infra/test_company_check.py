@@ -7,7 +7,9 @@ name on it equals one of the employer's reviewed legal names after
 normalizing, never on a partial or a near match.
 """
 
+import contextlib
 import importlib.util
+import io
 import json
 import re
 import sqlite3
@@ -492,6 +494,7 @@ check("read_board: through fetch_json, one call a board", board_calls,
 
 D0 = date(2026, 1, 1)
 day = lambda n: D0 + timedelta(days=n)   # noqa: E731
+ds = lambda n: day(n).isoformat()        # noqa: E731
 VB = cc.board_of(f"https://jobs.ashbyhq.com/vultr/{U1}")
 
 
@@ -500,60 +503,147 @@ def census(ledger, n, *rows, prospect=0):
                                   "prospect": prospect}, day(n))
 
 
+def watch(ledger, days, listings, prospect=0):
+    """The census on each of days; listings are (id, title, place, board date,
+    first day up, last day up), and each day's read shows the ones up that day."""
+    for n in days:
+        census(ledger, n, *[(pid, t, l, d) for pid, t, l, d, a, b in listings if a <= n <= b], prospect=prospect)
+
+
+def relist_on(listings, today, days=None):
+    """relisted() on day today, the board read every day from 0 to today unless days says otherwise."""
+    led = {"version": 1, "boards": {}}
+    watch(led, range(today + 1) if days is None else days, listings)
+    return cc.relisted(led["boards"]["ashby:vultr"], day(today))
+
+
 L = {"version": 1, "boards": {}}
-census(L, 0, ("a", "SRE", "Portland, OR", "2025-12-01"), ("b", "SOC Analyst", "Remote", None),
-       ("c", "Help Desk", "Boise, ID", "2025-12-20"))
+# Read every day from day 0. a (SRE, Portland) is up to day 29; d, a new listing
+# with its title and place, from day 40. e opens on day 40 beside c, the same
+# role while c is still up (two openings). b leaves on day 40 and comes back
+# under its own id on day 60; f opens with b's title somewhere else.
+LISTINGS = [("a", "SRE", "Portland, OR", "2025-12-01", 0, 29), ("b", "SOC Analyst", "Remote", None, 0, 39),
+            ("c", "Help Desk", "Boise, ID", "2025-12-20", 0, 101), ("d", "SRE", "Portland, OR", "2026-02-10", 40, 100),
+            ("e", "Help Desk", "Boise, ID", "2026-02-10", 40, 100), ("f", "SOC Analyst", "Seattle, WA", "2026-03-02", 60, 100)]
+watch(L, [0], LISTINGS)
 rec = L["boards"]["ashby:vultr"]
 check("ledger: the first run sets f and s to today",
-      (rec["first_ok"], rec["last_ok"], rec["link"], rec["postings"]["a"]),
-      ("2026-01-01", "2026-01-01", "https://jobs.ashbyhq.com/vultr",
+      (rec["first_ok"], rec["last_ok"], rec["link"], rec["reads"], rec["postings"]["a"]),
+      ("2026-01-01", "2026-01-01", "https://jobs.ashbyhq.com/vultr", [["2026-01-01", "2026-01-01"]],
        {"t": "SRE", "l": "Portland, OR", "d": "2025-12-01", "f": "2026-01-01", "s": "2026-01-01"}))
-census(L, 29, ("a", "SRE", "Portland, OR", "2025-12-01"), ("b", "SOC Analyst", "Remote", None),
-       ("c", "Help Desk", "Boise, ID", "2025-12-20"))
-# Day 40: a is gone and a new listing, d, has its title and place; e opens beside
-# c, the same role while c is still up (two openings).
-census(L, 40, ("b", "SOC Analyst", "Remote", None), ("c", "Help Desk", "Boise, ID", "2025-12-20"),
-       ("d", "SRE", "Portland, OR", "2026-02-10"), ("e", "Help Desk", "Boise, ID", "2026-02-10"))
+watch(L, range(1, 41), LISTINGS)
 check("ledger: an absent listing keeps its last day seen", (rec["postings"]["a"]["s"], rec["postings"]["d"]["f"]),
-      ("2026-01-30", "2026-02-10"))
-census(L, 50, ("c", "Help Desk", "Boise, ID", "2025-12-20"), ("d", "SRE", "Portland, OR", "2026-02-10"),
-       ("e", "Help Desk", "Boise, ID", "2026-02-10"))
-# Day 60: b comes back under the same id; f opens with b's title somewhere else.
-census(L, 60, ("b", "SOC Analyst", "Remote", None), ("c", "Help Desk", "Boise, ID", "2025-12-20"),
-       ("d", "SRE", "Portland, OR", "2026-02-10"), ("e", "Help Desk", "Boise, ID", "2026-02-10"),
-       ("f", "SOC Analyst", "Seattle, WA", "2026-03-02"))
+      (ds(29), ds(40)))
+check("ledger: the days read, as one run", rec["reads"], [[ds(0), ds(40)]])
+watch(L, range(41, 61), LISTINGS + [("b", "SOC Analyst", "Remote", None, 60, 101)])
 check("ledger: the same id back keeps its first day seen", (rec["postings"]["b"]["f"], rec["postings"]["b"]["s"]),
-      ("2026-01-01", "2026-03-02"))
+      (ds(0), ds(60)))
 check("relisted: none before 90 days of watching", cc.hiring_facts(rec, day(60))["relisted"], None)
-census(L, 100, ("b", "SOC Analyst", "Remote", None), ("c", "Help Desk", "Boise, ID", "2025-12-20"),
-       ("d", "SRE", "Portland, OR", "2026-02-10"), ("e", "Help Desk", "Boise, ID", "2026-02-10"),
-       ("f", "SOC Analyst", "Seattle, WA", "2026-03-02"), prospect=2)
+# A listing present again with a new title and date (an edit, a republish): t, l
+# and d follow the board, f stays.
+census(L, 61, *[(pid, t, l, d) for pid, t, l, d, a, b in LISTINGS if a <= 61 <= b],
+       ("b", "SOC Analyst II", "Remote - US", "2026-03-02"))
+check("ledger: a listing seen again takes the board's title, place and date, keeps its first day",
+      rec["postings"]["b"], {"t": "SOC Analyst II", "l": "Remote - US", "d": "2026-03-02", "f": ds(0), "s": ds(61)})
+LISTINGS_B = LISTINGS + [("b", "SOC Analyst II", "Remote - US", "2026-03-02", 61, 101)]
+watch(L, range(62, 101), LISTINGS_B, prospect=2)
 facts = cc.hiring_facts(rec, day(100))
 check("relisted: only the new listing after the old one's last day, not two up at once or an id come back",
       facts["relisted"], {"roles": 1, "window_days": 90,
-                          "examples": [{"title": "SRE", "link": "https://jobs.ashbyhq.com/vultr/d"}]})
+                          "examples": [{"title": "SRE", "place": "Portland, OR", "link": "https://jobs.ashbyhq.com/vultr/d"}]})
 check("hiring_facts: the board's numbers today", {k: facts[k] for k in ("state", "ats", "open", "dated", "watching_since", "prospect")},
-      {"state": "ok", "ats": "ashby", "open": 5, "dated": 4, "watching_since": "2026-01-01", "prospect": 2})
-census(L, 101, ("b", "SOC Analyst", "Remote", None))
+      {"state": "ok", "ats": "ashby", "open": 5, "dated": 5, "watching_since": "2026-01-01", "prospect": 2})
+census(L, 101, ("b", "SOC Analyst II", "Remote - US", "2026-03-02"), ("c", "Help Desk", "Boise, ID", "2025-12-20"))
 check("relisted: an example no longer listed links to the board",
-      cc.hiring_facts(rec, day(101))["relisted"]["examples"], [{"title": "SRE", "link": "https://jobs.ashbyhq.com/vultr"}])
-# Outside the window: a listing new on day 5 that replaced one gone on day 0 is
-# older than 90 days by day 100.
-L2 = {"version": 1, "boards": {}}
-census(L2, 0, ("x", "NOC Engineer", "Hillsboro, OR", None))
-census(L2, 5, ("y", "NOC Engineer", "Hillsboro, OR", None))
-census(L2, 100, ("y", "NOC Engineer", "Hillsboro, OR", None))
-check("relisted: only roles listed again within the window", cc.hiring_facts(L2["boards"]["ashby:vultr"], day(100))["relisted"]["roles"], 0)
-# Pruning: listings not seen for 180 days, and boards not read for 180 days.
+      cc.hiring_facts(rec, day(101))["relisted"]["examples"],
+      [{"title": "SRE", "place": "Portland, OR", "link": "https://jobs.ashbyhq.com/vultr"}])
+
+HD = ("Help Desk", "Boise, ID")
+# The handover day: x and y are both up on day 95 (two openings at once), x gone
+# on day 96. A day later, y first seen the day after x's last: taken down and
+# listed again overnight.
+check("relisted: the old listing's last day is the new one's first: two up at once, none",
+      relist_on([("x", *HD, None, 0, 95), ("y", *HD, None, 95, 100)], 100)["roles"], 0)
+check("relisted: the new listing first seen the day after the old one's last: one",
+      relist_on([("x", *HD, None, 0, 95), ("y", *HD, None, 96, 100)], 100)["roles"], 1)
+# One role taken down and listed again twice in the window is one role.
+check("relisted: one role listed again twice counts once, the newest as the example",
+      relist_on([("a", *HD, None, 0, 39), ("d", *HD, None, 40, 60), ("g", *HD, None, 61, 120)], 120),
+      {"roles": 1, "window_days": 90, "examples": [{"title": "Help Desk", "place": "Boise, ID",
+                                                   "link": "https://jobs.ashbyhq.com/vultr/g"}]})
+check("relisted: titles and places match without case or punctuation",
+      relist_on([("a", "Sr. SRE", "Portland, OR", None, 0, 49), ("b", "Sr SRE", "portland or", None, 50, 120)], 120)["roles"], 1)
+check("relisted: a different place is another role",
+      relist_on([("a", "SRE", "Portland, OR", None, 0, 49), ("b", "SRE", "Seattle, WA", None, 50, 120)], 120)["roles"], 0)
+four = relist_on([x for i, t in enumerate(("NOC", "SOC", "SRE", "IT")) for x in
+                  ((f"o{i}", t, "Remote", None, 0, 40 + i), (f"n{i}", t, "Remote", None, 41 + i, 120))], 120)
+check("relisted: four roles, three examples, newest first",
+      (four["roles"], [x["title"] for x in four["examples"]]), (4, ["IT", "SRE", "SOC"]))
+# The window is the last 90 days (day 30 to day 120): the census's last read
+# before the new listing came up must fall in it.
+check("relisted: the last read before the new listing on the window's first day counts",
+      relist_on([("q", *HD, None, 0, 30), ("p", *HD, None, 31, 120)], 120)["roles"], 1)
+check("relisted: the day before the window does not",
+      relist_on([("q", *HD, None, 0, 29), ("p", *HD, None, 30, 120)], 120)["roles"], 0)
+check("relisted: exactly 90 days of watching shows the numbers", relist_on([("q", *HD, None, 0, 90)], 90),
+      {"roles": 0, "window_days": 90, "examples": []})
+check("relisted: 89 days does not", relist_on([("q", *HD, None, 0, 89)], 89), None)
+# A new listing whose own board date is before the window, or before the old
+# one's last day, was up (perhaps unlisted) before the census saw it.
+check("relisted: the new listing's own date before the window does not count",
+      relist_on([("q", *HD, None, 0, 5), ("p", *HD, ds(8), 50, 120)], 120)["roles"], 0)
+check("relisted: nor its own date before the old listing's last day",
+      relist_on([("q", *HD, None, 0, 49), ("p", *HD, ds(45), 50, 120)], 120)["roles"], 0)
+check("relisted: its own date on the old listing's last day counts (taken down and listed that day)",
+      relist_on([("q", *HD, None, 0, 49), ("p", *HD, ds(49), 50, 120)], 120)["roles"], 1)
+# Gaps in the reads (2026-11-12 review): the census reads only the boards today's
+# cards link to, so a board can go weeks unread. Read days 0-54 and 71 on: q is
+# up to day 64 and p from day 58, both up together while nobody read the board.
+GAP = [n for n in range(162) if not 55 <= n <= 70]
+check("relisted: a long gap starts the watch again", relist_on([("q", *HD, None, 0, 64), ("p", *HD, None, 58, 161)], 100, GAP), None)
+check("relisted: two listings up together in a gap are not counted after it",
+      relist_on([("q", *HD, None, 0, 64), ("p", *HD, None, 58, 161)], 161, GAP)["roles"], 0)
+gap_led = {"version": 1, "boards": {}}
+watch(gap_led, GAP[:120], [("q", *HD, None, 0, 64)])
+check("hiring_facts: watching since the read after the gap", cc.hiring_facts(gap_led["boards"]["ashby:vultr"], day(GAP[119]))["watching_since"],
+      ds(71))
+# A short gap (days 55 and 56 unread) stays one watch: a handover inside it is not
+# known, one gone before it is.
+SHORT = [n for n in range(121) if n not in (55, 56)]
+check("relisted: a short gap keeps the watch; a handover inside it is not counted",
+      relist_on([("q", *HD, None, 0, 55), ("p", *HD, None, 56, 120)], 120, SHORT)["roles"], 0)
+check("relisted: one gone before the short gap is",
+      relist_on([("q", *HD, None, 0, 40), ("p", *HD, None, 56, 120)], 120, SHORT)["roles"], 1)
+# Read days 0-30, then nothing until day 200 (the employer's cards left the page):
+# a listing first seen on day 200, dated day 40 by its board, is not "listed
+# again in the last 90 days".
+check("relisted: a board unread for months starts over",
+      relist_on([("a", *HD, None, 0, 30), ("b", *HD, ds(40), 40, 300)], 289, [*range(31), *range(200, 290)]), None)
+check("relisted: and after 90 more days, the change before the gap is not in the window",
+      relist_on([("a", *HD, None, 0, 30), ("b", *HD, ds(40), 40, 300)], 290, [*range(31), *range(200, 291)])["roles"], 0)
+check("read_runs: an entry without read days knows only its last day", cc.read_runs({"first_ok": ds(0), "last_ok": ds(9)}),
+      [[ds(9), ds(9)]])
+check("read_runs: read days that are not dates are dropped the same way",
+      cc.read_runs({"first_ok": ds(0), "last_ok": ds(9), "reads": [["2026-02-30", ds(9)]]}), [[ds(9), ds(9)]])
+# Pruning: listings not seen for 180 days, boards not read for 180 days, and read days as old.
 L["boards"]["lever:gone"] = {"ats": "lever", "token": "gone", "link": "https://jobs.lever.co/gone", "first_ok": "2026-01-01",
                              "last_ok": "2026-01-01", "postings": {}}
+rec["reads"] = [[ds(0), ds(30)], [ds(40), ds(101)]]
 census(L, 250, ("d", "SRE", "Portland, OR", "2026-02-10"))
-check("ledger_prune: what is gone 180 days leaves", (cc.ledger_prune(L, day(250)), sorted(rec["postings"]), sorted(L["boards"])),
-      (2, ["b", "c", "d", "e", "f"], ["ashby:vultr"]))
-bad_file, no_file = tmp / "boards-bad.json", tmp / "boards-none.json"
+check("ledger_prune: what is gone 180 days leaves",
+      (cc.ledger_prune(L, day(250)), sorted(rec["postings"]), sorted(L["boards"]), rec["reads"]),
+      (2, ["b", "c", "d", "e", "f"], ["ashby:vultr"], [[ds(40), ds(101)], [ds(250), ds(250)]]))
+bad_file, no_file, odd_file = tmp / "boards-bad.json", tmp / "boards-none.json", tmp / "boards-odd.json"
 bad_file.write_text('{"version": 1, "boards": ', encoding="utf-8")
 check("load_ledger: a corrupt file starts empty", cc.load_ledger(bad_file), {"version": 1, "boards": {}})
 check("load_ledger: no file starts empty", cc.load_ledger(no_file), {"version": 1, "boards": {}})
+odd_file.write_text(json.dumps({"version": 1, "boards": {
+    "ashby:ok": {"first_ok": ds(0), "last_ok": ds(1), "postings": {}},
+    "ashby:nofirst": {"last_ok": ds(1), "postings": {}},
+    "ashby:badlast": {"first_ok": ds(0), "last_ok": "2026-02-30", "postings": {}},
+    "ashby:nopostings": {"first_ok": ds(0), "last_ok": ds(1)},
+    "ashby:list": ["not", "a", "board"]}}), encoding="utf-8")
+check("load_ledger: a board without its days or listings is dropped", sorted(cc.load_ledger(odd_file)["boards"]), ["ashby:ok"])
 
 # Age bands and the median, by the board's own dates, over what is listed today.
 T = date(2026, 11, 12)
@@ -682,6 +772,12 @@ cc.COURT_BUDGET = 100
 # ── Employers the table does not cover: matched automatically ────────────────
 
 check("auto_name drops a note in parentheses", cc.auto_name("Syms Strategic Group, LLC (SSG)"), "Syms Strategic Group, LLC")
+# An ambiguous automatic employer avoids its one legal name; its searches use the
+# card's name without the note, as before the avoid rule (review, 2026-11-12).
+SSG = cc.auto_entry("Syms Strategic Group, LLC (SSG)", {"ambiguous": True})
+check("search_name: an ambiguous automatic employer, the card name without its note", cc.search_name(SSG), "Syms Strategic Group")
+check("violations: its Violation Tracker search the same", cc.violations(SSG, {"syms strategic group": "ssg"}),
+      {"link": "https://violationtracker.goodjobsfirst.org/?company_op=starts&company=Syms+Strategic+Group+LLC", "kind": "search"})
 RECIPIENTS = {
     "AttainX": [{"uei": "ATTAINX00001", "name": "ATTAINX, INC.", "recipient_level": "P", "id": "ax-P"},
                 {"uei": "ATTAINX00001", "name": "ATTAINX, INC.", "recipient_level": "C", "id": "ax-C"},
@@ -764,7 +860,8 @@ check("hiring run: cards on two boards give no numbers", co["acme"].get("hiring"
 check("hiring run: cards on no board read here", co["zed"].get("hiring"), {"state": "none"})
 check("hiring run: an automatic employer gets it by its links too",
       ((co.get("auto-attainx") or {}).get("hiring") or {}).get("open"), 1)
-check("hiring run: a new board that fails gives no facts yet", "hiring" in (co.get("auto-nobody") or {"hiring": 1}), False)
+check("hiring run: a new board that fails says it is not read yet, with no promise of when",
+      (co.get("auto-nobody") or {}).get("hiring"), {"state": "unread", "link": "https://jobs.lever.co/nobody"})
 check("hiring run: the census in the stats", (out["stats"]["hiring"]["boards"], out["stats"]["hiring"]["failed"]),
       ({"found": 5, "read": 4, "failed": 1, "skipped": 0}, 1))
 ledger_now = json.loads(cc.BOARDS.read_text(encoding="utf-8"))
@@ -790,9 +887,13 @@ yesterday = (cc.TODAY - timedelta(days=1)).isoformat()
 ledger_before = json.loads(kept_ledger)
 vrec = ledger_before["boards"]["ashby:vultr"]
 vrec["first_ok"] = vrec["last_ok"] = yesterday
+vrec["reads"] = [[yesterday, yesterday]]
 for p in vrec["postings"].values():
     p["f"] = p["s"] = yesterday
 cc.BOARDS.write_text(json.dumps(ledger_before), encoding="utf-8")
+cache_v = json.loads(cc.CACHE.read_text(encoding="utf-8"))
+cache_v["vultr"]["hiring"]["at"] = yesterday
+cc.CACHE.write_text(json.dumps(cache_v), encoding="utf-8")
 vultr_api = "https://api.ashbyhq.com/posting-api/job-board/vultr"
 vultr_json = BOARD_JSON.pop(vultr_api)
 sys.argv = ["company_check.py", "--refresh", "--only", "hiring"]
@@ -800,10 +901,101 @@ cc.main()
 out2 = json.loads(cc.OUT.read_text(encoding="utf-8"))
 ledger2 = json.loads(cc.BOARDS.read_text(encoding="utf-8"))
 check("hiring run: a failed board keeps its ledger", ledger2["boards"]["ashby:vultr"], vrec)
-check("hiring run: and its employer's last facts", out2["companies"]["vultr"]["hiring"], vh)
+check("hiring run: and its employer's last facts, dated the day they were read (the page says so)",
+      (out2["companies"]["vultr"]["hiring"], out2["companies"]["vultr"]["checked"]["hiring"]), (vh, yesterday))
 check("hiring run: and says it failed", (out2["stats"]["hiring"]["failed"], "ashby:vultr" in (out2["stats"]["hiring"]["error"] or "")),
       (2, True))
 BOARD_JSON[vultr_api] = vultr_json
+
+# Cadence: hiring is due every day, every other source once a week (REFRESH).
+k_v = cc.entry_key(VULTR)
+week_ago = (cc.TODAY - timedelta(days=7)).isoformat()
+due_cache = {"vultr": {"hiring": {"at": yesterday, "key": k_v}, "labor": {"at": yesterday, "key": k_v},
+                       "pac": {"at": week_ago, "key": k_v}}}
+check("due: hiring a day old is due; labor a day old waits its week; pac a week old is due",
+      (cc.due(due_cache, VULTR, "hiring"), cc.due(due_cache, VULTR, "labor"), cc.due(due_cache, VULTR, "pac")), (True, False, True))
+check("due: hiring checked today is not due", cc.due({"vultr": {"hiring": {"at": today_s, "key": k_v}}}, VULTR, "hiring"), False)
+# The next day, without --refresh, every board is read again.
+board_apis = lambda: sorted(u for u in board_calls if "/recipient/" not in u and "spending" not in u)   # noqa: E731
+ALL_APIS = sorted([vultr_api, "https://boards-api.greenhouse.io/v1/boards/acme/jobs", "https://api.lever.co/v0/postings/acme?mode=json",
+                   "https://api.lever.co/v0/postings/nobody?mode=json", "https://api.ashbyhq.com/posting-api/job-board/attainx"])
+cc.CACHE.unlink(missing_ok=True)
+cc.BOARDS.unlink(missing_ok=True)
+sys.argv = ["company_check.py", "--only", "hiring"]
+cc.main()
+real_today = cc.TODAY
+tomorrow = (real_today + timedelta(days=1)).isoformat()
+cc.TODAY = real_today + timedelta(days=1)
+board_calls.clear()
+cc.main()
+check("hiring run: the next day, without --refresh, every board is read again", board_apis(), ALL_APIS)
+check("hiring run: and the days read run on", json.loads(cc.BOARDS.read_text(encoding="utf-8"))["boards"]["ashby:vultr"]["reads"],
+      [[today_s, tomorrow]])
+# Vultr's cards move to another board, which does not answer: no numbers from the
+# board it left, and no promise of when.
+cc.JOBS = tmp / "jobs-moved.json"
+cc.JOBS.write_text(json.dumps({"jobs": [{"company": "Vultr", "url": f"https://jobs.lever.co/vultr/{U1}"}]}), encoding="utf-8")
+sys.argv = ["company_check.py", "--refresh", "--only", "hiring"]
+cc.main()
+check("hiring run: cards on a new board that is not read yet drop the old board's numbers",
+      json.loads(cc.OUT.read_text(encoding="utf-8"))["companies"]["vultr"]["hiring"], {"state": "unread", "link": "https://jobs.lever.co/vultr"})
+cc.TODAY = real_today
+cc.JOBS = tmp / "jobs-boards.json"
+
+# The census's limits: BOARD_MAX boards a run, the clock, and a vendor's breaker.
+cc.CACHE.unlink(missing_ok=True)
+cc.BOARDS.unlink(missing_ok=True)
+cc.BOARD_MAX = 1
+err_out = io.StringIO()
+with contextlib.redirect_stderr(err_out):
+    cc.main()
+cc.BOARD_MAX = 400
+out3 = json.loads(cc.OUT.read_text(encoding="utf-8"))
+check("hiring run: BOARD_MAX boards a run, the busiest first; the rest wait",
+      (out3["stats"]["hiring"]["boards"], sorted(json.loads(cc.BOARDS.read_text(encoding="utf-8"))["boards"]),
+       "hiring: 4 boards not read today" in err_out.getvalue()),
+      ({"found": 5, "read": 1, "failed": 0, "skipped": 4}, ["ashby:vultr"], True))
+check("hiring run: an employer whose board waits is not read yet", out3["companies"]["auto-attainx"]["hiring"],
+      {"state": "unread", "link": "https://jobs.ashbyhq.com/attainx"})
+ledger_text = cc.BOARDS.read_text(encoding="utf-8")
+cc.START = time.monotonic() - 3600
+board_calls.clear()
+cc.main()
+cc.START = time.monotonic()
+check("hiring run: past the run's time, no board is read and the ledger stays",
+      (json.loads(cc.OUT.read_text(encoding="utf-8"))["stats"]["hiring"]["boards"], board_apis(), cc.BOARDS.read_text(encoding="utf-8")),
+      ({"found": 5, "read": 0, "failed": 0, "skipped": 5}, [], ledger_text))
+# Three Lever boards that fail, then one that answers (boards go busiest first,
+# then by key). A timeout three times is the vendor down: the fourth waits. A 404
+# three times is three dead boards: the vendor answered, so the fourth is read.
+BOARD_JSON["https://api.lever.co/v0/postings/good?mode=json"] = [
+    {"id": U1, "text": "Cloud Engineer", "categories": {"location": "Seattle, WA"}, "createdAt": LEVER_MS}]
+cc.JOBS = tmp / "jobs-lever.json"
+cc.JOBS.write_text(json.dumps({"jobs": [{"company": f"L{t}", "url": f"https://jobs.lever.co/{t}/{U1}"}
+                                         for t in ("dead1", "dead2", "dead3", "good")]}), encoding="utf-8")
+LEVER_APIS = [f"https://api.lever.co/v0/postings/{t}?mode=json" for t in ("dead1", "dead2", "dead3", "good")]
+
+
+def lever_timeouts(url, data=None, headers=None, timeout=60):
+    if "/dead" in url:
+        board_calls.append(url)
+        raise RuntimeError("TimeoutError: timed out")
+    return fake_boards(url, data, headers, timeout)
+
+
+for label, fetcher, calls, tally in (
+        ("three 404s are three dead boards, not Lever down", fake_boards, LEVER_APIS,
+         {"found": 4, "read": 1, "failed": 3, "skipped": 0}),
+        ("three timeouts in a row stop Lever for the day", lever_timeouts, LEVER_APIS[:3],
+         {"found": 4, "read": 0, "failed": 3, "skipped": 1})):
+    cc.CACHE.unlink(missing_ok=True)
+    cc.BOARDS.unlink(missing_ok=True)
+    cc.fetch_json = fetcher
+    board_calls.clear()
+    cc.main()
+    check(f"hiring run: {label}", (sorted(set(board_apis())), json.loads(cc.OUT.read_text(encoding="utf-8"))["stats"]["hiring"]["boards"]),
+          (calls, tally))
+cc.fetch_json = fake_boards
 cc.JOBS = tmp / "no-page.json"
 
 # ── The page's hiring section ────────────────────────────────────────────────
