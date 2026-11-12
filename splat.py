@@ -114,6 +114,9 @@ ASHBY = {
     "vanta": "Vanta", "drata": "Drata", "cohere": "Cohere", "replit": "Replit",
     "1password": "1Password", "sentry": "Sentry", "zip": "Zip", "decagon": "Decagon",
     "sierra": "Sierra", "harvey": "Harvey", "persona": "Persona",
+    # 2026-11-12: Vultr's roles reached the Splat only through Foorilla, some with a
+    # later date than its own board's (a March posting shown as Nov 6).
+    "vultr": "Vultr",
 }
 # (tenant, wd host, site, display name). Workday is where most big PNW employers live.
 WORKDAY = [
