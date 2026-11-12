@@ -235,7 +235,7 @@
   <details id="share">
     <summary>Share a job <span class="sum-note">Found one that isn't here? &middot; goes on the public page</span></summary>
     <div class="help-body">
-    <p class="help-intro">Found a job the Splat doesn't have? Share it, and it shows up after the next morning's run if it fits the tracks. The employer's own posting is best. A LinkedIn or Indeed link works too: the Splat looks for the employer's own posting first, and if there isn't one, the card says "LinkedIn only" and links there. Nothing about you is kept.</p>
+    <p class="help-intro">Found a job the Splat doesn't have? Share it. The form tells you right away if it's outside the Splat's tracks or places; otherwise it shows up after the next morning's run. A LinkedIn or Indeed link works: the Splat looks for the employer's own posting first, and if there isn't one, the card says "LinkedIn only" and links there. A link to an employer's own careers site waits for David to look at it first. Nothing about you is kept.</p>
     <form id="share-form" novalidate>
       <label class="field"><span>Link to the job</span><input type="text" name="url" inputmode="url" maxlength="500" placeholder="https://..." autocomplete="off"></label>
       <div class="two">
@@ -243,7 +243,7 @@
         <label class="field"><span>Employer</span><input type="text" name="company" maxlength="120" autocomplete="off"></label>
       </div>
       <label class="field"><span>Where</span><input type="text" name="location" maxlength="120" placeholder="Portland, OR · Seattle, WA · Remote US" autocomplete="off"></label>
-      <label class="field"><span>Anything to know about it (optional, not shown on the page)</span><textarea name="note" maxlength="500"></textarea></label>
+      <label class="field"><span>Anything to know about it (optional, goes only to David)</span><textarea name="note" maxlength="500"></textarea></label>
       <input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div class="send-row">
         <button class="send" type="submit">Share it</button>
@@ -366,7 +366,7 @@
   <details>
     <summary>How this works</summary>
     <p>Every morning a script on this server reads company job boards directly (Greenhouse, Lever, Ashby and Workday boards for Oregon and PNW employers and security vendors, plus Amazon) and the open aggregators listed in the <a href="/job-sources/">job source directory</a>: Foorilla, RemoteOK, Jobicy, Himalayas, Working Nomads and Workable. Federal IT jobs open to the public in Oregon, Washington and Idaho come from <a href="https://www.usajobs.gov/" target="_blank" rel="noopener">USAJOBS</a>, and each one links to its official posting there. This page is not affiliated with or endorsed by USAJOBS or the U.S. Office of Personnel Management.</p>
-    <p>Jobs marked "Shared by a member" came in through "Share a job" and go through the same checks as the rest. The Splat never copies LinkedIn or Indeed: when a member shares a job from there, it looks for the employer's own posting and links to that, and if there isn't one the card says "LinkedIn only" (or "Indeed only") and links there for two weeks. Any other shared link shows up only once the posting at it has been read.</p>
+    <p>Jobs marked "Shared by a member" came in through "Share a job" and go through the same checks as the rest. The Splat never copies LinkedIn or Indeed: when a member shares a job from there, it looks for the employer's own posting and links to that, and if there isn't one the card says "LinkedIn only" (or "Indeed only") and links there for two weeks. A link to a job system the Splat reads directly (Greenhouse, Lever, Ashby, Workday and a few others) shows once the posting there has been read. A link to an employer's own careers site waits until David has looked at it, so a fake page can't slip onto the Splat. A note added to a shared job goes only to David.</p>
     <p>Portland-area public employers that post on governmentjobs.com don't allow their listings to be copied, so look for those jobs on their own pages: <a href="https://www.governmentjobs.com/careers/portlandor" target="_blank" rel="noopener">City of Portland</a>, <a href="https://www.governmentjobs.com/careers/trimet" target="_blank" rel="noopener">TriMet</a>, <a href="https://www.governmentjobs.com/careers/portofportland" target="_blank" rel="noopener">Port of Portland</a>, <a href="https://www.governmentjobs.com/careers/beaverton" target="_blank" rel="noopener">City of Beaverton</a> and <a href="https://www.governmentjobs.com/careers/oregonmetro" target="_blank" rel="noopener">Oregon Metro</a>.</p>
     <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), or as a sales engineer of technology: sales and solutions engineers and consultants, pre-sales roles, and the solutions architects and customer engineers of technology vendors (sales engineers of industrial, building or other non-technology products, account executives and support after the sale are left out); the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
     <p>Each new posting is also read once, the day it first appears, from the employer's own system where it can be: its pay range, any clearance it requires, days in the office, where a remote hire may live, the degree and years it asks for, the kind of work, and whether the job manages people. Pay, years and office days are taken from the text as written; the rest is the classifier's reading of the few sentences that say it, so check the posting before you rely on a tag. <span id="read-line"></span> A federal or defense contractor whose posting could not be read gets "Check clearance", since many of their roles need one the title never mentions.</p>
@@ -921,21 +921,25 @@
       if (!r.ok || !d.ok) throw new Error(d.error || "It did not send. Please try again in a bit.");
       shareForm.reset(); shareStatus.className = "ok";
       shareStatus.textContent = d.new === false ? "Someone already shared that one. Thank you anyway."
-        : "Shared. Thank you. It shows up after the next morning's run if it fits the tracks.";
+        : d.review ? "Shared. Thank you. That link isn't on a job system the Splat can check, so David looks at it before it shows up."
+        : "Shared. Thank you. It shows up after the next morning's run.";
     } catch (err) {
       shareStatus.className = "err"; shareStatus.textContent = err.message;
     } finally { btn.disabled = false; }
   });
 
-  // David's remove link from the tip email: #tip-review=ID.SIGNATURE. The signature
-  // is checked on the server; this only asks before sending it.
-  const review = /^#tip-review=([0-9a-f]{16})\.([0-9a-f]{32})$/.exec(location.hash);
+  // David's links from the tip email: #tip-review=ID.SIG removes, #tip-approve=ID.SIG
+  // lets a link the reader cannot vouch for show. Each signature is checked on the
+  // server for its own action; this only asks before sending it.
+  const review = /^#tip-(review|approve)=([0-9a-f]{16})\.([0-9a-f]{32})$/.exec(location.hash);
   if (review) {
     history.replaceState(null, "", location.pathname + location.search);
-    if (confirm("Remove this shared job from the Splat? It drops off at the next morning's run.")) {
+    const action = review[1] === "approve" ? "approve" : "remove";
+    if (confirm(action === "approve" ? "Approve this shared job? It shows up after the next morning's run."
+      : "Remove this shared job from the Splat? It drops off at the next morning's run.")) {
       fetch("/api/splat-intake", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "tip_review", id: review[1], sig: review[2] }) })
-        .then((r) => r.json()).then((d) => alert(d.ok ? "Removed." : (d.error || "That did not work.")))
+        body: JSON.stringify({ kind: "tip_review", action, id: review[2], sig: review[3] }) })
+        .then((r) => r.json()).then((d) => alert(d.ok ? (action === "approve" ? "Approved." : "Removed.") : (d.error || "That did not work.")))
         .catch(() => alert("That did not work. Try the link again in a bit."));
     }
   }
