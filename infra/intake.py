@@ -77,7 +77,7 @@ TIPS_FILE = Path(os.environ.get("TIPS_FILE") or "/var/lib/daily-splat/tips.json"
 TIP_KEEP_DAYS = 31        # splat.py shows a tip at most 30 days (14 for LinkedIn/Indeed)
 TIPS_PER_DAY = 40         # new tips a day, all visitors together: a flood waits for tomorrow
 TIPS_ACTIVE_MAX = 300     # tips held at once
-PAGE = "https://iambraun.com/cv/job-sources/daily-splat/"
+PAGE = "https://worksearchcollective.com/splat/"
 TIP_FIELDS = {"url": 500, "title": 160, "company": 120, "location": 120, "note": 500}
 _tips_lock = threading.Lock()
 # The last number in a /jobs/view/ slug is the job (a title can hold a req number),

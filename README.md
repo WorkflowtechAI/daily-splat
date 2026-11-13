@@ -1,6 +1,6 @@
 # The Daily Splat
 
-`https://iambraun.com/cv/job-sources/daily-splat/` is a tiny job aggregator for
+`https://worksearchcollective.com/splat/` is a tiny job aggregator for
 the job-hunt cabal: cybersecurity openings plus the infrastructure engineering
 next to them (cloud, network, systems, DevOps, sysadmin, IT support), and the
 project, program and product managers of technology work, entry to senior
@@ -465,13 +465,20 @@ last two days are carried and marked "Source down today" on the page.
 
 ```bash
 git clone https://github.com/WorkflowtechAI/daily-splat.git /home/foundry/daily-splat
+sudo install -d -o foundry -g foundry -m 775 /var/www/worksearchcollective.com/splat   # the docroot the units write to
 sudo cp /home/foundry/daily-splat/infra/daily-splat.service /etc/systemd/system/
 sudo cp /home/foundry/daily-splat/infra/daily-splat.timer   /etc/systemd/system/
 sudo cp /home/foundry/daily-splat/infra/company-check.service /home/foundry/daily-splat/infra/company-check.timer /etc/systemd/system/
+sudo cp /home/foundry/daily-splat/infra/splat-intake.service /etc/systemd/system/   # needs /etc/splat-intake.env (Graph keys)
 sudo systemctl daemon-reload
-sudo systemctl enable --now daily-splat.timer company-check.timer
+sudo systemctl enable --now daily-splat.timer company-check.timer splat-intake.service
 sudo systemctl start daily-splat.service      # first run now, so the page has data
 ```
+
+The site itself (nginx server, certificate, the `/api/splat-intake` proxy) is
+`infra/nginx/worksearchcollective.com.conf`; its header has the certbot and
+deploy commands. The `/etc/systemd/system` unit files are copies, not links: after
+a PR changes one, install it again and run `sudo systemctl daemon-reload`.
 
 ## Running it
 

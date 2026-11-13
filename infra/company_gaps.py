@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LIVE = "https://iambraun.com/cv/job-sources/daily-splat/jobs.json"
+LIVE = "https://worksearchcollective.com/splat/jobs.json"
 spec = importlib.util.spec_from_file_location("company_check", ROOT / "company_check.py")
 cc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cc)
