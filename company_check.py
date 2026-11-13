@@ -75,7 +75,7 @@ DATA = STATE_DIR / "company-data"
 BOARDS = STATE_DIR / "boards.json"
 NOW = datetime.now(timezone.utc)
 TODAY = NOW.date()
-UA = "daily-splat/1.0 (company check; https://iambraun.com/cv/job-sources/daily-splat/)"
+UA = "daily-splat/1.0 (company check; https://worksearchcollective.com/splat/)"
 
 REFRESH_DAYS = 7          # each source, per employer
 REFRESH = {"hiring": 1}   # days, for a source that is not weekly: the board census is daily

@@ -14,7 +14,7 @@ EnvironmentFile=/etc/daily-splat.env
 # (boards.json, which the splat reads for posting dates) live beside the
 # splat's state.
 StateDirectory=daily-splat
-Environment=COMPANY_OUT=/var/www/iambraun.com/cv/job-sources/daily-splat/companies.json
+Environment=COMPANY_OUT=/var/www/worksearchcollective.com/splat/companies.json
 # Runs the checkout daily-splat.service pulled at 05:30. It never pulls itself,
 # so the two units never race on the git tree.
 ExecStart=/usr/bin/python3 /home/foundry/daily-splat/company_check.py

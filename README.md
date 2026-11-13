@@ -1,6 +1,6 @@
 # The Daily Splat
 
-`https://iambraun.com/cv/job-sources/daily-splat/` is a tiny job aggregator for
+`https://worksearchcollective.com/splat/` is a tiny job aggregator for
 the job-hunt cabal: cybersecurity openings plus the infrastructure engineering
 next to them (cloud, network, systems, DevOps, sysadmin, IT support), and the
 project, program and product managers of technology work, entry to senior
