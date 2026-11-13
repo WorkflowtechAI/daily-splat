@@ -56,6 +56,7 @@ FIELDS = {
     "would_use": ("Would use the tools", 50),
     "pieces": ("Pieces that matter", 400),
     "account": ("Account preference", 100),
+    "donate": ("Optional donate link", 100),
     "extras": ("Other help they'd want", 600),
     "extras_other": ("Other help, in their words", 600),
     "else": ("Anything else", 4000),
