@@ -813,6 +813,40 @@ def ashby_pay(summary: str | None) -> str | None:
     return head if re.search(r"\d", head) else None
 
 
+# Mojibake: UTF-8 text that a source decoded as Latin-1 (or cp1252) before sending it.
+# RemoteOK's API had "Engineer â\x80\x94 Kubernetes" for "Engineer — Kubernetes",
+# "MÃ¼nchen" for "München" and "Sothebyâ\x80\x99s" for "Sotheby’s" (7 of 97 rows,
+# 2026-11-14). Each run shaped exactly like one UTF-8 character is turned back into its
+# bytes and decoded; a run that is not valid UTF-8 stays as it is, so real accented
+# text ("Château", "Zürich", "Señor") never changes. A continuation byte in the
+# Latin-1 view (U+0080-U+00BF) is safe anywhere. The cp1252 view, where those bytes
+# show as punctuation ("â€”" for "—"), counts only after a 3- or 4-byte lead or after
+# "Ã": a 2-byte read of real text would turn "OLÉ”" into "OLɔ".
+_CP1252 = {bytes([b]).decode("cp1252"): b for b in range(0x80, 0xA0) if b not in (0x81, 0x8D, 0x8F, 0x90, 0x9D)}
+_L1 = "[\u0080-¿]"
+_CC = "[\u0080-¿" + re.escape("".join(_CP1252)) + "]"
+MOJIBAKE = re.compile(f"[Â-ß]{_L1}|Ã{_CC}|[à-ï]{_CC}{{2}}|[ð-ô]{_CC}{{3}}")
+
+
+def _unbake(m: re.Match) -> str:
+    try:
+        return bytes(_CP1252.get(c, ord(c)) for c in m.group()).decode("utf-8")
+    except UnicodeDecodeError:
+        return m.group()
+
+
+def unmojibake(s: str) -> str:
+    """Undo mojibake, up to two layers deep ("ÃƒÂ©" is "é" garbled twice)."""
+    for _ in range(3):
+        if not s or s.isascii():
+            return s
+        fixed = MOJIBAKE.sub(_unbake, s)
+        if fixed == s:
+            return s
+        s = fixed
+    return s
+
+
 def posting(**kw) -> dict:
     # body: the posting's full text when the list call carries it; ref: how to fetch
     # it when it does not (see fetch_posting); mode/yrs: structured facts a source gives.
@@ -821,8 +855,11 @@ def posting(**kw) -> dict:
          "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False,
          "body": "", "ref": None, "mode": None, "yrs": None, "older_than": None}
     p.update(kw)
-    p["title"] = re.sub(r"\s+", " ", unescape(p["title"] or "")).strip()
-    p["company"] = unescape(p["company"] or "").strip()
+    p["title"] = re.sub(r"\s+", " ", unmojibake(unescape(p["title"] or ""))).strip()
+    p["company"] = unmojibake(unescape(p["company"] or "")).strip()
+    for k in ("location", "desc", "body"):
+        if isinstance(p[k], str):
+            p[k] = unmojibake(p[k])
     return p
 
 
