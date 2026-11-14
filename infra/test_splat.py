@@ -115,6 +115,12 @@ MOJIBAKE = [
     ("“OLÉ” Security Team", "“OLÉ” Security Team"), ("ZÜRICH–GENEVA", "ZÜRICH–GENEVA"),
     ("SÃO PAULO", "SÃO PAULO"), ("Data Engineer — Remote", "Data Engineer — Remote"),
     ("東京 · Remote", "東京 · Remote"), ("Engineer 🚀", "Engineer 🚀"), ("Plain ASCII", "Plain ASCII"), ("", ""),
+    # Real text shaped like UTF-8 bytes, with no sure sign of mojibake: left alone
+    # (review, 2026-11-14; without the sign check each of these decoded as bytes).
+    ("RESPONSABLE QUALITÉ H/F", "RESPONSABLE QUALITÉ H/F"), ("SOCIÉTÉ GÉNÉRALE", "SOCIÉTÉ GÉNÉRALE"),
+    ("Responsable Qualité – Lyon", "Responsable Qualité – Lyon"), ("«ÉTÉ» Security", "«ÉTÉ» Security"),
+    ("NESTLÉ® Purina", "NESTLÉ® Purina"), ("Hauptstraß 12, Berlin", "Hauptstraß 12, Berlin"),
+    ("Straß­e", "Straß­e"), ("“¡olé’” Team", "“¡olé’” Team"), ("Ü±5%", "Ü±5%"),
 ]
 
 AGENCY = [
@@ -1628,6 +1634,13 @@ def main() -> int:
     if splat.norm("Engineer â\u0080\u0094 Cloud") != splat.norm("Engineer — Cloud"):
         bad += 1
         print("norm() differs between a garbled and a repaired title, so the job id would change")
+    # A garbled no-break space ("Â" + U+00A0) is half whitespace: text() and body_text()
+    # repair it before they fold whitespace, or the fold splits it first.
+    html_in = "<p>Weâ\u0080\u0099re hiring.Â Apply</p><p>CafÃ©</p>"
+    for fn, want in ((splat.text, "We’re hiring. Apply Café"), (splat.body_text, "We’re hiring. Apply\nCafé")):
+        if fn(html_in) != want:
+            bad += 1
+            print(f"{fn.__name__}({html_in!r}) = {fn(html_in)!r}, want {want!r}")
     for name, pattern, cases in (("AGENCY", splat.AGENCY, AGENCY), ("FEDERAL", splat.FEDERAL, FEDERAL)):
         for company, want in cases:
             if bool(pattern.search(company)) != want:
@@ -1740,7 +1753,7 @@ def main() -> int:
             bad += 1
             print(f"norm({a!r}) = {splat.norm(a)!r} != norm({b!r}) = {splat.norm(b)!r}")
     total = (len(WHERE) + len(TRACK) + len(TRACK_SEC_TOPIC) + len(TRACK_PM) + len(LEVEL_PM) + len(LEVEL) + len(NORM)
-             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(MOJIBAKE) + 2 + len(AGENCY) + len(FEDERAL) + 4 + reader_total
+             + len(TECH_SOURCE) + len(APPLY_JEV) + len(MONEY) + len(ASHBY_PAY) + len(MOJIBAKE) + 4 + len(AGENCY) + len(FEDERAL) + 4 + reader_total
              + board_total + auto_total + wd30_total
              + len(TRACK_SE) + len(LEVEL_SE) + len(READ_DUE) + len(se_subs) + 2 + len(FOLD_READ) + len(CROSS_CONFIRM) + len(NOT_PRESALES) + len(NOT_REMOTE) + len(MIDDLEMAN_URLS))
     print(f"{total - bad}/{total} passed")

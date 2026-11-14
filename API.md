@@ -116,8 +116,11 @@ are. Every text field and every URL comes from a third party.
 - Escape all text before you show it.
 - Check a URL's scheme before you link it. One live row uses `http://`.
 - Normalize whitespace before you compare text. Some fields carry no-break
-  spaces, doubled spaces or newlines, and one live title is mis-encoded at its
-  source.
+  spaces, doubled spaces or newlines.
+- Text a source sent mis-encoded (UTF-8 read as Latin-1, so `â\u0080\u0094`
+  where `—` belongs) is repaired before it is written. RemoteOK's API does this
+  to about one string in 25. A row carried from a day before the repair, or text
+  garbled in a way the repair does not recognize, can still show it.
 
 ## jobs.json
 
