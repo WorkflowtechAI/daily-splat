@@ -55,6 +55,7 @@ FIELDS = {
     "level": ("Level", 100),
     "would_use": ("Would use the tools", 50),
     "pieces": ("Pieces that matter", 400),
+    "pieces_other": ("Other pieces, in their words", 300),
     "account": ("Account preference", 100),
     "donate": ("Optional donate link", 100),
     "extras": ("Other help they'd want", 600),
