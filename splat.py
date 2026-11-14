@@ -742,8 +742,11 @@ def http_text(url: str, data: dict | None = None, headers: dict | None = None, t
 TAG = re.compile(r"<[^<>]*>")
 
 
+# text() and body_text() repair mojibake before they fold whitespace: a garbled
+# no-break space ("Â" then U+00A0) or NEL (U+0085) is half whitespace, and folding
+# first would split it before unmojibake (below) could see it.
 def text(html: str | None, n: int = 1500) -> str:
-    s = TAG.sub(" ", unescape((html or "")[:200_000]))
+    s = TAG.sub(" ", unmojibake(unescape((html or "")[:200_000])))
     return re.sub(r"\s+", " ", s).strip()[:n]
 
 
@@ -759,7 +762,7 @@ def body_text(html: str | None, n: int = BODY_MAX) -> str:
     s = unescape((html or "")[:300_000])
     if "&lt;" in s:
         s = unescape(s)
-    s = unescape(TAG.sub(" ", BLOCK.sub("\n", s)))
+    s = unmojibake(unescape(TAG.sub(" ", BLOCK.sub("\n", s))))
     lines = (re.sub(r"[^\S\n]+", " ", x).strip() for x in s.split("\n"))
     return "\n".join(x for x in lines if x)[:n]
 
@@ -813,6 +816,51 @@ def ashby_pay(summary: str | None) -> str | None:
     return head if re.search(r"\d", head) else None
 
 
+# Mojibake: UTF-8 text that a source decoded as Latin-1 (or cp1252) before sending it.
+# RemoteOK's API had "Engineer â\x80\x94 Kubernetes" for "Engineer — Kubernetes",
+# "MÃ¼nchen" for "München" and "Sothebyâ\x80\x99s" for "Sotheby’s": 88 of the 2,084
+# strings in its 2026-11-14 feed, most of them descriptions.
+#
+# A string is repaired only when it shows a sure sign (MOJIBAKE_SIGN): a C1 control
+# (U+0080-U+009F, which real text never has), "Â" or "Ã" before a continuation
+# character, "â€" or "ðŸ". Then each run shaped exactly like one UTF-8 character is
+# turned back into its bytes and decoded, and a run that is not valid UTF-8 stays as
+# it is. The sign is what keeps real text whole: without it, "QUALITÉ" before a
+# no-break space or "«ÉTÉ»" would decode as bytes too (review, 2026-11-14: 0 changes
+# in 290k strings from 26 real feeds, French, Spanish and German among them). A
+# continuation byte in the Latin-1 view (U+0080-U+00BF) counts after any lead. The
+# cp1252 view, where those bytes show as punctuation ("â€”" for "—"), counts only
+# after a 3- or 4-byte lead or after "Ã", since "OLÉ”" would otherwise become "OLɔ".
+# Left garbled: a string whose only garble has no sign, such as "Ä°stanbul" or
+# Cyrillic "Ð°Ð±". The one real text it can still change is an uppercase word ending
+# in "Â" or "Ã" right before a symbol or punctuation ("AMANHÃ…"; 3 of the review's
+# 240 hand-picked strings, none in the real feeds).
+_CP1252 = {bytes([b]).decode("cp1252"): b for b in range(0x80, 0xA0) if b not in (0x81, 0x8D, 0x8F, 0x90, 0x9D)}
+_L1 = "[\u0080-¿]"
+_CC = "[\u0080-¿" + re.escape("".join(_CP1252)) + "]"
+MOJIBAKE = re.compile(f"[Â-ß]{_L1}|Ã{_CC}|[à-ï]{_CC}{{2}}|[ð-ô]{_CC}{{3}}")
+MOJIBAKE_SIGN = re.compile(f"[\u0080-\u009f]|[ÂÃ]{_CC}|â€|ðŸ")
+
+
+def _unbake(m: re.Match) -> str:
+    try:
+        return bytes(_CP1252.get(c, ord(c)) for c in m.group()).decode("utf-8")
+    except UnicodeDecodeError:
+        return m.group()
+
+
+def unmojibake(s: str) -> str:
+    """Undo mojibake, up to two layers deep ("ÃƒÂ©" is "é" garbled twice)."""
+    for _ in range(2):
+        if not s or s.isascii() or not MOJIBAKE_SIGN.search(s):
+            return s
+        fixed = MOJIBAKE.sub(_unbake, s)
+        if fixed == s:
+            return s
+        s = fixed
+    return s
+
+
 def posting(**kw) -> dict:
     # body: the posting's full text when the list call carries it; ref: how to fetch
     # it when it does not (see fetch_posting); mode/yrs: structured facts a source gives.
@@ -821,8 +869,11 @@ def posting(**kw) -> dict:
          "salary": None, "desc": "", "hint": None, "origin": "company", "sec_topic": False,
          "body": "", "ref": None, "mode": None, "yrs": None, "older_than": None}
     p.update(kw)
-    p["title"] = re.sub(r"\s+", " ", unescape(p["title"] or "")).strip()
-    p["company"] = unescape(p["company"] or "").strip()
+    p["title"] = re.sub(r"\s+", " ", unmojibake(unescape(p["title"] or ""))).strip()
+    p["company"] = unmojibake(unescape(p["company"] or "")).strip()
+    for k in ("location", "desc", "body"):
+        if isinstance(p[k], str):
+            p[k] = unmojibake(p[k])
     return p
 
 
