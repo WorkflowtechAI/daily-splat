@@ -10,6 +10,10 @@ every morning, and a posting its source stopped listing is gone that day.
 The server pulls `main` before each daily run (05:30 Pacific), so a merged PR is
 live the next morning. Contributions are welcome: see **Contributing** below.
 
+The data files (`jobs.json`, `companies.json`) and the form endpoint are
+documented field by field in [API.md](API.md). A PR that changes a field's name,
+meaning or shape updates API.md in the same PR.
+
 - **Generator:** `splat.py`. Stdlib Python, no pip installs. Writes `jobs.json`
   beside itself, or where `SPLAT_OUT` says (the server sets the docroot).
 - **Client:** `index.html` reads `jobs.json`
@@ -121,8 +125,7 @@ folds them into one line under the source list.
 
 Microsoft's own careers API refuses anonymous calls, but its roles arrive
 through Foorilla. Not covered, and why: LinkedIn (no API, and scraping it is against its terms), We Work Remotely
-(paywalled for job-seekers), USAJOBS (needs its own key; worth adding if the
-group wants federal roles).
+(paywalled for job-seekers).
 
 Every board token in `splat.py` answered from this box on 2026-10-02. To add
 an employer, add its token to the right dict and run the script once by hand;
