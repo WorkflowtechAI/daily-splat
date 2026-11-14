@@ -40,7 +40,16 @@ do not allow passing listings on to others. There is no license for the files
 yet. Open an issue on this repo and ask before you republish the data or build a
 product on it.
 
-Two rules apply whatever you do with the files:
+These rules apply whatever you do with the files:
+
+- **Foorilla rows** (`source` is `"Foorilla"`) are Foorilla's data under
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Wherever you
+  show them or pass them on, name Foorilla with a link to https://foorilla.com and
+  the license, say the data was modified, and share anything built from them
+  under the same license. The page does this in its footer.
+- **RemoteOK rows** (`source` is `"RemoteOK"`) need the name Remote OK as the
+  source and a followed link (no `nofollow`) to the row's remoteok.com `url`
+  wherever they are shown. RemoteOK suspends API access when they are missing.
 
 - **Court records** (`companies.*.courts`) come from CourtListener. Its terms
   forbid using them, or anything derived from them, to decide a person's
