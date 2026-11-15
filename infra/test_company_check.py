@@ -25,6 +25,9 @@ spec = importlib.util.spec_from_file_location("company_check", ROOT / "company_c
 cc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cc)
 cc.COURT_GAP = 0   # no pacing in tests
+# The module dates everything by UTC (cc.NOW). Between 00:00 UTC and local midnight
+# west of Greenwich, the local date.today() is a day behind it.
+TODAY = cc.NOW.date()
 # splat.py, for the board patterns and keys the two files must share.
 spec_splat = importlib.util.spec_from_file_location("splat", ROOT / "splat.py")
 splat = importlib.util.module_from_spec(spec_splat)
@@ -173,8 +176,8 @@ except RuntimeError:
 # ── Labor board ──────────────────────────────────────────────────────────────
 
 tmp = Path(tempfile.mkdtemp(prefix="cc-test-"))
-recent = (date.today() - timedelta(days=200)).isoformat()
-old = (date.today() - timedelta(days=365 * 6)).isoformat()
+recent = (TODAY - timedelta(days=200)).isoformat()
+old = (TODAY - timedelta(days=365 * 6)).isoformat()
 db_path = tmp / "nlrb.db"
 db = sqlite3.connect(db_path)
 db.executescript("""
@@ -305,7 +308,7 @@ check("pac: the employer's committees, a W one too", sorted(c["id"] for c in got
 check("pac: this cycle's gifts by party, DFL as Democratic, memo lines left out",
       {k: got["cycles"][0][k] for k in ("dem", "rep", "other", "gifts")}, {"dem": 1500, "rep": 2900, "other": 500, "gifts": 6})
 check("pac: a cycle with no gifts", got["cycles"][1]["gifts"], 0)
-check("pac_index: when the files date from", idx["as_of"], date.today().isoformat())
+check("pac_index: when the files date from", idx["as_of"], TODAY.isoformat())
 
 
 def fec_404(newest):
@@ -816,7 +819,7 @@ cc.COURT_RUN = 45
 # Oldest first: an employer never checked goes before one checked last week,
 # whatever their order in the table.
 cache_now = json.loads(cc.CACHE.read_text(encoding="utf-8"))
-week_ago = (date.today() - timedelta(days=8)).isoformat()
+week_ago = (TODAY - timedelta(days=8)).isoformat()
 cache_now["a"] = {"courts": {"at": week_ago, "key": "", "facts": None}}
 cache_now.pop("b", None)
 cache_now.pop("_court_used", None)
