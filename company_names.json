@@ -6812,14 +6812,17 @@
      "uei": "UW4YQK4HKUE5",
      "name": "JONES LANG LASALLE AMERICAS  INC.",
      "level": "P"
+    },
+    {
+     "uei": "ULL4MBMTMDJ9",
+     "name": "JONES LANG LASALLE INCORPORATED",
+     "level": "P"
     }
    ],
-   "exclude_ueis": [
-    "K1M2YB9EQMF4"
-   ],
+   "exclude_ueis": [],
    "vt": null,
    "confidence": "high",
-   "notes": "Chicago commercial real estate services firm (200 E Randolph St). The federal contracts sit with Jones Lang LaSalle Americas, Inc., which has several parent UEIs (Chicago and Washington DC). Its Brokerage and Northeast records with no contract dollars were left out. One unrelated Westmont IL company that USAspending files under a JLL Brokerage parent is excluded."
+   "notes": "Chicago commercial real estate services firm (200 E Randolph St). Federal contracts sit with Jones Lang LaSalle Americas, Inc. under several parent UEIs (Chicago and Washington DC) and the ultimate parent Jones Lang LaSalle Incorporated. Advanced Technologies Group, Inc. (Westmont IL), acquired by JLL in 2016, is JLL's own unit and is not excluded."
   },
   {
    "id": "delinea",
@@ -6828,15 +6831,23 @@
    ],
    "kind": "private company",
    "legal": [
-    "Delinea Inc."
+    "Delinea Inc.",
+    "Centrify Corporation",
+    "Thycotic Software, LLC"
    ],
    "avoid": [],
    "avoid_notes": [],
-   "ueis": [],
+   "ueis": [
+    {
+     "uei": "DLWKF3FZ8N13",
+     "name": "THYCOTIC SOFTWARE, LLC",
+     "level": "P"
+    }
+   ],
    "exclude_ueis": [],
    "vt": null,
    "confidence": "medium",
-   "notes": "Privileged-access security vendor (formed from the Thycotic and Centrify merger, HQ Redwood City CA). No USAspending recipient was found under the name Delinea, so no UEI. Predecessor entity names were not confirmed, so older records may use a name not listed here."
+   "notes": "Privileged-access security vendor (Thycotic and Centrify merged in April 2021; renamed Delinea in February 2022; HQ Redwood City CA). Delinea Inc. is the former Centrify Corporation, per Delinea's own release. Thycotic Software, LLC (Washington DC) holds the only USAspending UEI, whose last contract began in 2021, so recent years show no contract dollars."
   },
   {
    "id": "dropbox",
@@ -6875,24 +6886,28 @@
     "Payward, Inc."
    ],
    "avoid": [
-    "Kraken Robotics US Inc"
+    "Kraken Robotics US Inc",
+    "Payward, Inc."
    ],
    "avoid_notes": [
-    "Kraken Robotics US Inc (Canadian ocean-tech firm's US unit, unrelated)"
+    "Kraken Robotics US Inc (Canadian ocean-tech firm's US unit, unrelated)",
+    "Payward, Inc. (blocked on purpose: the card name Kraken also covers Kraken Technologies, Octopus Energy's utility-software company on jobs.ashbyhq.com/krakentech, so a Kraken card cannot be tied to Payward by name)"
    ],
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
-   "confidence": "medium",
-   "notes": "The cryptocurrency exchange Kraken, operated by Payward, Inc. (US). Taken from the titles (Security GRC, M&A, a long list of countries including UAE and Argentina) and the British spelling in Cyber Defence; the card does not name the legal entity, and Payward Ventures or other entities were not confirmed. No USAspending record for Payward was found. Kraken Robotics US Inc is a different company."
+   "confidence": "low",
+   "notes": "Two employers post as Kraken: the crypto exchange (Payward, Inc.; board jobs.ashbyhq.com/kraken.com, whose listings name Payward as the parent) and Kraken Technologies, Octopus Energy's utility-software company (board jobs.ashbyhq.com/krakentech). The panel looks cards up by name and cannot tell them apart, so Payward's legal name is on the avoid list and the name-matched sources say the records cannot be told apart. No USAspending record for Payward was found. Kraken Robotics US Inc is a different company."
   },
   {
    "id": "abnormal-ai",
    "names": [
-    "Abnormal AI"
+    "Abnormal AI",
+    "Abnormal Security"
    ],
    "kind": "private company",
    "legal": [
+    "Abnormal AI, Inc.",
     "Abnormal Security Corporation"
    ],
    "avoid": [],
@@ -6900,8 +6915,8 @@
    "ueis": [],
    "exclude_ueis": [],
    "vt": null,
-   "confidence": "medium",
-   "notes": "Email-security company in San Francisco, formerly Abnormal Security; it renamed itself Abnormal AI. USAspending lists Abnormal Security Corporation with no contract dollars, so no UEI. Whether the legal name changed was not confirmed, so records may also use a name not listed here."
+   "confidence": "high",
+   "notes": "Email-security company in San Francisco. Its legal name changed from Abnormal Security Corporation to Abnormal AI, Inc. in April 2025 (company release; the privacy notice and terms name Abnormal AI, Inc.); both are listed. Its Greenhouse board slug is still abnormalsecurity, and the Splat's own board cards show it as Abnormal Security. USAspending has only an Abnormal Security Corporation record with no UEI and no contract dollars, so no UEI."
   },
   {
    "id": "humana",
@@ -6920,12 +6935,19 @@
      "uei": "ETS5JZPPGZX4",
      "name": "HUMANA INC.",
      "level": "P"
+    },
+    {
+     "uei": "ZE6ZM6NKSV43",
+     "name": "HUMANA GOVERNMENT BUSINESS INC",
+     "level": "P"
     }
    ],
-   "exclude_ueis": [],
+   "exclude_ueis": [
+    "TB2ELWL2QEB5"
+   ],
    "vt": null,
    "confidence": "high",
-   "notes": "Louisville KY health insurer. Its parent UEI covers Humana Government Business (TRICARE) and the other units USAspending files under it, including Valor Healthcare and Concentra. Nearly all the dollars are TRICARE and VA contracts."
+   "notes": "Louisville KY health insurer. Its federal contracts sit with Humana Government Business, Inc. (TRICARE East), which USAspending records as its own parent from FY2025, so both UEIs are listed. Valor Healthcare (sold by Concentra to Trive Capital in 2020) still carries a Humana Inc. parent in FY2024 data and is excluded; Concentra was sold in 2015."
   },
   {
    "id": "optiv",
@@ -6953,12 +6975,17 @@
      "uei": "NCBQC9F1P9C4",
      "name": "OPTIV SECURITY INC",
      "level": "R"
+    },
+    {
+     "uei": "KKQWHMFKH1H8",
+     "name": "CLEARSHARK LLC",
+     "level": "P"
     }
    ],
    "exclude_ueis": [],
    "vt": null,
    "confidence": "high",
-   "notes": "Cybersecurity services firm HQ in Overland Park KS (earlier Denver). The Chantilly VA federal unit and the Denver registration are both its own. Optivor Technologies, LLC, a different company, is not included."
+   "notes": "Cybersecurity services firm HQ in Overland Park KS (earlier Denver). The Chantilly VA federal unit and the Denver registration are both its own, and so is ClearShark LLC (Hanover MD), bought in March 2023 and run as Optiv + ClearShark for federal customers. Optivor Technologies, LLC, a different company, is not included."
   },
   {
    "id": "remitly",
