@@ -2777,33 +2777,52 @@ def board_redate(p: dict, ledger: dict) -> bool:
 # cards were past the age limit by the employer's own board: Smartsheet's
 # "Principal Security Engineer (Remote Eligible)" showed posted Nov 16 on Jobicy,
 # and Smartsheet's Greenhouse board dated it Aug 25. These are matched on the
-# employer's name and the exact title instead.
+# employer's name and the job title instead (title_key: case and punctuation
+# only, so "Cloud Services Engineer" stays apart from "Cloud Engineer").
+
+BOARD_SOURCES = ("greenhouse", "lever", "lever-eu", "ashby")   # read in full: every listing, any place
+
+
+def title_key(company, title) -> str | None:
+    """The own_dates key: norm() for the employer, case and punctuation only for
+    the title. None when either is not a usable string."""
+    if not (isinstance(company, str) and isinstance(title, str)):
+        return None
+    c, t = norm(company), re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+    return f"{c}|{t}" if c and t else None
+
 
 def own_dates(raw: list[tuple[str, dict]], ledger: dict) -> dict[str, str | None]:
-    """company|title (norm) -> the newest date the employer's own Ashby,
-    Greenhouse or Lever board gives a listing of that title; None when one of
-    them is undated, since that one may be new. From this run's reads of those
-    boards (every listing, any place) and the census ledger's boards read OK
-    within AUTO_BOARD_DAYS (the listings up at that read, under the board's card
-    name and its token). The newest wins, so a fresh listing of the title anywhere
-    on the board keeps every copy of it."""
+    """title_key -> the newest date the employer's own Ashby, Greenhouse or Lever
+    board gives a listing of that title. None, so no copy is matched, when one
+    of them is undated (it may be new) or when two boards give the title under
+    the same name (two employers whose names norm() alike, or one employer's two
+    boards). From this run's reads of those boards, hand-kept or found (by the
+    source that read them: a hand-kept Greenhouse board such as Okta's links its
+    listings to the employer's own site), and the census ledger's boards read OK
+    within AUTO_BOARD_DAYS (the listings up at that read). Each board counts
+    under its name and its token. The newest wins, so a fresh listing of the
+    title anywhere on the board keeps every copy of it."""
     out: dict[str, str | None] = {}
+    seen: dict[str, set] = {}
 
-    def add(company: str, title: str, d) -> None:
-        c, t = norm(company or ""), norm(title or "")
-        if not c or not t:
-            return
-        k = f"{c}|{t}"
-        if k in out and out[k] is None:
-            return
-        if not (isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) and age_days(d) is not None):
-            out[k] = None
-            return
-        out[k] = max(out.get(k) or d, d)
+    def add(board: str, names: set, title, d) -> None:
+        for n in names:
+            k = title_key(n, title)
+            if not k:
+                continue
+            seen.setdefault(k, set()).add(board)
+            if k in out and out[k] is None:
+                continue
+            if not (isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) and age_days(d) is not None):
+                out[k] = None
+            else:
+                out[k] = max(out.get(k) or d, d)
 
-    for _, p in raw:
-        if p.get("origin") == "company" and board_key(p.get("url")):
-            add(p.get("company"), p.get("title"), p.get("posted"))
+    for sid, p in raw:
+        board = sid.removeprefix("auto:").lower() if isinstance(sid, str) else ""   # the ledger's key
+        if p.get("origin") == "company" and board.partition(":")[0] in BOARD_SOURCES:
+            add(board, {p.get("company"), board.partition(":")[2]}, p.get("title"), p.get("posted"))
     for key, rec in (ledger or {}).items():
         if not isinstance(key, str) or not isinstance(rec, dict):
             continue
@@ -2812,22 +2831,27 @@ def own_dates(raw: list[tuple[str, dict]], ledger: dict) -> dict[str, str | None
         posts = rec.get("postings")
         if age is None or age > AUTO_BOARD_DAYS or not isinstance(posts, dict):
             continue
-        names = {n for n in (rec.get("name"), key.partition(":")[2]) if isinstance(n, str) and n.strip()}
+        names = {rec.get("name"), key.partition(":")[2]}
         for x in posts.values():
             if isinstance(x, dict) and x.get("s") == last:
-                for n in names:
-                    add(n, x.get("t"), x.get("d"))
+                add(key, names, x.get("t"), x.get("d"))
+    for k, boards in seen.items():
+        if len(boards) > 1:
+            out[k] = None
     return out
 
 
 def title_redate(p: dict, own: dict) -> bool:
-    """board_redate for an aggregator copy that does not link to an Ashby,
-    Greenhouse or Lever board: the newest date the employer's own board gives
-    the same title (own_dates), when that is older than the copy's. A linked
-    copy is board_redate's alone: its posting id is the better match."""
-    if p.get("origin") != "aggregator" or board_key(p.get("url")):
+    """board_redate for an aggregator copy whose link is not a posting on a
+    tracking system (ats_link): the aggregator's own page (Jobicy, Himalayas) or
+    the employer's site. It takes the newest date the employer's own board gives
+    the same title (own_dates) when that is older than the copy's. A copy that
+    links to a board is board_redate's, by posting id; one that links to Workday
+    or another system names its own posting there, which may be a new one."""
+    if p.get("origin") != "aggregator" or ats_link(p.get("url") or ""):
         return False
-    d = own.get(f"{norm(p.get('company') or '')}|{norm(p.get('title') or '')}")
+    k = title_key(p.get("company"), p.get("title"))
+    d = own.get(k) if k else None
     if not d or (p.get("posted") and p["posted"] <= d):
         return False
     p["posted"] = d

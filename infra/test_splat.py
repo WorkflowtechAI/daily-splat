@@ -973,7 +973,46 @@ def check_title_dates() -> tuple[int, int]:
     ], led)
     dates = splat.own_dates([own(pse, ago(85)), own(pse, ago(3), "Austin, TX", 2), jobicy(pse, ago(2))], led)
     redate = jobicy("Senior SRE, Managed Gateways", ago(0), company="Kong Inc.")[1]
+    # Review, 2026-11-18. A hand-kept Greenhouse board whose listings link to the
+    # employer's own site (Okta's do) still dates the copies.
+    okta = ("greenhouse:okta", splat.posting(title="Staff Security Engineer", company="Okta", location="Bellevue, WA",
+                                             url="https://www.okta.com/company/careers/opportunity/7000001?gh_jid=7000001",
+                                             posted=ago(90), origin="company"))
+    okta_run, okta_n, _ = splat.rules_pass([okta, jobicy("Staff Security Engineer", ago(1), company="Okta")], {})
+    # A copy that links to Workday names its own posting there, maybe a new one: left alone.
+    wd = ("foorilla", splat.posting(title=pse, company="Smartsheet", location="Remote - US", remote=True, posted=ago(2),
+                                    url="https://smartsheet.wd1.myworkdayjobs.com/External/job/Bellevue/PSE_R123",
+                                    origin="aggregator"))
+    wd_run, wd_n, _ = splat.rules_pass([own(pse, ago(85)), wd], {})
+    # The ledger by card name only (PlayStation's token is Sony's), by token only ("ŌURA" norms to "ura"),
+    # two boards under one name (Zip and Zip Co both norm to "zip"): no date, and a title that is not a string.
+    led2 = {
+        "greenhouse:sonyinteractiveentertainmentglobal": {"name": "PlayStation Global", "last_ok": ago(1), "postings": {
+            "p": {"t": "Senior Security AI Risk Analyst", "d": ago(54), "s": ago(1)}, "n": {"t": 5, "d": ago(9), "s": ago(1)}}},
+        "greenhouse:oura": {"name": "ŌURA", "last_ok": ago(1), "postings": {
+            "o": {"t": "Security Engineer", "d": ago(40), "s": ago(1)}}},
+        "ashby:zip": {"name": "Zip", "last_ok": ago(1), "postings": {"z": {"t": "Cloud Security Architect", "d": ago(60), "s": ago(1)}}},
+        "greenhouse:zipcolimited": {"name": "Zip Co", "last_ok": ago(2), "postings": {
+            "y": {"t": "Cloud Security Architect", "d": ago(70), "s": ago(2)}}},
+    }
+    ledg2, ledg2_n, _ = splat.rules_pass([
+        jobicy("Senior Security AI Risk Analyst", ago(0), company="PlayStation Global"),
+        jobicy("Security Engineer", ago(0), company="Oura"),
+        jobicy("Cloud Security Architect", ago(0), company="Zip"),
+    ], led2)
+    agg_only = splat.own_dates([("foorilla", splat.posting(title=pse, company="Smartsheet", url=f"{gh}9", posted=ago(1),
+                                                           origin="aggregator"))], {})
     checks = [
+        ("title dates: a hand-kept board linking to the employer's own site still dates copies", (len(okta_run), okta_n),
+         (0, 1)),
+        ("title dates: a copy that links to Workday is left alone", ([p["posted"] for p in wd_run.values()], wd_n),
+         ([ago(2)], 0)),
+        ("title dates: the ledger by card name only and by token only; two boards under one name match nothing",
+         (sorted(p["company"] for p in ledg2.values()), ledg2_n), (["Zip"], 2)),
+        ("own_dates: only the employer's own board rows count", agg_only, {}),
+        ("title_key: case and punctuation only, corporate words kept in the title",
+         (splat.title_key("Kong Inc.", "Senior SRE, Managed Gateways"), splat.title_key("Acme", "Cloud Services Engineer"),
+          splat.title_key("Acme", 5)), ("kong|senior sre managed gateways", "acme|cloud services engineer", None)),
         ("title dates: a copy past the age limit by its employer's board drops, counted", (len(stale), stale_n), (0, 1)),
         ("title dates: a fresh listing of the title anywhere on the board keeps the copy, on that date",
          ([(p["origin"], p["posted"]) for p in fresh.values()], fresh_n), ([("aggregator", ago(3))], 0)),
@@ -986,8 +1025,8 @@ def check_title_dates() -> tuple[int, int]:
         ("title dates: a copy that links to the board is board_redate's alone", (len(linked), linked_n), (1, 0)),
         ("title dates: the ledger's boards, by card name or token, listings up at the last read, read this week",
          (sorted(p["title"] for p in ledg.values()), ledg_n), (["Security Engineer", "Senior Platform Engineer"], 1)),
-        ("own_dates: newest wins across today's reads", dates.get(f"smartsheet|{splat.norm(pse)}"), ago(3)),
-        ("own_dates: a ledger board under its token", dates.get("kong|senior sre managed gateways"), ago(118)),
+        ("own_dates: newest wins across today's reads", dates.get(splat.title_key("Smartsheet", pse)), ago(3)),
+        ("own_dates: a ledger board", dates.get("kong|senior sre managed gateways"), ago(118)),
         ("title_redate: moves an older date onto the copy", (splat.title_redate(redate, dates), redate["posted"]),
          (True, ago(118))),
         ("title_redate: never moves a date forward", splat.title_redate(jobicy("Senior SRE, Managed Gateways", ago(200),
