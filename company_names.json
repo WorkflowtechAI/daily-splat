@@ -1,6 +1,6 @@
 {
  "version": 1,
- "reviewed": "2026-11-09",
+ "reviewed": "2026-11-18",
  "how": "Job-board names -> legal names and USAspending UEIs, researched by agents against live USAspending data and spot-checked. Numbers show only for employers listed here; a legal name matches a record only when equal after normalizing case, punctuation and the corporate suffix. exclude_ueis are joint ventures or units that are not the employer, subtracted from contract totals.",
  "employers": [
   {
@@ -6760,6 +6760,269 @@
    "vt": null,
    "confidence": "high",
    "notes": "Checked: the UEI is confirmed live, is not in the existing list, and the capture contains only LinkedIn and Lynda.com. No changes. LinkedIn Corporation is a wholly owned Microsoft subsidiary (Bellevue WA engineering roles); Microsoft is a separate employer in the table."
+  },
+  {
+   "id": "second-front-systems",
+   "names": [
+    "Second Front Systems"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Second Front Systems, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "EXHQM7EHY6Z4",
+     "name": "SECOND FRONT SYSTEMS, INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Arlington VA software company (Game Warden, FedRAMP and DoD accreditation platform). The UEI's name and Arlington address match; its captured contract search shows only itself."
+  },
+  {
+   "id": "jll",
+   "names": [
+    "JLL"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Jones Lang LaSalle Incorporated",
+    "Jones Lang LaSalle Americas, Inc.",
+    "JLL Valuation & Advisory Services, LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "PBG7UK4DCJP4",
+     "name": "JONES LANG LASALLE AMERICAS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "NE9KSKUZ8CW9",
+     "name": "JONES LANG LASALLE AMERICAS, INC.",
+     "level": "P"
+    },
+    {
+     "uei": "UW4YQK4HKUE5",
+     "name": "JONES LANG LASALLE AMERICAS  INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "K1M2YB9EQMF4"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Chicago commercial real estate services firm (200 E Randolph St). The federal contracts sit with Jones Lang LaSalle Americas, Inc., which has several parent UEIs (Chicago and Washington DC). Its Brokerage and Northeast records with no contract dollars were left out. One unrelated Westmont IL company that USAspending files under a JLL Brokerage parent is excluded."
+  },
+  {
+   "id": "delinea",
+   "names": [
+    "Delinea"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Delinea Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Privileged-access security vendor (formed from the Thycotic and Centrify merger, HQ Redwood City CA). No USAspending recipient was found under the name Delinea, so no UEI. Predecessor entity names were not confirmed, so older records may use a name not listed here."
+  },
+  {
+   "id": "dropbox",
+   "names": [
+    "Dropbox"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Dropbox, Inc."
+   ],
+   "avoid": [
+    "Dropbox Incorporated"
+   ],
+   "avoid_notes": [
+    "Dropbox Incorporated (unrelated company, 1033 Port Road, Wurtland KY)"
+   ],
+   "ueis": [
+    {
+     "uei": "HAULH3E9MTU3",
+     "name": "DROPBOX INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "File-sync company at 1800 Owens St, San Francisco. A different company, Dropbox Incorporated of Wurtland KY, has its own UEI and normalizes to the same name, so name-matched sources (labor charges, courts, FEC) are blocked for this employer and the panel will say the records cannot be told apart. Only the San Francisco UEI is listed."
+  },
+  {
+   "id": "kraken",
+   "names": [
+    "Kraken"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Payward, Inc."
+   ],
+   "avoid": [
+    "Kraken Robotics US Inc"
+   ],
+   "avoid_notes": [
+    "Kraken Robotics US Inc (Canadian ocean-tech firm's US unit, unrelated)"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "The cryptocurrency exchange Kraken, operated by Payward, Inc. (US). Taken from the titles (Security GRC, M&A, a long list of countries including UAE and Argentina) and the British spelling in Cyber Defence; the card does not name the legal entity, and Payward Ventures or other entities were not confirmed. No USAspending record for Payward was found. Kraken Robotics US Inc is a different company."
+  },
+  {
+   "id": "abnormal-ai",
+   "names": [
+    "Abnormal AI"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Abnormal Security Corporation"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Email-security company in San Francisco, formerly Abnormal Security; it renamed itself Abnormal AI. USAspending lists Abnormal Security Corporation with no contract dollars, so no UEI. Whether the legal name changed was not confirmed, so records may also use a name not listed here."
+  },
+  {
+   "id": "humana",
+   "names": [
+    "Humana"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Humana Inc.",
+    "Humana Government Business, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "ETS5JZPPGZX4",
+     "name": "HUMANA INC.",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Louisville KY health insurer. Its parent UEI covers Humana Government Business (TRICARE) and the other units USAspending files under it, including Valor Healthcare and Concentra. Nearly all the dollars are TRICARE and VA contracts."
+  },
+  {
+   "id": "optiv",
+   "names": [
+    "Optiv"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Optiv Security Inc.",
+    "Optiv Federal Inc."
+   ],
+   "avoid": [
+    "Optivor Technologies, LLC"
+   ],
+   "avoid_notes": [
+    "Optivor Technologies, LLC (unrelated federal contractor)"
+   ],
+   "ueis": [
+    {
+     "uei": "MTKZKM9K9HM6",
+     "name": "OPTIV FEDERAL INC",
+     "level": "P"
+    },
+    {
+     "uei": "NCBQC9F1P9C4",
+     "name": "OPTIV SECURITY INC",
+     "level": "R"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Cybersecurity services firm HQ in Overland Park KS (earlier Denver). The Chantilly VA federal unit and the Denver registration are both its own. Optivor Technologies, LLC, a different company, is not included."
+  },
+  {
+   "id": "remitly",
+   "names": [
+    "Remitly"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Remitly, Inc.",
+    "Remitly Global, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Seattle money-transfer company. No USAspending recipient was found for it, so no UEI."
+  },
+  {
+   "id": "skydio",
+   "names": [
+    "Skydio"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Skydio, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "LTBJCLHYL5S9",
+     "name": "SKYDIO, INC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Drone maker in San Mateo CA. The UEI matches the San Mateo address; its captured search shows only itself."
+  },
+  {
+   "id": "terrapower",
+   "names": [
+    "TerraPower"
+   ],
+   "kind": "private company",
+   "legal": [
+    "TerraPower, LLC"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "G4XNL77M7DR1",
+     "name": "TERRAPOWER LLC",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Nuclear reactor developer in Bellevue WA, backed by Bill Gates. The UEI matches the Bellevue address. Its net federal contract total is negative from de-obligations, and the captured search window returned nothing."
   }
  ],
  "unclear": [
@@ -6786,6 +7049,22 @@
   {
    "name": "Solace",
    "why": "Checked: no change. GWLUCDMGJU85 was confirmed as Solace Corporation of Ottawa and is not listed. The employer is still ambiguous: most likely Solace Health (solace.health, a patient-advocacy startup that repeatedly posts remote US Platform"
+  },
+  {
+   "name": "Bask Health",
+   "why": "Telehealth and pharmacy-integration software company, but its incorporated US legal name could not be confirmed and USAspending has no record of it."
+  },
+  {
+   "name": "Nscale",
+   "why": "UK AI-infrastructure company with US offices; no US legal entity could be confirmed and USAspending lookups for the name only returned unrelated companies."
+  },
+  {
+   "name": "AHEAD",
+   "why": "Chicago IT services firm, but the name is generic: USAspending's AHEAD LLC is a Cheyenne WY registration that cannot be tied to it, and other same-named entities would collide."
+  },
+  {
+   "name": "Department of Veterans Affairs",
+   "why": "A federal agency, not a private employer; labor-charge, court and PAC records do not apply to it."
   }
  ]
 }
