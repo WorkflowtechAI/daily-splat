@@ -177,7 +177,10 @@ CYBER = re.compile(
     r"privacy|\bisso\b|\bissm\b|"
     r"vulnerab|penetration|pen ?test|red team|blue team|purple team|malware|forensic|\bgrc\b|"
     r"governance,? risk|identity (and|&) access|\biam\b|zero trust|cryptograph|privacy engineer|"
-    r"\bsiem\b|offensive|defensive|trust (and|&) safety engineer|information (risk|assurance)", re.I)
+    r"\bsiem\b|offensive|defensive|trust (and|&) safety engineer|information (risk|assurance)|"
+    # Build integrity, signing, SBOMs. "Software Supply Chain Engineer" names no
+    # security word (asked for in the group chat, 2026-11-18).
+    r"software supply chain", re.I)
 # "Engineering" here means the infrastructure security people work in and next
 # to, not general software development. The first live run (2026-10-03) took
 # every engineer title and landed 4,539 engineering rows against 657 cyber,
@@ -1161,7 +1164,7 @@ def src_foorilla() -> list[dict]:
     for topic in (102, 26):
         queries.append({"topic": topic, "country": 238, "has_remote": "true", "published_after": remote_since})
     for t in ("security", "cyber", "soc analyst", "threat", "incident response", "vulnerability",
-              "penetration", "grc", "identity", "detection", "devops", "site reliability",
+              "penetration", "grc", "identity", "detection", "software supply chain", "devops", "site reliability",
               "cloud engineer", "infrastructure", "network engineer", "systems engineer", "platform engineer",
               # The entry lane: where sysadmin and support careers start.
               "help desk", "service desk", "desktop support", "technical support", "it support",
