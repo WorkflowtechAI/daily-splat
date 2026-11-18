@@ -163,6 +163,20 @@
   }
   @media (prefers-reduced-motion:reduce){:is(#help,#share) .chips label{transition:none}}
   details p,details li{color:var(--ink-soft);font-size:.93rem}
+  /* Where Company check gets its data (How this works). Stacks into one block per record on a phone. */
+  .rec-src{width:100%;border-collapse:collapse;margin:4px 0 12px;font-size:.88rem;color:var(--ink-soft)}
+  .rec-src th,.rec-src td{text-align:left;vertical-align:top;padding:7px 12px 7px 0;border-top:1px solid var(--line)}
+  .rec-src th{border-top:0;color:var(--ink);font-weight:600;font-size:.8rem}
+  .rec-src td:first-child{color:var(--ink)}
+  @media (max-width:560px){
+    .rec-src,.rec-src tbody{display:block}
+    .rec-src thead{display:none}
+    .rec-src tr{display:block;border-top:1px solid var(--line);padding:8px 0}
+    .rec-src td{display:block;border:0;padding:1px 0}
+    .rec-src td:first-child{font-weight:600}
+    .rec-src td:nth-child(2)::before{content:"Source: ";color:var(--ink-faint)}
+    .rec-src td:nth-child(3)::before{content:"Matched: ";color:var(--ink-faint)}
+  }
   .srcs{columns:3 200px;font-family:var(--mono);font-size:11px;padding:0;list-style:none;margin:10px 0 0}
   .srcs li{break-inside:avoid;padding:1px 0}
   .srcs .bad{color:var(--copper-ink)}
@@ -190,7 +204,7 @@
 <body>
 <div class="wrap">
   <header class="mast">
-    <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v3.3</a></p>
+    <p class="kicker">Job-hunt cabal · rebuilt every morning · <a id="version" href="changes.html" title="What changed">v3.4</a></p>
     <h1>The Daily Splat</h1>
     <p class="standfirst">Cyber, Infra &amp; IT (help desk, networks, servers, cloud), tech PM and sales engineering jobs in Portland, Oregon, the PNW, or remote US. Entry to principal, from employer boards and job feeds, rebuilt daily.</p>
     <p class="today"><span id="today">Loading today's numbers…</span><button type="button" class="linkbtn" id="ask">Tell me what would help</button><button type="button" class="linkbtn" id="share-open">Share a job</button></p>
@@ -380,7 +394,19 @@
     <p>Portland-area public employers that post on governmentjobs.com don't allow their listings to be copied, so look for those jobs on their own pages: <a href="https://www.governmentjobs.com/careers/portlandor" target="_blank" rel="noopener">City of Portland</a>, <a href="https://www.governmentjobs.com/careers/trimet" target="_blank" rel="noopener">TriMet</a>, <a href="https://www.governmentjobs.com/careers/portofportland" target="_blank" rel="noopener">Port of Portland</a>, <a href="https://www.governmentjobs.com/careers/beaverton" target="_blank" rel="noopener">City of Beaverton</a> and <a href="https://www.governmentjobs.com/careers/oregonmetro" target="_blank" rel="noopener">Oregon Metro</a>.</p>
     <p>It keeps a posting when the title reads as security, as cloud, network, systems, sysadmin, help desk or support engineering (general software development is left out), or as a project, program or product manager of technology, IT or security work (construction, marketing, clinical and other PMs, scrum masters and agile coaches are left out; healthcare IT and EHR project roles such as Epic or clinical applications count), or as a sales engineer of technology: sales and solutions engineers and consultants, pre-sales roles, and the solutions architects and customer engineers of technology vendors (sales engineers of industrial, building or other non-technology products, account executives and support after the sale are left out); the level is anything from entry to principal (no internships, no directors), and the location is in WA, OR or ID or remote within the US. Each new posting is then checked by a small classifier (Jev) for track and level, which catches titles the rules miss and drops ones that only look right. Recruiter and staffing-agency reposts are left out; the page lists employers. A role listed both locally and as remote shows once, under its local place, and the Remote filter still finds it.</p>
     <p>Each new posting is also read once, the day it first appears, from the employer's own system where it can be: its pay range, any clearance it requires, days in the office, where a remote hire may live, the degree and years it asks for, the kind of work, and whether the job manages people. Pay, years and office days are taken from the text as written; the rest is the classifier's reading of the few sentences that say it, so check the posting before you rely on a tag. <span id="read-line"></span> A federal or defense contractor whose posting could not be read gets "Check clearance", since many of their roles need one the title never mentions.</p>
-    <p>"Company check" under each card shows public records about the employer: its federal contracts by fiscal year from USAspending, with how much the Defense Department and Homeland Security (ICE and CBP among it) paid for; unfair-labor-practice charges filed against it at the National Labor Relations Board and how they closed; federal employment discrimination cases naming it, from CourtListener; what its PAC gave federal candidates, by party, from the FEC (a corporate PAC's money comes from the company's executives, managers and shareholders who choose to give; the company runs it but cannot give to candidates itself); and its page on Good Jobs First's Violation Tracker. For reviewed employers, records are matched on their checked legal names and federal contractor IDs. Every other employer is matched automatically on the name its card shows, and the panel says so and shows what it matched; when several companies are registered under that name, it shows search links instead of numbers. Each week the busiest unreviewed employers are reviewed and added. A charge or a lawsuit is an allegation, not a finding. The records refresh weekly. The panel also counts the open listings on the employer's own Ashby, Greenhouse or Lever board (the one its cards link to) and how long they have been up, by the board's own dates, and it has started tracking roles taken down and listed again; that part is the Splat's own daily reading of public job boards, not a public record.</p>
+    <p>"Company check" under each card shows public records about the employer. This is where it gets its data:</p>
+    <table class="rec-src">
+      <thead><tr><th>Record</th><th>Source</th><th>How it's matched to the employer</th></tr></thead>
+      <tbody>
+        <tr><td>Federal contracts by fiscal year, and how much the Defense Department and Homeland Security (ICE and CBP among it) paid for</td><td><a href="https://api.usaspending.gov/" target="_blank" rel="noopener">USAspending</a> API</td><td>The employer's federal contractor IDs (UEIs), less its joint ventures, units it sold and units of other employers on this list</td></tr>
+        <tr><td>Unfair-labor-practice charges filed against it in the last five years, and how they closed</td><td>National Labor Relations Board data, as a bulk download from the <a href="https://github.com/labordata/nlrb-data" target="_blank" rel="noopener">labordata/nlrb-data</a> project</td><td>The charge's respondent name equals the employer's legal name</td></tr>
+        <tr><td>Federal employment discrimination cases naming it, filed in the last five years</td><td><a href="https://www.courtlistener.com/" target="_blank" rel="noopener">CourtListener</a> API</td><td>A party on the docket equals the legal name. Reviewed employers only, because CourtListener allows few searches a day</td></tr>
+        <tr><td>What its PAC gave federal candidates, by party</td><td><a href="https://www.fec.gov/data/browse-data/?tab=bulk-data" target="_blank" rel="noopener">FEC</a> bulk files</td><td>The PAC's connected organization equals the legal name</td></tr>
+        <tr><td>Its page on Violation Tracker</td><td><a href="https://violationtracker.goodjobsfirst.org/" target="_blank" rel="noopener">Good Jobs First</a>, as a link only: its terms allow linking, not copying</td><td>Violation Tracker's own parent-company list, otherwise a search for the name</td></tr>
+        <tr><td>Open listings on its own job board, and how long they have been up</td><td>The public Ashby, Greenhouse and Lever job-board APIs, read by the Splat every day</td><td>The board its cards link to, not the name</td></tr>
+      </tbody>
+    </table>
+    <p>Reviewed employers are matched on checked legal names and federal contractor IDs. Every other employer is matched automatically on the name its card shows, and the panel says so and shows what it matched; when several companies are registered under that name, it shows search links instead of numbers. Unreviewed employers get reviewed and added over time, the busiest first. Most public records refresh weekly, court cases about every nine days, and the job-board counts daily. A charge or a lawsuit is an allegation, not a finding. A corporate PAC's money comes from the company's executives, managers and shareholders who choose to give; the company runs it but cannot give to federal candidates itself. The job-board counts use the board's own dates, and the Splat has started tracking roles taken down and listed again; that part is its own reading of public job boards, not a public record.</p>
     <p>If your last visit on this device was before yesterday, "New" counts from that visit ("New since Thu") instead of from this morning. The visit date is kept only in this browser and never leaves it.</p>
     <p>A job drops off when its source stops listing it, when it is older than 30 days (14 for remote), or when Foorilla marks it expired. When an aggregator lists a job from an employer's own Ashby, Greenhouse or Lever board and the Splat has that board's dates, its age counts from the employer's own date for it when that is earlier than the aggregator's. If a whole source fails one morning, its jobs are kept for up to two days rather than vanishing. Applying is always on you: every link goes to the employer's posting or the aggregator's free listing.</p>
     <p id="src-line"></p>
