@@ -2772,6 +2772,68 @@ def board_redate(p: dict, ledger: dict) -> bool:
     return True
 
 
+# An aggregator's copy that links to its own page (Jobicy, Himalayas) carries no
+# posting id to look up, so board_redate cannot date it. On 2026-11-18, 11 such
+# cards were past the age limit by the employer's own board: Smartsheet's
+# "Principal Security Engineer (Remote Eligible)" showed posted Nov 16 on Jobicy,
+# and Smartsheet's Greenhouse board dated it Aug 25. These are matched on the
+# employer's name and the exact title instead.
+
+def own_dates(raw: list[tuple[str, dict]], ledger: dict) -> dict[str, str | None]:
+    """company|title (norm) -> the newest date the employer's own Ashby,
+    Greenhouse or Lever board gives a listing of that title; None when one of
+    them is undated, since that one may be new. From this run's reads of those
+    boards (every listing, any place) and the census ledger's boards read OK
+    within AUTO_BOARD_DAYS (the listings up at that read, under the board's card
+    name and its token). The newest wins, so a fresh listing of the title anywhere
+    on the board keeps every copy of it."""
+    out: dict[str, str | None] = {}
+
+    def add(company: str, title: str, d) -> None:
+        c, t = norm(company or ""), norm(title or "")
+        if not c or not t:
+            return
+        k = f"{c}|{t}"
+        if k in out and out[k] is None:
+            return
+        if not (isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) and age_days(d) is not None):
+            out[k] = None
+            return
+        out[k] = max(out.get(k) or d, d)
+
+    for _, p in raw:
+        if p.get("origin") == "company" and board_key(p.get("url")):
+            add(p.get("company"), p.get("title"), p.get("posted"))
+    for key, rec in (ledger or {}).items():
+        if not isinstance(key, str) or not isinstance(rec, dict):
+            continue
+        last = rec.get("last_ok")
+        age = age_days(last) if isinstance(last, str) else None
+        posts = rec.get("postings")
+        if age is None or age > AUTO_BOARD_DAYS or not isinstance(posts, dict):
+            continue
+        names = {n for n in (rec.get("name"), key.partition(":")[2]) if isinstance(n, str) and n.strip()}
+        for x in posts.values():
+            if isinstance(x, dict) and x.get("s") == last:
+                for n in names:
+                    add(n, x.get("t"), x.get("d"))
+    return out
+
+
+def title_redate(p: dict, own: dict) -> bool:
+    """board_redate for an aggregator copy that does not link to an Ashby,
+    Greenhouse or Lever board: the newest date the employer's own board gives
+    the same title (own_dates), when that is older than the copy's. A linked
+    copy is board_redate's alone: its posting id is the better match."""
+    if p.get("origin") != "aggregator" or board_key(p.get("url")):
+        return False
+    d = own.get(f"{norm(p.get('company') or '')}|{norm(p.get('title') or '')}")
+    if not d or (p.get("posted") and p["posted"] <= d):
+        return False
+    p["posted"] = d
+    return True
+
+
 def drop_board_copies(cands: dict) -> int:
     """An aggregator's copy of a posting whose own board row is on the page under
     another title or place: the same posting id on the same board, so one job,
@@ -2837,6 +2899,7 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
     # the Splat's own row gone, a copy keyed the same would take its place.
     wd_older = {wk: p["older_than"] for _, p in raw
                 if p.get("older_than") is not None and (wk := wd_posting(p["url"]))}
+    own = own_dates(raw, board_ledger)
     for sid, p in raw:
         if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
                 or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
@@ -2866,7 +2929,7 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
         # remote fold) and dropped after took the row it beat with it, a fresh
         # copy or the employer's own row (review, 2026-11-12). Counted only when
         # the board's date is what made the row too old.
-        if board_redate(p, board_ledger) and (age_days(p["posted"]) or 0) > max_age:
+        if (board_redate(p, board_ledger) or title_redate(p, own)) and (age_days(p["posted"]) or 0) > max_age:
             older_by_board += 1
             continue
         p.update(where=w, track=track, level=level, source=sid,

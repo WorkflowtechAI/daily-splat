@@ -170,6 +170,15 @@ a wrong token shows up as a failed source, it does not break the run.
    before (the check runs after the splat); that is fine because a card only
    ever takes an earlier date, and a board new today dates its cards from
    tomorrow.
+   **A copy that does not link to the board** (Jobicy and Himalayas link to
+   their own pages; 2026-11-18): matched on the employer's name and the exact
+   title instead (`own_dates`, `title_redate`), it takes the newest date the
+   employer's own Ashby, Greenhouse or Lever board gives that title, from this
+   run's reads of those boards (every listing, any place) and the ledger's
+   boards read within `AUTO_BOARD_DAYS`, under the board's card name or its
+   token. A fresh listing of the title anywhere on the board keeps the copy,
+   and an undated one leaves the copy's own date. Counted in
+   `counts.older_by_board` with the rest.
    **Workday's "30+"** (2026-11-12): a Workday list gives an age, not a
    date ("Posted Today", "Posted 29 Days Ago", "Posted 30 Days Ago", then
    "Posted 30+ Days Ago"). The Splat read "30+" as exactly 30 days, so every
