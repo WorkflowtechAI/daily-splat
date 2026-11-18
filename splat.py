@@ -2772,6 +2772,92 @@ def board_redate(p: dict, ledger: dict) -> bool:
     return True
 
 
+# An aggregator's copy that links to its own page (Jobicy, Himalayas) carries no
+# posting id to look up, so board_redate cannot date it. On 2026-11-18, 11 such
+# cards were past the age limit by the employer's own board: Smartsheet's
+# "Principal Security Engineer (Remote Eligible)" showed posted Nov 16 on Jobicy,
+# and Smartsheet's Greenhouse board dated it Aug 25. These are matched on the
+# employer's name and the job title instead (title_key: case and punctuation
+# only, so "Cloud Services Engineer" stays apart from "Cloud Engineer").
+
+BOARD_SOURCES = ("greenhouse", "lever", "lever-eu", "ashby")   # read in full: every listing, any place
+
+
+def title_key(company, title) -> str | None:
+    """The own_dates key: norm() for the employer, case and punctuation only for
+    the title. None when either is not a usable string."""
+    if not (isinstance(company, str) and isinstance(title, str)):
+        return None
+    c, t = norm(company), re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+    return f"{c}|{t}" if c and t else None
+
+
+def own_dates(raw: list[tuple[str, dict]], ledger: dict) -> dict[str, str | None]:
+    """title_key -> the newest date the employer's own Ashby, Greenhouse or Lever
+    board gives a listing of that title. None, so no copy is matched, when one
+    of them is undated (it may be new) or when two boards give the title under
+    the same name (two employers whose names norm() alike, or one employer's two
+    boards). From this run's reads of those boards, hand-kept or found (by the
+    source that read them: a hand-kept Greenhouse board such as Okta's links its
+    listings to the employer's own site), and the census ledger's boards read OK
+    within AUTO_BOARD_DAYS (the listings up at that read). Each board counts
+    under its name and its token. The newest wins, so a fresh listing of the
+    title anywhere on the board keeps every copy of it."""
+    out: dict[str, str | None] = {}
+    seen: dict[str, set] = {}
+
+    def add(board: str, names: set, title, d) -> None:
+        for n in names:
+            k = title_key(n, title)
+            if not k:
+                continue
+            seen.setdefault(k, set()).add(board)
+            if k in out and out[k] is None:
+                continue
+            if not (isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) and age_days(d) is not None):
+                out[k] = None
+            else:
+                out[k] = max(out.get(k) or d, d)
+
+    for sid, p in raw:
+        board = sid.removeprefix("auto:").lower() if isinstance(sid, str) else ""   # the ledger's key
+        if p.get("origin") == "company" and board.partition(":")[0] in BOARD_SOURCES:
+            add(board, {p.get("company"), board.partition(":")[2]}, p.get("title"), p.get("posted"))
+    for key, rec in (ledger or {}).items():
+        if not isinstance(key, str) or not isinstance(rec, dict):
+            continue
+        last = rec.get("last_ok")
+        age = age_days(last) if isinstance(last, str) else None
+        posts = rec.get("postings")
+        if age is None or age > AUTO_BOARD_DAYS or not isinstance(posts, dict):
+            continue
+        names = {rec.get("name"), key.partition(":")[2]}
+        for x in posts.values():
+            if isinstance(x, dict) and x.get("s") == last:
+                add(key, names, x.get("t"), x.get("d"))
+    for k, boards in seen.items():
+        if len(boards) > 1:
+            out[k] = None
+    return out
+
+
+def title_redate(p: dict, own: dict) -> bool:
+    """board_redate for an aggregator copy whose link is not a posting on a
+    tracking system (ats_link): the aggregator's own page (Jobicy, Himalayas) or
+    the employer's site. It takes the newest date the employer's own board gives
+    the same title (own_dates) when that is older than the copy's. A copy that
+    links to a board is board_redate's, by posting id; one that links to Workday
+    or another system names its own posting there, which may be a new one."""
+    if p.get("origin") != "aggregator" or ats_link(p.get("url") or ""):
+        return False
+    k = title_key(p.get("company"), p.get("title"))
+    d = own.get(k) if k else None
+    if not d or (p.get("posted") and p["posted"] <= d):
+        return False
+    p["posted"] = d
+    return True
+
+
 def drop_board_copies(cands: dict) -> int:
     """An aggregator's copy of a posting whose own board row is on the page under
     another title or place: the same posting id on the same board, so one job,
@@ -2837,6 +2923,7 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
     # the Splat's own row gone, a copy keyed the same would take its place.
     wd_older = {wk: p["older_than"] for _, p in raw
                 if p.get("older_than") is not None and (wk := wd_posting(p["url"]))}
+    own = own_dates(raw, board_ledger)
     for sid, p in raw:
         if (not p["title"] or not p["url"] or not p["company"] or AGENCY.search(p["company"])
                 or (MIDDLEMAN.search(p["url"]) and not p.get("gate"))):
@@ -2866,7 +2953,7 @@ def rules_pass(raw: list[tuple[str, dict]], board_ledger: dict) -> tuple[dict, i
         # remote fold) and dropped after took the row it beat with it, a fresh
         # copy or the employer's own row (review, 2026-11-12). Counted only when
         # the board's date is what made the row too old.
-        if board_redate(p, board_ledger) and (age_days(p["posted"]) or 0) > max_age:
+        if (board_redate(p, board_ledger) or title_redate(p, own)) and (age_days(p["posted"]) or 0) > max_age:
             older_by_board += 1
             continue
         p.update(where=w, track=track, level=level, source=sid,
