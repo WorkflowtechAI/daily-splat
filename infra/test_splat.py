@@ -236,6 +236,13 @@ TRACK = [
     ("Help Desk Lead (2 PM - 10 PM)", "eng"),            # only CLOCK keeps this one out of pm
     ("Semiconductor Equipment Engineer", None),
     ("Sr. Design Validation Product Engineer, DEG", None),
+    # Software supply chain security (group chat, 2026-11-18). The security
+    # word carried the first two before; the last two name none.
+    ("Engineer III, Supply Chain Source, Product Security (Remote)", "cyber"),   # CrowdStrike
+    ("Senior Engineer, Software Supply Chain Security", "cyber"),
+    ("Software Supply Chain Engineer", "cyber"),
+    ("Staff Software Engineer, Software Supply Chain", "cyber"),
+    ("Supply Chain Engineer", None),                     # a manufacturer's
 ]
 
 # Titles Foorilla filed under its infosec topics, where the title alone is not
