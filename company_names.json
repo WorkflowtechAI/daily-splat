@@ -1,6 +1,6 @@
 {
  "version": 1,
- "reviewed": "2026-11-18",
+ "reviewed": "2026-11-23",
  "how": "Job-board names -> legal names and USAspending UEIs, researched by agents against live USAspending data and spot-checked. Numbers show only for employers listed here; a legal name matches a record only when equal after normalizing case, punctuation and the corporate suffix. exclude_ueis are joint ventures or units that are not the employer, subtracted from contract totals.",
  "employers": [
   {
@@ -7050,6 +7050,397 @@
    "vt": null,
    "confidence": "high",
    "notes": "Nuclear reactor developer in Bellevue WA, backed by Bill Gates. The UEI matches the Bellevue address. Its net federal contract total is negative from de-obligations, and the captured search window returned nothing."
+  },
+  {
+   "id": "abbvie",
+   "names": [
+    "AbbVie"
+   ],
+   "kind": "public company",
+   "legal": [
+    "AbbVie Inc.",
+    "AbbVie US LLC",
+    "Allergan, Inc.",
+    "Allergan USA, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "VAFXUGJBLML4",
+     "name": "ABBVIE INC (1 N Waukegan Rd, North Chicago IL)",
+     "level": "P"
+    },
+    {
+     "uei": "MAB9Y43Z1US6",
+     "name": "ABBVIE US LLC (1 N Waukegan Rd, North Chicago IL)",
+     "level": "P"
+    },
+    {
+     "uei": "HC62HHL8JKY3",
+     "name": "ALLERGAN, INC. (1 N Waukegan Rd, North Chicago IL)",
+     "level": "P"
+    },
+    {
+     "uei": "CQDKHZ83XTH6",
+     "name": "ALLERGAN USA INC (2525 Dupont Dr, Irvine CA)",
+     "level": "C"
+    },
+    {
+     "uei": "PT7YAB8GCGF1",
+     "name": "LIFECELL CORPORATION (1 Millennium Way, Branchburg NJ)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [
+    "Q6NKZ88FJMT5",
+    "U1FJNN5XQM15"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Pharma company, North Chicago IL; all 8 cards link to its SmartRecruiters board. Its federal contract records sit with AbbVie US LLC, Allergan USA (AbbVie bought Allergan in 2020) and LifeCell (Allergan bought it from KCI in 2017). Pharmacyclics, ImmunoGen and Cerevel hang under the AbbVie Inc. parent record and hold no contracts. USAspending also files Gilgamesh Pharmaceuticals (AbbVie bought the bretisilocin program; the staff and other programs went to the independent Gilgamesh Pharma Inc.) and Abbott Laboratories SA under that parent record; both are excluded. Allergan Inc. has a second P record (NE25DXU1K4L5) that is left out because its child list holds Aon, Nielsen and Teva-era generic units."
+  },
+  {
+   "id": "sentilink",
+   "names": [
+    "SentiLink"
+   ],
+   "kind": "private company",
+   "legal": [
+    "SentiLink Corp."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "San Francisco identity-fraud company; its 5 cards link to jobs.ashbyhq.com/sentilink. The legal name comes from its own privacy policy. USAspending has no recipient named SentiLink, including for the FedRAMP roles."
+  },
+  {
+   "id": "tenstorrent",
+   "names": [
+    "Tenstorrent"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Tenstorrent USA, Inc.",
+    "Tenstorrent Holdings Inc.",
+    "Tenstorrent Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "AI chip company, Santa Clara CA (headquarters moved from Toronto in 2023); the cards link to its Greenhouse board. Its terms name Tenstorrent USA, Inc. as the US entity (Santa Clara) and Tenstorrent Holdings Inc. as the Delaware parent (EDGAR lists it, Austin TX); Tenstorrent Inc. is the former Toronto parent, kept for older records. USAspending has no contract recipient named Tenstorrent."
+  },
+  {
+   "id": "appomni",
+   "names": [
+    "AppOmni"
+   ],
+   "kind": "private company",
+   "legal": [
+    "AppOmni, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "SaaS security company in California (its site gives San Mateo); the cards link to its Greenhouse board. The legal name comes from its own terms and conditions. USAspending has no recipient named AppOmni."
+  },
+  {
+   "id": "ericsson",
+   "names": [
+    "Ericsson"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Ericsson Inc.",
+    "Ericsson Enterprise Wireless Solutions, Inc.",
+    "Cradlepoint, Inc.",
+    "Ericsson Federal Technologies Group, Inc.",
+    "Vonage Holdings Corp."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "YJGEHVL71H59",
+     "name": "ERICSSON INC (6300 Legacy Dr, Plano TX)",
+     "level": "C"
+    },
+    {
+     "uei": "RTHVCYX7CXU1",
+     "name": "TELEFON AB LM ERICSSON (parent)",
+     "level": "P"
+    },
+    {
+     "uei": "XGUENLNVFMG8",
+     "name": "TELEFON AB L M ERICSSON (parent, older record)",
+     "level": "P"
+    },
+    {
+     "uei": "MZ6UH869YDK3",
+     "name": "ERICSSON FEDERAL TECHNOLOGIES GROUP INC. (8065 Leesburg Pike, Vienna VA)",
+     "level": "P"
+    },
+    {
+     "uei": "JSLJJD7V1LC3",
+     "name": "VONAGE HOLDINGS CORP. (Holmdel NJ)",
+     "level": "P"
+    },
+    {
+     "uei": "ZAV8DT7YALJ7",
+     "name": "ERICSSON ENTERPRISE WIRELESS SOLUTIONS, INC. (Boise ID; formerly Cradlepoint, Inc.)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [
+    "N7YGELPVNDC8",
+    "NQKWRHGLTD55",
+    "HFMTMDNAGP95",
+    "E4FKSXWJNBJ1"
+   ],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Swedish telecom group; the cards are Ericsson Inc. sales-engineer roles in its Enterprise Wireless Solutions unit (formerly Cradlepoint). Vonage became Ericsson's on 2022-07-21 and holds small contracts ($11,162 in FY2025); Ericsson Federal Technologies Group was set up in 2024. USAspending files four units under the Ericsson parent records that are not Ericsson's today, and all four are excluded: iconectiv (Ericsson sold it to Koch Equity Development on 2025-08-22), Peraton Labs (Applied Communication Sciences, sold in 2013), Oceus Networks (Ericsson Federal Inc., sold to Tailwind Capital in 2010) and Ericsson Television (majority sold to One Equity Partners in 2019; Ericsson kept 49%)."
+  },
+  {
+   "id": "genesys",
+   "names": [
+    "Genesys"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Genesys Cloud Services, Inc.",
+    "Genesys Telecommunications Laboratories, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "DD9KMGMUZM47",
+     "name": "GENESYS CLOUD SERVICES INC (1302 El Camino Real, Menlo Park CA)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Contact-center software company (Genesys Cloud); the cards link to its Workday board. Genesys Telecommunications Laboratories is its former name, per USAspending's alternate names. USAspending lists Permira Advisers and Alcatel-Lucent Participations as its parents; both are left out (an investor and a former owner). Genesys Works (a nonprofit), Genesys Corporation and Genesys Systems LLC are other companies."
+  },
+  {
+   "id": "grafana-labs",
+   "names": [
+    "Grafana Labs"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Grafana Labs, Inc.",
+    "Raintank, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "JNL8JK7S1G89",
+     "name": "RAINTANK, INC (29 Broadway, New York NY on its award; the profile shows 3141 Irving St, San Francisco)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Observability software company; the cards link to its Greenhouse board (grafanalabs). grafana.com's legal pages now name Grafana Labs Inc.; GLEIF and a 2018 SEC Form D list the same company as Raintank Inc. (Delaware, 29 Broadway, New York), trading as Grafana Labs, so both names are listed. The USAspending record RAINTANK, INC is its own: one NOAA software-subscription award of $7,860 in January 2023, recorded at the New York address; the profile's San Francisco street address is unexplained."
+  },
+  {
+   "id": "nbcuniversal",
+   "names": [
+    "NBCUniversal"
+   ],
+   "kind": "public company",
+   "legal": [
+    "NBCUniversal Media, LLC",
+    "NBCUniversal, LLC",
+    "NBC Subsidiary KNBC-TV, LLC",
+    "Telemundo of Puerto Rico LLC",
+    "Universal City Studios Productions LLLP"
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "NBTCRM2NJ8Q9",
+     "name": "UNIVERSAL CITY STUDIOS PRODUCTIONS LLLP (100 Universal City Plz, Universal City CA)",
+     "level": "P"
+    },
+    {
+     "uei": "R4ULK4JA3284",
+     "name": "NBCUNIVERSAL, LLC (100 Universal City Plz, Universal City CA)",
+     "level": "C"
+    },
+    {
+     "uei": "GN3MTCU42MN3",
+     "name": "NBC SUBSIDIARY (KNBC-TV) LLC (100 Universal City Plz, Universal City CA)",
+     "level": "P"
+    },
+    {
+     "uei": "FBRPVECFWQR4",
+     "name": "TELEMUNDO OF PUERTO RICO LLC (383 Roosevelt Ave, San Juan PR)",
+     "level": "P"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Media company owned by Comcast; the cards link to its SmartRecruiters board (NBCUniversal3). Comcast Corporation's own records (USAspending lists it as NBCUniversal LLC's parent) are left out: its 81 child records are mostly Comcast Cable and Comcast Government Services, which would put their money on an NBC card. NBCUniversal Media, LLC is the SEC registrant name (EDGAR CIK 0000902739). The three listed units appear among its affiliates in the Copyright Claims Board agent directory. Universal City Studios Productions is listed first because the panel's USAspending link opens the first UEI's profile and NBCUNIVERSAL, LLC's last award was in 2019."
+  },
+  {
+   "id": "nexustek",
+   "names": [
+    "NexusTek"
+   ],
+   "kind": "private company",
+   "legal": [
+    "Nexus Technologies, LLC",
+    "NexusTek"
+   ],
+   "avoid": [
+    "Nexus Technologies, Inc."
+   ],
+   "avoid_notes": [
+    "Nexus Technologies, Inc. (Reston VA and Fletcher NC federal contractors, unrelated)"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "medium",
+   "notes": "Managed IT firm in Greenwood Village CO; its 4 cards link to an ADP WorkforceNow board that names NexusTek. The legal entity is Nexus Technologies, LLC, a Colorado LLC (Secretary of State id 19971129495) that registered NexusTek as a trade name in 2000. That legal name equals unrelated federal contractors Nexus Technologies, Inc. (Reston VA, Fletcher NC) and a Nexus Technologies LLC in Fowlerville MI once the suffix is dropped, so it is blocked and only the trade name matches. USAspending has no recipient named NexusTek."
+  },
+  {
+   "id": "pinterest",
+   "names": [
+    "Pinterest"
+   ],
+   "kind": "public company",
+   "legal": [
+    "Pinterest, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "San Francisco social media company; the cards link to pinterestcareers.com (Greenhouse job ids). USAspending has no recipient named Pinterest, Inc."
+  },
+  {
+   "id": "stn-incorporated",
+   "names": [
+    "STN Incorporated"
+   ],
+   "kind": "private company",
+   "legal": [
+    "STN Incorporated"
+   ],
+   "avoid": [
+    "STN Inc."
+   ],
+   "avoid_notes": [
+    "STN Inc. (other records under this name at different addresses: Aurora CO, Denver CO, Hayward CA)"
+   ],
+   "ueis": [
+    {
+     "uei": "WB99A7BK4MK9",
+     "name": "STN INC (4464 Willow Rd, Pleasanton CA; filed as STN INCORPORATED)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Pleasanton CA IT and managed-security firm (stninc.com); its 4 cards link to its own board, stnincorporated.applytojob.com. The UEI's address (4464 Willow Rd Ste 102) is the one stninc.com lists, and its alternate name is STN Incorporated. Other STN Inc. records at different addresses (Aurora CO, Denver CO, Hayward CA) have the same name once the suffix is dropped, so the name-matched sources read as cannot-be-told-apart; contracts match by UEI and are not affected. USAspending has no contract record for this UEI, only two FCC E-Rate payments ($14,432 and $2,400), so the panel shows $0."
+  },
+  {
+   "id": "servicenow",
+   "names": [
+    "ServiceNow"
+   ],
+   "kind": "public company",
+   "legal": [
+    "ServiceNow, Inc.",
+    "Moveworks, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [
+    {
+     "uei": "RRACXPKQJ918",
+     "name": "SERVICENOW, INC. (2225 Lawson Ln, Santa Clara CA)",
+     "level": "P"
+    },
+    {
+     "uei": "NYDGGRT5WPV9",
+     "name": "MOVEWORKS INC. (parent record)",
+     "level": "P"
+    },
+    {
+     "uei": "NY43SUCE6Y57",
+     "name": "MOVEWORKS, INC. (1400 Terra Bella Ave, Mountain View CA)",
+     "level": "C"
+    }
+   ],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Enterprise software company; the cards link to its SmartRecruiters board. Moveworks became its own on 2025-12-15 (one card's title names Moveworks) and holds contracts. Veza (closed 2026-03-02) and Armis (closed 2026-04-20) have no USAspending recipient of their own."
+  },
+  {
+   "id": "sofi",
+   "names": [
+    "SoFi"
+   ],
+   "kind": "public company",
+   "legal": [
+    "SoFi Technologies, Inc.",
+    "SoFi Bank, N.A.",
+    "SoFi Bank, National Association",
+    "SoFi Lending Corp."
+   ],
+   "avoid": [
+    "Social Finance, Inc."
+   ],
+   "avoid_notes": [
+    "Social Finance, Inc. (Boston nonprofit, unrelated; also SoFi's former name)"
+   ],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Fintech and bank holding company in San Francisco; the cards link to sofi.com careers (Greenhouse job ids). Its former name Social Finance, Inc. is also the name of a Boston nonprofit, so it is left out of legal (and so is the current subsidiary Social Finance, LLC, which normalizes the same). USAspending has no contract recipient for SoFi; SOFITC3 LLC and SOFITC JV LLC are unrelated federal contractors."
+  },
+  {
+   "id": "the-pokemon-company-international",
+   "names": [
+    "The Pokémon Company International"
+   ],
+   "kind": "private company",
+   "legal": [
+    "The Pokémon Company International, Inc.",
+    "The Pokemon Company International, Inc."
+   ],
+   "avoid": [],
+   "avoid_notes": [],
+   "ueis": [],
+   "exclude_ueis": [],
+   "vt": null,
+   "confidence": "high",
+   "notes": "Bellevue WA publisher and licensing arm of The Pokémon Company (Japan); its Greenhouse board is pokemoncareers, which splat.py labels with this name. Both spellings are listed because the name matcher turns the accent into a space. USAspending has no recipient named Pokemon Company International."
   }
  ],
  "unclear": [
@@ -7092,6 +7483,10 @@
   {
    "name": "Department of Veterans Affairs",
    "why": "A federal agency, not a private employer; labor-charge, court and PAC records do not apply to it."
+  },
+  {
+   "name": "FP Markets",
+   "why": "Forex and CFD broker group founded in Sydney, Australia; its Workable postings are remote EMEA or hybrid Limassol, Cyprus roles (the card's United States tag is not on Workable), and no US legal entity could be found."
   }
  ]
 }
